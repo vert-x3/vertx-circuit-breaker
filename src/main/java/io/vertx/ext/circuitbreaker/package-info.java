@@ -26,7 +26,7 @@
  * * exception thrown by your code
  * * uncompleted futures (timeout)
  *
- * Operations guarded by a circuit breaker are intended to by non-blocking and asynchronous in oter to benefits from
+ * Operations guarded by a circuit breaker are intended to by non-blocking and asynchronous in order to benefits from
  * the Vert.x execution model.
  *
  * == Using the vert.x circuit breaker
@@ -175,7 +175,7 @@
  *
  */
 @ModuleGen(name = "vertx-circuit-breaker", groupPackage = "io.vertx.ext.circuitbreaker")
-@Document
+@Document(fileName = "index.adoc")
 package io.vertx.ext.circuitbreaker;
 
 import io.vertx.codegen.annotations.ModuleGen;
