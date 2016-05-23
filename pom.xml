@@ -21,9 +21,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-     <groupId>io.vertx</groupId>
-     <artifactId>vertx-ext-parent</artifactId>
-     <version>20</version>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-ext-parent</artifactId>
+    <version>20</version>
   </parent>
 
   <artifactId>vertx-circuit-breaker</artifactId>
@@ -113,23 +113,23 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-     <groupId>junit</groupId>
-     <artifactId>junit</artifactId>
-     <version>4.12</version>
-     <scope>test</scope>
-   </dependency>
-   <dependency>
-     <groupId>org.assertj</groupId>
-     <artifactId>assertj-core</artifactId>
-     <version>3.3.0</version>
-     <scope>test</scope>
-   </dependency>
-   <dependency>
-     <groupId>com.jayway.awaitility</groupId>
-     <artifactId>awaitility</artifactId>
-     <version>1.7.0</version>
-     <scope>test</scope>
-   </dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.3.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jayway.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>1.7.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
