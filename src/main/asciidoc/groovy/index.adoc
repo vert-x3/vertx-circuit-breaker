@@ -48,7 +48,7 @@ Here is an example:
 
 [source,groovy]
 ----
-import io.vertx.ext.circuitbreaker.groovy.CircuitBreaker
+import io.vertx.groovy.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000,
@@ -73,7 +73,7 @@ output of a REST endpoint invocation:
 
 [source,groovy]
 ----
-import io.vertx.ext.circuitbreaker.groovy.CircuitBreaker
+import io.vertx.groovy.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -104,7 +104,7 @@ Optionally, you can provide a fallback executed when the circuit is open:
 
 [source,groovy]
 ----
-import io.vertx.ext.circuitbreaker.groovy.CircuitBreaker
+import io.vertx.groovy.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -134,11 +134,11 @@ The fallback is called whenever the circuit is open, or if the
 set, the result is using the output of the fallback function. The fallback function takes as parameter a
 `Throwable` object and returned an object of the expected type.
 
-The fallback can also be set on the `link:../../groovydoc/io/vertx/ext/circuitbreaker/groovy/CircuitBreaker.html[CircuitBreaker]` object directly:
+The fallback can also be set on the `link:../../groovydoc/io/vertx/groovy/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
 
 [source,groovy]
 ----
-import io.vertx.ext.circuitbreaker.groovy.CircuitBreaker
+import io.vertx.groovy.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -167,7 +167,7 @@ You can also configures callbacks invoked when the circuit is opened or closed:
 
 [source,groovy]
 ----
-import io.vertx.ext.circuitbreaker.groovy.CircuitBreaker
+import io.vertx.groovy.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -191,7 +191,7 @@ breaker.execute({ future ->
 ----
 
 You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
-such as callback with `link:../../groovydoc/io/vertx/ext/circuitbreaker/groovy/CircuitBreaker.html#halfOpenHandler(io.vertx.core.Handler)[halfOpenHandler]`.
+such as callback with `link:../../groovydoc/io/vertx/groovy/circuitbreaker/CircuitBreaker.html#halfOpenHandler(io.vertx.core.Handler)[halfOpenHandler]`.
 
 == Event bus notification
 

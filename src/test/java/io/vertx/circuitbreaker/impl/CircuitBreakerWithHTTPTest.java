@@ -14,16 +14,16 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker.impl;
+package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
-import io.vertx.ext.circuitbreaker.CircuitBreaker;
-import io.vertx.ext.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.ext.circuitbreaker.CircuitBreakerState;
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.ext.web.Router;
 import org.junit.After;
 import org.junit.Before;

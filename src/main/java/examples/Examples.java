@@ -18,8 +18,8 @@ package examples;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.circuitbreaker.CircuitBreaker;
-import io.vertx.ext.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>

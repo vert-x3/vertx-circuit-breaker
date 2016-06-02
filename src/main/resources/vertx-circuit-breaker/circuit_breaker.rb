@@ -1,7 +1,7 @@
 require 'vertx/vertx'
 require 'vertx/future'
 require 'vertx/util/utils.rb'
-# Generated from io.vertx.ext.circuitbreaker.CircuitBreaker
+# Generated from io.vertx.circuitbreaker.CircuitBreaker
 module VertxCircuitBreaker
   #  An implementation of the circuit breaker pattern for Vert.x
   class CircuitBreaker
@@ -22,9 +22,9 @@ module VertxCircuitBreaker
     # @return [::VertxCircuitBreaker::CircuitBreaker] the created instance
     def self.create(name=nil,vertx=nil,options=nil)
       if name.class == String && vertx.class.method_defined?(:j_del) && !block_given? && options == nil
-        return ::Vertx::Util::Utils.safe_create(Java::IoVertxExtCircuitbreaker::CircuitBreaker.java_method(:create, [Java::java.lang.String.java_class,Java::IoVertxCore::Vertx.java_class]).call(name,vertx.j_del),::VertxCircuitBreaker::CircuitBreaker)
+        return ::Vertx::Util::Utils.safe_create(Java::IoVertxCircuitbreaker::CircuitBreaker.java_method(:create, [Java::java.lang.String.java_class,Java::IoVertxCore::Vertx.java_class]).call(name,vertx.j_del),::VertxCircuitBreaker::CircuitBreaker)
       elsif name.class == String && vertx.class.method_defined?(:j_del) && options.class == Hash && !block_given?
-        return ::Vertx::Util::Utils.safe_create(Java::IoVertxExtCircuitbreaker::CircuitBreaker.java_method(:create, [Java::java.lang.String.java_class,Java::IoVertxCore::Vertx.java_class,Java::IoVertxExtCircuitbreaker::CircuitBreakerOptions.java_class]).call(name,vertx.j_del,Java::IoVertxExtCircuitbreaker::CircuitBreakerOptions.new(::Vertx::Util::Utils.to_json_object(options))),::VertxCircuitBreaker::CircuitBreaker)
+        return ::Vertx::Util::Utils.safe_create(Java::IoVertxCircuitbreaker::CircuitBreaker.java_method(:create, [Java::java.lang.String.java_class,Java::IoVertxCore::Vertx.java_class,Java::IoVertxCircuitbreaker::CircuitBreakerOptions.java_class]).call(name,vertx.j_del,Java::IoVertxCircuitbreaker::CircuitBreakerOptions.new(::Vertx::Util::Utils.to_json_object(options))),::VertxCircuitBreaker::CircuitBreaker)
       end
       raise ArgumentError, "Invalid arguments when calling create(name,vertx,options)"
     end

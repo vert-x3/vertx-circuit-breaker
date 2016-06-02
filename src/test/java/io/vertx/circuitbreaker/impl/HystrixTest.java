@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker.impl;
+package io.vertx.circuitbreaker.impl;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;

@@ -88,11 +88,11 @@
  * ----
  *
  * The fallback is called whenever the circuit is open, or if the
- * {@link io.vertx.ext.circuitbreaker.CircuitBreakerOptions#isFallbackOnFailure()} is enabled. When a fallback is
+ * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#isFallbackOnFailure()} is enabled. When a fallback is
  * set, the result is using the output of the fallback function. The fallback function takes as parameter a
  * {@link java.lang.Throwable} object and returned an object of the expected type.
  *
- * The fallback can also be set on the {@link io.vertx.ext.circuitbreaker.CircuitBreaker} object directly:
+ * The fallback can also be set on the {@link io.vertx.circuitbreaker.CircuitBreaker} object directly:
  *
  * [source,$lang]
  * ----
@@ -109,13 +109,13 @@
  * ----
  *
  * You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
- * such as callback with {@link io.vertx.ext.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)}.
+ * such as callback with {@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)}.
  *
  * == Event bus notification
  *
  * Every time the circuit state changes, an event is published on the event bus. The address on which the event are
  * sent is configurable with
- * {@link io.vertx.ext.circuitbreaker.CircuitBreakerOptions#setNotificationAddress(java.lang.String)}. If `null` is
+ * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationAddress(java.lang.String)}. If `null` is
  * passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
  *
  * Each event contains a Json Object with:
@@ -129,7 +129,7 @@
  *
  * When the circuit is “open,” calls to the circuit breaker fail immediately, without any attempt to execute the real
  * operation. After a suitable amount of time (configured from
- * {@link io.vertx.ext.circuitbreaker.CircuitBreakerOptions#setResetTimeout(long)}, the circuit breaker decides that the
+ * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setResetTimeout(long)}, the circuit breaker decides that the
  * operation has a chance of succeeding, so it goes into the {@code half-open} state. In this state, the next call to the
  * circuit breaker is allowed to execute the dangerous operation. Should the call succeed, the circuit breaker resets
  * and returns to the {@code closed} state, ready for more routine operation. If this trial call fails, however, the circuit
@@ -174,9 +174,9 @@
  * ----
  *
  */
-@ModuleGen(name = "vertx-circuit-breaker", groupPackage = "io.vertx.ext.circuitbreaker")
+@ModuleGen(name = "vertx-circuit-breaker", groupPackage = "io.vertx")
 @Document(fileName = "index.adoc")
-package io.vertx.ext.circuitbreaker;
+package io.vertx.circuitbreaker;
 
 import io.vertx.codegen.annotations.ModuleGen;
 import io.vertx.docgen.Document;

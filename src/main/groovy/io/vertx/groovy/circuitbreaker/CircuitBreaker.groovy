@@ -14,13 +14,13 @@
  * under the License.
  */
 
-package io.vertx.ext.circuitbreaker.groovy;
+package io.vertx.groovy.circuitbreaker;
 import groovy.transform.CompileStatic
 import io.vertx.lang.groovy.InternalHelper
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.circuitbreaker.CircuitBreakerState
+import io.vertx.circuitbreaker.CircuitBreakerOptions
+import io.vertx.circuitbreaker.CircuitBreakerState
 import io.vertx.groovy.core.Vertx
-import io.vertx.ext.circuitbreaker.CircuitBreakerOptions
 import io.vertx.core.Handler
 import io.vertx.groovy.core.Future
 import java.util.function.Function
@@ -29,38 +29,38 @@ import java.util.function.Function
 */
 @CompileStatic
 public class CircuitBreaker {
-  private final def io.vertx.ext.circuitbreaker.CircuitBreaker delegate;
+  private final def io.vertx.circuitbreaker.CircuitBreaker delegate;
   public CircuitBreaker(Object delegate) {
-    this.delegate = (io.vertx.ext.circuitbreaker.CircuitBreaker) delegate;
+    this.delegate = (io.vertx.circuitbreaker.CircuitBreaker) delegate;
   }
   public Object getDelegate() {
     return delegate;
   }
   /**
-   * Creates a new instance of {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}.
+   * Creates a new instance of {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}.
    * @param name the name
    * @param vertx the Vert.x instance
-   * @param options the configuration option (see <a href="../../../../../../../cheatsheet/CircuitBreakerOptions.html">CircuitBreakerOptions</a>)
+   * @param options the configuration option (see <a href="../../../../../../cheatsheet/CircuitBreakerOptions.html">CircuitBreakerOptions</a>)
    * @return the created instance
    */
   public static CircuitBreaker create(String name, Vertx vertx, Map<String, Object> options) {
-    def ret = InternalHelper.safeCreate(io.vertx.ext.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null, options != null ? new io.vertx.ext.circuitbreaker.CircuitBreakerOptions(new io.vertx.core.json.JsonObject(options)) : null), io.vertx.ext.circuitbreaker.groovy.CircuitBreaker.class);
+    def ret = InternalHelper.safeCreate(io.vertx.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null, options != null ? new io.vertx.circuitbreaker.CircuitBreakerOptions(new io.vertx.core.json.JsonObject(options)) : null), io.vertx.groovy.circuitbreaker.CircuitBreaker.class);
     return ret;
   }
   /**
-   * Creates a new instance of {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}, with default options.
+   * Creates a new instance of {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}, with default options.
    * @param name the name
    * @param vertx the Vert.x instance
    * @return the created instance
    */
   public static CircuitBreaker create(String name, Vertx vertx) {
-    def ret = InternalHelper.safeCreate(io.vertx.ext.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null), io.vertx.ext.circuitbreaker.groovy.CircuitBreaker.class);
+    def ret = InternalHelper.safeCreate(io.vertx.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null), io.vertx.groovy.circuitbreaker.CircuitBreaker.class);
     return ret;
   }
   /**
    * Closes the circuit breaker. It stops sending events on its state on the event bus.
    * This method is not related to the <code>close</code> state of the circuit breaker. To set the circuit breaker in the
-   * <code>close</code> state, use {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker#reset}.
+   * <code>close</code> state, use {@link io.vertx.groovy.circuitbreaker.CircuitBreaker#reset}.
    * @return 
    */
   public CircuitBreaker close() {
@@ -70,7 +70,7 @@ public class CircuitBreaker {
   /**
    * Sets a  invoked when the circuit breaker state switches to open.
    * @param handler the handler, must not be <code>null</code>
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker openHandler(Handler<Void> handler) {
     delegate.openHandler(handler);
@@ -79,7 +79,7 @@ public class CircuitBreaker {
   /**
    * Sets a  invoked when the circuit breaker state switches to half-open.
    * @param handler the handler, must not be <code>null</code>
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker halfOpenHandler(Handler<Void> handler) {
     delegate.halfOpenHandler(handler);
@@ -88,7 +88,7 @@ public class CircuitBreaker {
   /**
    * Sets a  invoked when the circuit breaker state switches to close.
    * @param handler the handler, must not be <code>null</code>
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker closeHandler(Handler<Void> handler) {
     delegate.closeHandler(handler);
@@ -125,7 +125,7 @@ public class CircuitBreaker {
     return ret;
   }
   /**
-   * Same as {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker#executeWithFallback} but using the circuit breaker default fallback.
+   * Same as {@link io.vertx.groovy.circuitbreaker.CircuitBreaker#executeWithFallback} but using the circuit breaker default fallback.
    * @param operation the operation
    * @return a future object completed when the operation or its fallback completes
    */
@@ -138,11 +138,11 @@ public class CircuitBreaker {
     return ret;
   }
   /**
-   * Same as {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker#executeAndReportWithFallback} but using the circuit breaker default
+   * Same as {@link io.vertx.groovy.circuitbreaker.CircuitBreaker#executeAndReportWithFallback} but using the circuit breaker default
    * fallback.
    * @param resultFuture the future on which the operation result is reported
    * @param operation the operation
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> operation) {
     delegate.executeAndReport(resultFuture != null ? (io.vertx.core.Future<T>)resultFuture.getDelegate() : null, operation != null ? new Handler<io.vertx.core.Future<java.lang.Object>>(){
@@ -162,14 +162,14 @@ public class CircuitBreaker {
    * circuit breaker also monitor the completion of the operation before a configure timeout. The operation is
    * considered as failed if it does not terminate in time.
    * <p>
-   * Unlike {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker#executeWithFallback},  this method does return a  object, but
+   * Unlike {@link io.vertx.groovy.circuitbreaker.CircuitBreaker#executeWithFallback},  this method does return a  object, but
    * let the caller pass a  object on which the result is reported. If the fallback is called, the future
    * is successfully completed with the value returned by the fallback function. If the fallback throws an exception,
    * the future is marked as failed.
    * @param resultFuture the future on which the operation result is reported
    * @param operation the operation
    * @param fallback the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> operation, java.util.function.Function<Throwable, T> fallback) {
     delegate.executeAndReportWithFallback(resultFuture != null ? (io.vertx.core.Future<T>)resultFuture.getDelegate() : null, operation != null ? new Handler<io.vertx.core.Future<java.lang.Object>>(){
@@ -186,11 +186,11 @@ public class CircuitBreaker {
   }
   /**
    * Sets a <em>default</em>  invoked when the bridge is open to handle the "request", or on failure
-   * if <a href="../../../../../../../cheatsheet/CircuitBreakerOptions.html">CircuitBreakerOptions</a> is enabled.
+   * if <a href="../../../../../../cheatsheet/CircuitBreakerOptions.html">CircuitBreakerOptions</a> is enabled.
    * <p>
    * The function gets the exception as parameter and returns the <em>fallback</em> result.
    * @param handler the handler
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public <T> CircuitBreaker fallback(java.util.function.Function<Throwable, T> handler) {
     delegate.fallback(handler != null ? new java.util.function.Function<java.lang.Throwable, java.lang.Object>(){
@@ -203,7 +203,7 @@ public class CircuitBreaker {
   }
   /**
    * Resets the circuit breaker state (number of failure set to 0 and state set to closed).
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker reset() {
     delegate.reset();
@@ -211,7 +211,7 @@ public class CircuitBreaker {
   }
   /**
    * Explicitly opens the circuit.
-   * @return the current {@link io.vertx.ext.circuitbreaker.groovy.CircuitBreaker}
+   * @return the current {@link io.vertx.groovy.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker open() {
     delegate.open();

@@ -14,22 +14,20 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker.impl;
+package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.circuitbreaker.CircuitBreaker;
-import io.vertx.ext.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.ext.circuitbreaker.CircuitBreakerState;
+import io.vertx.circuitbreaker.CircuitBreaker;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-
-import static io.vertx.ext.circuitbreaker.CircuitBreakerState.*;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -50,7 +48,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private Handler<Void> closeHandler = NOOP;
   private Function fallback = null;
 
-  private CircuitBreakerState state = CLOSED;
+  private CircuitBreakerState state = CircuitBreakerState.CLOSED;
   private long failures = 0;
   private AtomicInteger passed = new AtomicInteger();
 
@@ -114,12 +112,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public synchronized CircuitBreaker reset() {
     failures = 0;
 
-    if (state == CLOSED) {
+    if (state == CircuitBreakerState.CLOSED) {
       // Do nothing else.
       return this;
     }
 
-    state = CLOSED;
+    state = CircuitBreakerState.CLOSED;
     closeHandler.handle(null);
     sendUpdateOnEventBus();
     return this;
@@ -138,7 +136,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public synchronized CircuitBreaker open() {
-    state = OPEN;
+    state = CircuitBreakerState.OPEN;
     openHandler.handle(null);
     sendUpdateOnEventBus();
 
@@ -162,9 +160,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized CircuitBreaker attemptReset() {
-    if (state == OPEN) {
+    if (state == CircuitBreakerState.OPEN) {
       passed.set(0);
-      state = HALF_OPEN;
+      state = CircuitBreakerState.HALF_OPEN;
       halfOpenHandler.handle(null);
       sendUpdateOnEventBus();
     }
@@ -203,12 +201,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       // Else the operation has been canceled because of a time out.
     });
 
-    if (currentState == CLOSED) {
+    if (currentState == CircuitBreakerState.CLOSED) {
       executeOperation(operation, operationResult);
-    } else if (currentState == OPEN) {
+    } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       invokeFallback(new RuntimeException("open circuit"), userFuture, fallback);
-    } else if (currentState == HALF_OPEN) {
+    } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
           if (event.failed()) {
@@ -292,7 +290,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private synchronized void incrementFailures() {
     failures++;
     if (failures >= options.getMaxFailures()) {
-      if (state != OPEN) {
+      if (state != CircuitBreakerState.OPEN) {
         open();
       } else {
         // No need to do it in the previous case, open() do it.

@@ -14,15 +14,15 @@
  * under the License.
  */
 
-package io.vertx.ext.circuitbreaker;
+package io.vertx.circuitbreaker;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 
 /**
- * Converter for {@link io.vertx.ext.circuitbreaker.CircuitBreakerOptions}.
+ * Converter for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
  *
- * NOTE: This class has been automatically generated from the {@link io.vertx.ext.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
  */
 public class CircuitBreakerOptionsConverter {
 

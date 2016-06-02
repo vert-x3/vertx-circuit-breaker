@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker;
+package io.vertx.circuitbreaker;
 
 /**
  * Circuit breaker states.

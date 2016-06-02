@@ -14,12 +14,12 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker.impl;
+package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.ext.circuitbreaker.CircuitBreaker;
-import io.vertx.ext.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreaker;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

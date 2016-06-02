@@ -14,15 +14,15 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.circuitbreaker;
+package io.vertx.circuitbreaker;
 
+import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.ext.circuitbreaker.impl.CircuitBreakerImpl;
 
 import java.util.function.Function;
 

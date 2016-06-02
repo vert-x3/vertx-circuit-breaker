@@ -129,11 +129,11 @@ breaker.executeWithFallback(
 ----
 
 The fallback is called whenever the circuit is open, or if the
-`link:../../apidocs/io/vertx/ext/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` is enabled. When a fallback is
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#isFallbackOnFailure--[isFallbackOnFailure]` is enabled. When a fallback is
 set, the result is using the output of the fallback function. The fallback function takes as parameter a
 `link:../../apidocs/java/lang/Throwable.html[Throwable]` object and returned an object of the expected type.
 
-The fallback can also be set on the `link:../../apidocs/io/vertx/ext/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
+The fallback can also be set on the `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
 
 [source,java]
 ----
@@ -188,13 +188,13 @@ breaker.execute(
 ----
 
 You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
-such as callback with `link:../../apidocs/io/vertx/ext/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]`.
+such as callback with `link:../../apidocs/io/vertx/circuitbreaker/CircuitBreaker.html#halfOpenHandler-io.vertx.core.Handler-[halfOpenHandler]`.
 
 == Event bus notification
 
 Every time the circuit state changes, an event is published on the event bus. The address on which the event are
 sent is configurable with
-`link:../../apidocs/io/vertx/ext/circuitbreaker/CircuitBreakerOptions.html#setNotificationAddress-java.lang.String-[setNotificationAddress]`. If `null` is
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setNotificationAddress-java.lang.String-[setNotificationAddress]`. If `null` is
 passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
 
 Each event contains a Json Object with:
@@ -208,7 +208,7 @@ Each event contains a Json Object with:
 
 When the circuit is “open,” calls to the circuit breaker fail immediately, without any attempt to execute the real
 operation. After a suitable amount of time (configured from
-`link:../../apidocs/io/vertx/ext/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]`, the circuit breaker decides that the
+`link:../../apidocs/io/vertx/circuitbreaker/CircuitBreakerOptions.html#setResetTimeout-long-[setResetTimeout]`, the circuit breaker decides that the
 operation has a chance of succeeding, so it goes into the `half-open` state. In this state, the next call to the
 circuit breaker is allowed to execute the dangerous operation. Should the call succeed, the circuit breaker resets
 and returns to the `closed` state, ready for more routine operation. If this trial call fails, however, the circuit

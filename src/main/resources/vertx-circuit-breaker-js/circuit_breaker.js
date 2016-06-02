@@ -21,8 +21,8 @@ var Future = require('vertx-js/future');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JCircuitBreaker = io.vertx.ext.circuitbreaker.CircuitBreaker;
-var CircuitBreakerOptions = io.vertx.ext.circuitbreaker.CircuitBreakerOptions;
+var JCircuitBreaker = io.vertx.circuitbreaker.CircuitBreaker;
+var CircuitBreakerOptions = io.vertx.circuitbreaker.CircuitBreakerOptions;
 
 /**
  An implementation of the circuit breaker pattern for Vert.x
@@ -312,7 +312,7 @@ CircuitBreaker.create = function() {
   if (__args.length === 2 && typeof __args[0] === 'string' && typeof __args[1] === 'object' && __args[1]._jdel) {
     return utils.convReturnVertxGen(JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx)"](__args[0], __args[1]._jdel), CircuitBreaker);
   }else if (__args.length === 3 && typeof __args[0] === 'string' && typeof __args[1] === 'object' && __args[1]._jdel && (typeof __args[2] === 'object' && __args[2] != null)) {
-    return utils.convReturnVertxGen(JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx,io.vertx.ext.circuitbreaker.CircuitBreakerOptions)"](__args[0], __args[1]._jdel, __args[2] != null ? new CircuitBreakerOptions(new JsonObject(JSON.stringify(__args[2]))) : null), CircuitBreaker);
+    return utils.convReturnVertxGen(JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx,io.vertx.circuitbreaker.CircuitBreakerOptions)"](__args[0], __args[1]._jdel, __args[2] != null ? new CircuitBreakerOptions(new JsonObject(JSON.stringify(__args[2]))) : null), CircuitBreaker);
   } else throw new TypeError('function invoked with invalid arguments');
 };
 
