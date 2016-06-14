@@ -44,7 +44,7 @@ public class CircuitBreaker {
    * @return the created instance
    */
   public static CircuitBreaker create(String name, Vertx vertx, Map<String, Object> options) {
-    def ret = InternalHelper.safeCreate(io.vertx.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null, options != null ? new io.vertx.circuitbreaker.CircuitBreakerOptions(new io.vertx.core.json.JsonObject(options)) : null), io.vertx.groovy.circuitbreaker.CircuitBreaker.class);
+    def ret = InternalHelper.safeCreate(io.vertx.circuitbreaker.CircuitBreaker.create(name, vertx != null ? (io.vertx.core.Vertx)vertx.getDelegate() : null, options != null ? new io.vertx.circuitbreaker.CircuitBreakerOptions(io.vertx.lang.groovy.InternalHelper.toJsonObject(options)) : null), io.vertx.groovy.circuitbreaker.CircuitBreaker.class);
     return ret;
   }
   /**

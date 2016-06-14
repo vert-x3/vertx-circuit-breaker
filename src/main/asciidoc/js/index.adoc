@@ -7,7 +7,7 @@ number of failures and _open the circuit_ when a threshold is reached. Optionall
 
 Supported failures are:
 
-* failures reported by your code in a `link:../../jsdoc/future-Future.html[Future]`
+* failures reported by your code in a `link:../../jsdoc/module-vertx-js_future-Future.html[Future]`
 * exception thrown by your code
 * uncompleted futures (timeout)
 
@@ -26,7 +26,7 @@ descriptor:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>3.3.0-SNAPSHOT</version>
+  <version>3.3.0.CR2</version>
 </dependency>
 ----
 
@@ -34,7 +34,7 @@ descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-circuit-breaker:3.3.0-SNAPSHOT'
+compile 'io.vertx:vertx-circuit-breaker:3.3.0.CR2'
 ----
 
 == Using the circuit breaker
@@ -67,7 +67,7 @@ breaker.execute(function (future) {
 
 ----
 
-The executed block receives a `link:../../jsdoc/future-Future.html[Future]` object as parameter, to denote the
+The executed block receives a `link:../../jsdoc/module-vertx-js_future-Future.html[Future]` object as parameter, to denote the
 success or failure of the operation as well as the result. For example in the following example, the result is the
 output of a REST endpoint invocation:
 
@@ -97,8 +97,8 @@ breaker.execute(function (future) {
 
 The result of the operation is provided using the:
 
-* returned `link:../../jsdoc/future-Future.html[Future]` when calling `execute` methods
-* provided `link:../../jsdoc/future-Future.html[Future]` when calling the `executeAndReport` methods
+* returned `link:../../jsdoc/module-vertx-js_future-Future.html[Future]` when calling `execute` methods
+* provided `link:../../jsdoc/module-vertx-js_future-Future.html[Future]` when calling the `executeAndReport` methods
 
 Optionally, you can provide a fallback executed when the circuit is open:
 
@@ -134,7 +134,7 @@ The fallback is called whenever the circuit is open, or if the
 set, the result is using the output of the fallback function. The fallback function takes as parameter a
 `Throwable` object and returned an object of the expected type.
 
-The fallback can also be set on the `link:../../jsdoc/circuit_breaker-CircuitBreaker.html[CircuitBreaker]` object directly:
+The fallback can also be set on the `link:../../jsdoc/module-vertx-circuit-breaker-js_circuit_breaker-CircuitBreaker.html[CircuitBreaker]` object directly:
 
 [source,js]
 ----
@@ -191,7 +191,7 @@ breaker.execute(function (future) {
 ----
 
 You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
-such as callback with `link:../../jsdoc/circuit_breaker-CircuitBreaker.html#halfOpenHandler[halfOpenHandler]`.
+such as callback with `link:../../jsdoc/module-vertx-circuit-breaker-js_circuit_breaker-CircuitBreaker.html#halfOpenHandler[halfOpenHandler]`.
 
 == Event bus notification
 
