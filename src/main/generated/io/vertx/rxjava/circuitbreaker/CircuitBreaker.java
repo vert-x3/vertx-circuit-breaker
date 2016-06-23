@@ -84,11 +84,7 @@ public class CircuitBreaker {
    * @return the current {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker openHandler(Handler<Void> handler) { 
-    delegate.openHandler(new Handler<java.lang.Void>() {
-      public void handle(java.lang.Void event) {
-        handler.handle(event);
-      }
-    });
+    delegate.openHandler(handler);
     return this;
   }
 
@@ -98,11 +94,7 @@ public class CircuitBreaker {
    * @return the current {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker halfOpenHandler(Handler<Void> handler) { 
-    delegate.halfOpenHandler(new Handler<java.lang.Void>() {
-      public void handle(java.lang.Void event) {
-        handler.handle(event);
-      }
-    });
+    delegate.halfOpenHandler(handler);
     return this;
   }
 
@@ -112,11 +104,7 @@ public class CircuitBreaker {
    * @return the current {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker}
    */
   public CircuitBreaker closeHandler(Handler<Void> handler) { 
-    delegate.closeHandler(new Handler<java.lang.Void>() {
-      public void handle(java.lang.Void event) {
-        handler.handle(event);
-      }
-    });
+    delegate.closeHandler(handler);
     return this;
   }
 
