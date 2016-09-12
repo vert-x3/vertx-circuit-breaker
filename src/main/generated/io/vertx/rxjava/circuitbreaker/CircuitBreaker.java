@@ -240,7 +240,6 @@ public class CircuitBreaker {
 
   /**
    * @return the current state.
-   * @return 
    */
   public CircuitBreakerState state() { 
     CircuitBreakerState ret = delegate.state();
@@ -249,7 +248,6 @@ public class CircuitBreaker {
 
   /**
    * @return the current number of failures.
-   * @return 
    */
   public long failureCount() { 
     long ret = delegate.failureCount();
@@ -258,7 +256,6 @@ public class CircuitBreaker {
 
   /**
    * @return the name of the circuit breaker.
-   * @return 
    */
   public String name() { 
     if (cached_0 != null) {

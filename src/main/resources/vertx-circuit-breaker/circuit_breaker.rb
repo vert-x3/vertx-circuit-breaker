@@ -166,24 +166,21 @@ module VertxCircuitBreaker
       end
       raise ArgumentError, "Invalid arguments when calling open()"
     end
-    #  @return the current state.
-    # @return [:OPEN,:CLOSED,:HALF_OPEN]
+    # @return [:OPEN,:CLOSED,:HALF_OPEN] the current state.
     def state
       if !block_given?
         return @j_del.java_method(:state, []).call().name.intern
       end
       raise ArgumentError, "Invalid arguments when calling state()"
     end
-    #  @return the current number of failures.
-    # @return [Fixnum]
+    # @return [Fixnum] the current number of failures.
     def failure_count
       if !block_given?
         return @j_del.java_method(:failureCount, []).call()
       end
       raise ArgumentError, "Invalid arguments when calling failure_count()"
     end
-    #  @return the name of the circuit breaker.
-    # @return [String]
+    # @return [String] the name of the circuit breaker.
     def name
       if !block_given?
         if @cached_name != nil

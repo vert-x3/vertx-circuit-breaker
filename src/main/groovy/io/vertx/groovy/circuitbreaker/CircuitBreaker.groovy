@@ -219,7 +219,6 @@ public class CircuitBreaker {
   }
   /**
    * @return the current state.
-   * @return 
    */
   public CircuitBreakerState state() {
     def ret = delegate.state();
@@ -227,7 +226,6 @@ public class CircuitBreaker {
   }
   /**
    * @return the current number of failures.
-   * @return 
    */
   public long failureCount() {
     def ret = delegate.failureCount();
@@ -235,7 +233,6 @@ public class CircuitBreaker {
   }
   /**
    * @return the name of the circuit breaker.
-   * @return 
    */
   public String name() {
     if (cached_0 != null) {

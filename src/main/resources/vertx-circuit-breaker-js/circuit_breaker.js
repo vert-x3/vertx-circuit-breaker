@@ -248,11 +248,10 @@ var CircuitBreaker = function(j_val) {
   };
 
   /**
-   @return the current state.
 
    @public
 
-   @return {Object}
+   @return {Object} the current state.
    */
   this.state = function() {
     var __args = arguments;
@@ -262,11 +261,10 @@ var CircuitBreaker = function(j_val) {
   };
 
   /**
-   @return the current number of failures.
 
    @public
 
-   @return {number}
+   @return {number} the current number of failures.
    */
   this.failureCount = function() {
     var __args = arguments;
@@ -276,11 +274,10 @@ var CircuitBreaker = function(j_val) {
   };
 
   /**
-   @return the name of the circuit breaker.
 
    @public
 
-   @return {string}
+   @return {string} the name of the circuit breaker.
    */
   this.name = function() {
     var __args = arguments;
