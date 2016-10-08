@@ -169,8 +169,6 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return this;
   }
 
-  //TODO Change fallback to receive the reason
-
   @Override
   public <T> CircuitBreaker executeAndReportWithFallback(
       Future<T> userFuture,
@@ -182,8 +180,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       currentState = state;
     }
 
-    // this future object track the completion of the operation
-    // it completes the userFuture when required
+    // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
     Future<T> operationResult = Future.future();
     operationResult.setHandler(event -> {
@@ -258,7 +255,20 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       });
     }
     try {
-      operation.handle(operationResult);
+      // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
+      Future<T> passedFuture = Future.future();
+      passedFuture.setHandler(ar -> {
+        if (ar.failed()) {
+          if (! operationResult.isComplete()) {
+            operationResult.fail(ar.cause());
+          }
+        } else {
+          if (! operationResult.isComplete()) {
+            operationResult.complete(ar.result());
+          }
+        }
+      });
+      operation.handle(passedFuture);
     } catch (Throwable e) {
       if (! operationResult.isComplete()) {
         operationResult.fail(e);
