@@ -57,6 +57,11 @@ public class CircuitBreakerOptions {
    */
   private static final long DEFAULT_NOTIFICATION_PERIOD = 2000;
 
+  /**
+   * Default rolling window for metrics in milliseconds.
+   */
+  private static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
+
   private long timeout = DEFAULT_TIMEOUT;
 
   private int maxFailures = DEFAULT_MAX_FAILURES;
@@ -68,6 +73,8 @@ public class CircuitBreakerOptions {
   private String notificationAddress = DEFAULT_NOTIFICATION_ADDRESS;
 
   private long notificationPeriod = DEFAULT_NOTIFICATION_PERIOD;
+
+  private long metricsRollingWindow = DEFAULT_METRICS_ROLLING_WINDOW;
 
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
@@ -218,6 +225,24 @@ public class CircuitBreakerOptions {
    */
   public CircuitBreakerOptions setNotificationPeriod(long notificationPeriod) {
     this.notificationPeriod = notificationPeriod;
+    return this;
+  }
+
+  /**
+   * @return the configured rolling window for metrics.
+   */
+  public long getMetricsRollingWindow() {
+    return metricsRollingWindow;
+  }
+
+  /**
+   * Sets the rolling window used for metrics.
+   *
+   * @param metricsRollingWindow the period in milliseconds.
+   * @return the current {@link CircuitBreaker} instance
+   */
+  public CircuitBreakerOptions setMetricsRollingWindow(long metricsRollingWindow) {
+    this.metricsRollingWindow = metricsRollingWindow;
     return this;
   }
 }
