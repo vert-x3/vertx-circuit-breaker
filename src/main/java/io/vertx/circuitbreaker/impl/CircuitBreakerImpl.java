@@ -199,7 +199,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     });
 
     if (currentState == CircuitBreakerState.CLOSED) {
-      executeOperation(operation, operationResult);
+      if (options.getMaxRetries() > 0) {
+        executeOperation(operation, retryFuture(1, operation, operationResult));
+      } else {
+        executeOperation(operation, operationResult);
+      }
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       invokeFallback(new RuntimeException("open circuit"), userFuture, fallback);
@@ -226,6 +230,33 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       }
     }
     return this;
+  }
+
+  private <T> Future<T> retryFuture(int retryCount, Handler<Future<T>> operation, Future<T> operationResult) {
+    Future<T> retry = Future.future();
+    retry.setHandler(event -> {
+      if (event.succeeded()) {
+        reset();
+        operationResult.complete(event.result());
+        return;
+      }
+
+      CircuitBreakerState currentState;
+      synchronized (this) {
+        currentState = state;
+      }
+
+      if (currentState == CircuitBreakerState.CLOSED) {
+        if (retryCount < options.getMaxRetries() - 1) {
+          executeOperation(operation, retryFuture(retryCount + 1, operation, operationResult));
+        } else {
+          executeOperation(operation, operationResult);
+        }
+      } else {
+        operationResult.fail(new RuntimeException("open circuit"));
+      }
+    });
+    return retry;
   }
 
   private <T> void invokeFallback(Throwable reason, Future<T> userFuture, Function<Throwable, T> fallback) {

@@ -57,6 +57,11 @@ public class CircuitBreakerOptions {
    */
   private static final long DEFAULT_NOTIFICATION_PERIOD = 2000;
 
+  /**
+   * Default number of retries.
+   */
+  private static final int DEFAULT_MAX_RETRIES = 0;
+
   private long timeout = DEFAULT_TIMEOUT;
 
   private int maxFailures = DEFAULT_MAX_FAILURES;
@@ -69,6 +74,8 @@ public class CircuitBreakerOptions {
 
   private long notificationPeriod = DEFAULT_NOTIFICATION_PERIOD;
 
+  private int maxRetries = DEFAULT_MAX_RETRIES;
+
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
    */
@@ -79,7 +86,8 @@ public class CircuitBreakerOptions {
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} by copying the other instance.
    *
-   * @param other the instance fo copy
+   * @param other
+   *          the instance fo copy
    */
   public CircuitBreakerOptions(CircuitBreakerOptions other) {
     this.timeout = other.timeout;
@@ -88,6 +96,7 @@ public class CircuitBreakerOptions {
     this.notificationAddress = other.notificationAddress;
     this.notificationPeriod = other.notificationPeriod;
     this.resetTimeout = other.resetTimeout;
+    this.maxRetries = other.maxRetries;
   }
 
   /**
@@ -218,6 +227,24 @@ public class CircuitBreakerOptions {
    */
   public CircuitBreakerOptions setNotificationPeriod(long notificationPeriod) {
     this.notificationPeriod = notificationPeriod;
+    return this;
+  }
+
+  /**
+   * @return the number of times the circuit breaker tries to redo the operation before failing
+   */
+  public int getMaxRetries() {
+    return maxRetries;
+  }
+
+  /**
+   * Configures the number of times the circuit breaker tries to redo the operation before failing.
+   *
+   * @param maxRetries the number of retries, 0 to disable this feature.
+   * @return the current {@link CircuitBreaker} instance
+   */
+  public CircuitBreakerOptions setMaxRetries(int maxRetries) {
+    this.maxRetries = maxRetries;
     return this;
   }
 }
