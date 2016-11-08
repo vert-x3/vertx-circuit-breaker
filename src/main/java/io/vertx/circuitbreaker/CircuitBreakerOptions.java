@@ -63,6 +63,11 @@ public class CircuitBreakerOptions {
   public static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
 
   /**
+   * Default number of retries.
+   */
+  private static final int DEFAULT_MAX_RETRIES = 0;
+
+  /**
    * The operation timeout.
    */
   private long timeout = DEFAULT_TIMEOUT;
@@ -92,6 +97,8 @@ public class CircuitBreakerOptions {
    */
   private long notificationPeriod = DEFAULT_NOTIFICATION_PERIOD;
 
+  private int maxRetries = DEFAULT_MAX_RETRIES;
+
   /**
    * The metric rolling window in ms.
    */
@@ -116,6 +123,7 @@ public class CircuitBreakerOptions {
     this.notificationAddress = other.notificationAddress;
     this.notificationPeriod = other.notificationPeriod;
     this.resetTimeout = other.resetTimeout;
+    this.maxRetries = other.maxRetries;
   }
 
   /**
@@ -264,6 +272,24 @@ public class CircuitBreakerOptions {
    */
   public CircuitBreakerOptions setMetricsRollingWindow(long metricsRollingWindow) {
     this.metricsRollingWindow = metricsRollingWindow;
+    return this;
+  }
+
+  /**
+   * @return the number of times the circuit breaker tries to redo the operation before failing
+   */
+  public int getMaxRetries() {
+    return maxRetries;
+  }
+
+  /**
+   * Configures the number of times the circuit breaker tries to redo the operation before failing.
+   *
+   * @param maxRetries the number of retries, 0 to disable this feature.
+   * @return the current {@link CircuitBreaker} instance
+   */
+  public CircuitBreakerOptions setMaxRetries(int maxRetries) {
+    this.maxRetries = maxRetries;
     return this;
   }
 }

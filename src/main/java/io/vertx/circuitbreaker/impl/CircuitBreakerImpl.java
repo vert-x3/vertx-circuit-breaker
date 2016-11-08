@@ -204,7 +204,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     });
 
     if (currentState == CircuitBreakerState.CLOSED) {
-      executeOperation(command, operationResult, call);
+      if (options.getMaxRetries() > 0) {
+        executeOperation(command, retryFuture(1, command, operationResult, call), call);
+      } else {
+        executeOperation(command, operationResult, call);
+      }
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       call.shortCircuited();
@@ -235,7 +239,37 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return this;
   }
 
-  private <T> void invokeFallback(Throwable reason, Future<T> userFuture, Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation operation) {
+  private <T> Future<T> retryFuture(int retryCount, Handler<Future<T>> command, Future<T> operationResult,
+                                    CircuitBreakerMetrics.Operation call) {
+    Future<T> retry = Future.future();
+    retry.setHandler(event -> {
+      if (event.succeeded()) {
+        reset();
+        operationResult.complete(event.result());
+        return;
+      }
+
+      CircuitBreakerState currentState;
+      synchronized (this) {
+        currentState = state;
+      }
+
+      if (currentState == CircuitBreakerState.CLOSED) {
+        if (retryCount < options.getMaxRetries() - 1) {
+          // Don't report timeout or error in the retry attempt, only the last one.
+          executeOperation(command, retryFuture(retryCount + 1, command, operationResult, null), call);
+        } else {
+          executeOperation(command, operationResult, call);
+        }
+      } else {
+        operationResult.fail(new RuntimeException("open circuit"));
+      }
+    });
+    return retry;
+  }
+
+  private <T> void invokeFallback(Throwable reason, Future<T> userFuture,
+                                  Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation operation) {
     if (fallback == null) {
       // No fallback, mark the user future as failed.
       userFuture.fail(reason);
@@ -259,7 +293,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       vertx.setTimer(options.getTimeout(), (l) -> {
         // Check if the operation has not already been completed
         if (!operationResult.isComplete()) {
-          call.timeout();
+          if (call != null) {
+            call.timeout();
+          }
           operationResult.fail("operation timeout");
         }
         // Else  Operation has completed
@@ -282,7 +318,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       operation.handle(passedFuture);
     } catch (Throwable e) {
       if (!operationResult.isComplete()) {
-        call.error();
+        if (call != null) {
+          call.error();
+        }
         operationResult.fail(e);
       }
     }

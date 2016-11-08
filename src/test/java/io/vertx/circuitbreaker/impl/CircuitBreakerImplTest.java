@@ -307,7 +307,6 @@ public class CircuitBreakerImplTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
   }
 
-
   @Test
   public void testResetAttemptThatFails() {
     AtomicBoolean called = new AtomicBoolean(false);
@@ -333,7 +332,7 @@ public class CircuitBreakerImplTest {
     called.set(false);
 
     AtomicReference<String> result = new AtomicReference<>();
-    breaker.<String>execute(v -> {
+    breaker.<String> execute(v -> {
       throw new RuntimeException("oh no, but this is expected");
     }).setHandler(ar -> result.set(ar.result()));
 
@@ -538,8 +537,7 @@ public class CircuitBreakerImplTest {
     AtomicInteger fallbackCalled = new AtomicInteger();
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.executeWithFallback(
-          future ->
-              vertx.setTimer(500, l -> future.complete()),
+          future -> vertx.setTimer(500, l -> future.complete()),
           v -> {
             fallbackCalled.incrementAndGet();
             return "fallback";
@@ -689,6 +687,118 @@ public class CircuitBreakerImplTest {
     });
     await().until(() -> failures.size() == 1);
     failures.stream().forEach(ar -> assertThat(ar).isNotNull().hasMessage("boom"));
+  }
+
+  @Test
+  public void testRetrys() {
+    CircuitBreakerOptions options = new CircuitBreakerOptions().setMaxRetries(5).setMaxFailures(4).setTimeout(100)
+        .setFallbackOnFailure(true);
+    List<Throwable> failures = new ArrayList<>();
+
+    AtomicInteger calls = new AtomicInteger();
+    breaker = CircuitBreaker.create("test", vertx, options);
+
+    Future result = breaker.execute(future -> {
+      calls.incrementAndGet();
+      future.fail("boom");
+    });
+
+    await().untilAtomic(calls, is(5));
+    assertThat(result.failed()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    breaker.reset();
+    calls.set(0);
+
+    result = breaker.execute(future -> {
+      if (calls.incrementAndGet() == 4) {
+        future.complete();
+      } else {
+        future.fail("boom");
+      }
+    });
+
+    await().untilAtomic(calls, is(4));
+    assertThat(result.succeeded()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(0);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    breaker.reset();
+    calls.set(0);
+
+    for (int i = 0; i < options.getMaxFailures() + 1; i++) {
+      breaker.execute(future -> {
+        try {
+          calls.incrementAndGet();
+          Thread.sleep(150);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      });
+    }
+
+    await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
+
+    calls.set(0);
+    breaker.reset();
+    Future result2 = breaker.execute(future -> {
+      if (calls.incrementAndGet() == 4) {
+        future.complete();
+      } else {
+        try {
+          Thread.sleep(150);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
+    for (int i = 0; i < options.getMaxFailures(); i++) {
+      breaker.execute(future -> {
+        future.fail("boom");
+      });
+    }
+
+    await().until(() -> result2.failed() == true);
+    assertThat(breaker.failureCount()).isEqualTo(options.getMaxFailures() + 1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+
+    breaker.reset();
+    breaker.fallback(failures::add);
+    calls.set(0);
+
+    result = breaker.execute(future -> {
+      try {
+        Thread.sleep(150);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    });
+
+    await().until(() -> failures.size() == 1);
+    failures.stream().forEach(ar -> assertThat(ar).isNotNull().hasMessage("operation timeout"));
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    breaker.reset();
+    calls.set(0);
+
+    result = breaker.execute(future -> {
+      if (calls.incrementAndGet() == 4) {
+        future.complete();
+      } else {
+        try {
+          Thread.sleep(150);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
+
+    await().untilAtomic(calls, is(4));
+    assertThat(result.succeeded()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(0);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
   }
 
 }
