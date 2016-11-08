@@ -111,15 +111,15 @@ var CircuitBreaker = function(j_val) {
    value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
 
    @public
-   @param operation {function} the operation 
+   @param command {function} the operation 
    @param fallback {todo} the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result 
    @return {Future} a future object completed when the operation or its fallback completes
    */
-  this.executeWithFallback = function(operation, fallback) {
+  this.executeWithFallback = function(command, fallback) {
     var __args = arguments;
     if (__args.length === 2 && typeof __args[0] === 'function' && typeof __args[1] === 'function') {
       return utils.convReturnVertxGen(j_circuitBreaker["executeWithFallback(io.vertx.core.Handler,java.util.function.Function)"](function(jVal) {
-      operation(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(jVal, Future));
     }, function(jVal) {
       var jRet = fallback(utils.convReturnThrowable(jVal));
       return utils.convParamTypeUnknown(jRet);
@@ -131,14 +131,14 @@ var CircuitBreaker = function(j_val) {
    Same as {@link CircuitBreaker#executeWithFallback} but using the circuit breaker default fallback.
 
    @public
-   @param operation {function} the operation 
+   @param command {function} the operation 
    @return {Future} a future object completed when the operation or its fallback completes
    */
-  this.execute = function(operation) {
+  this.execute = function(command) {
     var __args = arguments;
     if (__args.length === 1 && typeof __args[0] === 'function') {
       return utils.convReturnVertxGen(j_circuitBreaker["execute(io.vertx.core.Handler)"](function(jVal) {
-      operation(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(jVal, Future));
     }), Future);
     } else throw new TypeError('function invoked with invalid arguments');
   };
@@ -149,14 +149,14 @@ var CircuitBreaker = function(j_val) {
 
    @public
    @param resultFuture {Future} the future on which the operation result is reported 
-   @param operation {function} the operation 
+   @param command {function} the operation 
    @return {CircuitBreaker} the current {@link CircuitBreaker}
    */
-  this.executeAndReport = function(resultFuture, operation) {
+  this.executeAndReport = function(resultFuture, command) {
     var __args = arguments;
     if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'function') {
       j_circuitBreaker["executeAndReport(io.vertx.core.Future,io.vertx.core.Handler)"](resultFuture._jdel, function(jVal) {
-      operation(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(jVal, Future));
     });
       return that;
     } else throw new TypeError('function invoked with invalid arguments');
@@ -179,15 +179,15 @@ var CircuitBreaker = function(j_val) {
 
    @public
    @param resultFuture {Future} the future on which the operation result is reported 
-   @param operation {function} the operation 
+   @param command {function} the operation 
    @param fallback {todo} the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result 
    @return {CircuitBreaker} the current {@link CircuitBreaker}
    */
-  this.executeAndReportWithFallback = function(resultFuture, operation, fallback) {
+  this.executeAndReportWithFallback = function(resultFuture, command, fallback) {
     var __args = arguments;
     if (__args.length === 3 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'function' && typeof __args[2] === 'function') {
       j_circuitBreaker["executeAndReportWithFallback(io.vertx.core.Future,io.vertx.core.Handler,java.util.function.Function)"](resultFuture._jdel, function(jVal) {
-      operation(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(jVal, Future));
     }, function(jVal) {
       var jRet = fallback(utils.convReturnThrowable(jVal));
       return utils.convParamTypeUnknown(jRet);

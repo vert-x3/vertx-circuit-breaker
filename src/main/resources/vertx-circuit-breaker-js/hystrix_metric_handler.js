@@ -25,6 +25,7 @@ var JHystrixMetricHandler = io.vertx.circuitbreaker.HystrixMetricHandler;
 var CircuitBreakerOptions = io.vertx.circuitbreaker.CircuitBreakerOptions;
 
 /**
+ A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard.
 
  @class
 */
@@ -52,11 +53,12 @@ var HystrixMetricHandler = function(j_val) {
 };
 
 /**
+ Creates the handler.
 
  @memberof module:vertx-circuit-breaker-js/hystrix_metric_handler
- @param vertx {Vertx} 
- @param options {Object} 
- @return {HystrixMetricHandler}
+ @param vertx {Vertx} the Vert.x instance 
+ @param options {Object} the circuit breaker options. 
+ @return {HystrixMetricHandler} the handler
  */
 HystrixMetricHandler.create = function(vertx, options) {
   var __args = arguments;

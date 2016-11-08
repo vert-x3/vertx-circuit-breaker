@@ -16,14 +16,13 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
-import io.vertx.circuitbreaker.CircuitBreaker;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,12 +49,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   private CircuitBreakerState state = CircuitBreakerState.CLOSED;
   private long failures = 0;
-  private AtomicInteger passed = new AtomicInteger();
+  private final AtomicInteger passed = new AtomicInteger();
 
+  private CircuitBreakerMetrics metrics;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(vertx);
+    metrics = new CircuitBreakerMetrics(vertx, this, options);
     if (options == null) {
       this.options = new CircuitBreakerOptions();
     } else {
@@ -126,11 +127,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private synchronized void sendUpdateOnEventBus() {
     String address = options.getNotificationAddress();
     if (address != null) {
-      vertx.eventBus().publish(address, new JsonObject()
-          .put("name", name)
-          .put("state", state)
-          .put("failures", failures)
-          .put("node", vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local"));
+      JsonObject json = metrics.toJson();
+      vertx.eventBus().publish(address, json);
     }
   }
 
@@ -171,14 +169,16 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public <T> CircuitBreaker executeAndReportWithFallback(
-      Future<T> userFuture,
-      Handler<Future<T>> operation,
-      Function<Throwable, T> fallback) {
+    Future<T> userFuture,
+    Handler<Future<T>> command,
+    Function<Throwable, T> fallback) {
 
     CircuitBreakerState currentState;
     synchronized (this) {
       currentState = state;
     }
+
+    CircuitBreakerMetrics.Operation call = metrics.enqueue();
 
     // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
@@ -186,12 +186,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     operationResult.setHandler(event -> {
       if (event.failed()) {
         incrementFailures();
+        call.failed();
         if (options.isFallbackOnFailure()) {
-          invokeFallback(event.cause(), userFuture, fallback);
+          invokeFallback(event.cause(), userFuture, fallback, call);
         } else {
           userFuture.fail(event.cause());
         }
       } else {
+        call.complete();
         reset();
         userFuture.complete(event.result());
       }
@@ -199,17 +201,18 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     });
 
     if (currentState == CircuitBreakerState.CLOSED) {
-      executeOperation(operation, operationResult);
+      executeOperation(command, operationResult, call);
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
-      invokeFallback(new RuntimeException("open circuit"), userFuture, fallback);
+      call.shortCircuited();
+      invokeFallback(new RuntimeException("open circuit"), userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
           if (event.failed()) {
             open();
             if (options.isFallbackOnFailure()) {
-              invokeFallback(event.cause(), userFuture, fallback);
+              invokeFallback(event.cause(), userFuture, fallback, call);
             } else {
               userFuture.fail(event.cause());
             }
@@ -219,16 +222,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           }
         });
         // Execute the operation
-        executeOperation(operation, operationResult);
+        executeOperation(command, operationResult, call);
       } else {
         // Not selected, fallback.
-        invokeFallback(new RuntimeException("open circuit"), userFuture, fallback);
+        call.shortCircuited();
+        invokeFallback(new RuntimeException("open circuit"), userFuture, fallback, call);
       }
     }
     return this;
   }
 
-  private <T> void invokeFallback(Throwable reason, Future<T> userFuture, Function<Throwable, T> fallback) {
+  private <T> void invokeFallback(Throwable reason, Future<T> userFuture, Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation operation) {
     if (fallback == null) {
       // No fallback, mark the user future as failed.
       userFuture.fail(reason);
@@ -237,18 +241,22 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     try {
       T apply = fallback.apply(reason);
+      operation.fallbackSucceed();
       userFuture.complete(apply);
     } catch (Exception e) {
       userFuture.fail(e);
+      operation.fallbackFailed();
     }
   }
 
-  private <T> void executeOperation(Handler<Future<T>> operation, Future<T> operationResult) {
+  private <T> void executeOperation(Handler<Future<T>> operation, Future<T> operationResult,
+                                    CircuitBreakerMetrics.Operation call) {
     // Execute the operation
     if (options.getTimeout() != -1) {
       vertx.setTimer(options.getTimeout(), (l) -> {
         // Check if the operation has not already been completed
         if (!operationResult.isComplete()) {
+          call.timeout();
           operationResult.fail("operation timeout");
         }
         // Else  Operation has completed
@@ -259,18 +267,19 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       Future<T> passedFuture = Future.future();
       passedFuture.setHandler(ar -> {
         if (ar.failed()) {
-          if (! operationResult.isComplete()) {
+          if (!operationResult.isComplete()) {
             operationResult.fail(ar.cause());
           }
         } else {
-          if (! operationResult.isComplete()) {
+          if (!operationResult.isComplete()) {
             operationResult.complete(ar.result());
           }
         }
       });
       operation.handle(passedFuture);
     } catch (Throwable e) {
-      if (! operationResult.isComplete()) {
+      if (!operationResult.isComplete()) {
+        call.error();
         operationResult.fail(e);
       }
     }
@@ -311,5 +320,13 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       // Number of failure has changed, send update.
       sendUpdateOnEventBus();
     }
+  }
+
+  /**
+   * For testing purpose only.
+   * @return retrieve the metrics.
+   */
+  public CircuitBreakerMetrics getMetrics() {
+    return metrics;
   }
 }

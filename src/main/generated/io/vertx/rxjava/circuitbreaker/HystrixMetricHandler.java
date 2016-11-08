@@ -24,6 +24,7 @@ import io.vertx.rxjava.ext.web.RoutingContext;
 import io.vertx.core.Handler;
 
 /**
+ * A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard.
  *
  * <p/>
  * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.HystrixMetricHandler original} non RX-ified interface using Vert.x codegen.
@@ -45,6 +46,12 @@ public class HystrixMetricHandler implements Handler<RoutingContext> {
     delegate.handle((io.vertx.ext.web.RoutingContext)arg0.getDelegate());
   }
 
+  /**
+   * Creates the handler.
+   * @param vertx the Vert.x instance
+   * @param options the circuit breaker options.
+   * @return the handler
+   */
   public static HystrixMetricHandler create(Vertx vertx, CircuitBreakerOptions options) { 
     HystrixMetricHandler ret = HystrixMetricHandler.newInstance(io.vertx.circuitbreaker.HystrixMetricHandler.create((io.vertx.core.Vertx)vertx.getDelegate(), options));
     return ret;

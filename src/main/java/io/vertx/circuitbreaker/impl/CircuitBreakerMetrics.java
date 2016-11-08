@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Circuit breaker metrics.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class CircuitBreakerMetrics {
@@ -45,7 +47,6 @@ public class CircuitBreakerMetrics {
     List<Operation> toRemove = window.stream()
         .filter(operation -> operation.begin < beginningOfTheWindow)
         .collect(Collectors.toList());
-    System.out.println("Removing " + toRemove.size() + " calls - out of window");
     window.removeAll(toRemove);
   }
 
@@ -65,11 +66,11 @@ public class CircuitBreakerMetrics {
     private boolean shortCircuited;
 
     Operation() {
-      begin = System.currentTimeMillis();
+      begin = System.nanoTime();
     }
 
     synchronized void complete() {
-      end = System.currentTimeMillis();
+      end = System.nanoTime();
       complete = true;
       CircuitBreakerMetrics.this.complete(this);
     }
@@ -79,20 +80,20 @@ public class CircuitBreakerMetrics {
         // Already completed.
         return;
       }
-      end = System.currentTimeMillis();
+      end = System.nanoTime();
       failed = true;
       CircuitBreakerMetrics.this.complete(this);
     }
 
     synchronized void timeout() {
-      end = System.currentTimeMillis();
+      end = System.nanoTime();
       failed = false;
       timeout = true;
       CircuitBreakerMetrics.this.complete(this);
     }
 
     synchronized void error() {
-      end = System.currentTimeMillis();
+      end = System.nanoTime();
       failed = false;
       exception = true;
       CircuitBreakerMetrics.this.complete(this);
@@ -107,31 +108,13 @@ public class CircuitBreakerMetrics {
     }
 
     synchronized void shortCircuited() {
-      end = System.currentTimeMillis();
+      end = System.nanoTime();
       shortCircuited = true;
       CircuitBreakerMetrics.this.complete(this);
     }
 
-    @Override
-    public synchronized String toString() {
-      String content = "{";
-      if (exception) {
-        content += "exception:true,";
-      }
-      if (failed) {
-        content += "failed:true,";
-      }
-      if (timeout) {
-        content += "timeout:true,";
-      }
-      if (complete) {
-        content += "complete:true,";
-      }
-      if (shortCircuited) {
-        content += "shortCircuited:true,";
-      }
-      content += "}";
-      return content;
+    synchronized long durationInMs() {
+      return (end - begin) / 1000000;
     }
   }
 
@@ -143,8 +126,7 @@ public class CircuitBreakerMetrics {
     window.add(operation);
 
     // Compute global statistics
-    long duration = operation.end - operation.begin;
-    statistics.add(duration);
+    statistics.add(operation.durationInMs());
     calls++;
     if (operation.exception) {
       exceptions++;
@@ -157,7 +139,7 @@ public class CircuitBreakerMetrics {
     }
   }
 
-  synchronized JsonObject toJson() {
+  public synchronized JsonObject toJson() {
     JsonObject json = new JsonObject();
 
     json.put("name", circuitBreaker.name());
@@ -204,7 +186,7 @@ public class CircuitBreakerMetrics {
     int rollingShortCircuited = 0;
     Statistics rollingStatistic = new Statistics();
     for (Operation op : window) {
-      rollingStatistic.add(op.end - op.begin);
+      rollingStatistic.add(op.durationInMs());
       if (op.complete) {
         rollingSuccess = rollingSuccess + 1;
       } else if (op.failed) {

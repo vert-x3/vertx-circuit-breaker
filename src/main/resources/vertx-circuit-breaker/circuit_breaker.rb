@@ -81,14 +81,14 @@ module VertxCircuitBreaker
     #  This method returns a  object to retrieve the status and result of the operation, with the status
     #  being a success or a failure. If the fallback is called, the returned future is successfully completed with the
     #  value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
-    # @param [Proc] operation the operation
+    # @param [Proc] command the operation
     # @yield the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
     # @return [::Vertx::Future] a future object completed when the operation or its fallback completes
-    def execute_with_fallback(operation=nil,fallback=nil)
-      if operation.class == Proc && block_given? && fallback == nil
-        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:executeWithFallback, [Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call((Proc.new { |event| operation.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) })),::Vertx::Future)
+    def execute_with_fallback(command=nil,fallback=nil)
+      if command.class == Proc && block_given? && fallback == nil
+        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:executeWithFallback, [Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call((Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) })),::Vertx::Future)
       end
-      raise ArgumentError, "Invalid arguments when calling execute_with_fallback(operation,fallback)"
+      raise ArgumentError, "Invalid arguments when calling execute_with_fallback(command,fallback)"
     end
     #  Same as {::VertxCircuitBreaker::CircuitBreaker#execute_with_fallback} but using the circuit breaker default fallback.
     # @yield the operation
@@ -125,15 +125,15 @@ module VertxCircuitBreaker
     #  is successfully completed with the value returned by the fallback function. If the fallback throws an exception,
     #  the future is marked as failed.
     # @param [::Vertx::Future] resultFuture the future on which the operation result is reported
-    # @param [Proc] operation the operation
+    # @param [Proc] command the operation
     # @yield the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
     # @return [self]
-    def execute_and_report_with_fallback(resultFuture=nil,operation=nil,fallback=nil)
-      if resultFuture.class.method_defined?(:j_del) && operation.class == Proc && block_given? && fallback == nil
-        @j_del.java_method(:executeAndReportWithFallback, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call(resultFuture.j_del,(Proc.new { |event| operation.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) }))
+    def execute_and_report_with_fallback(resultFuture=nil,command=nil,fallback=nil)
+      if resultFuture.class.method_defined?(:j_del) && command.class == Proc && block_given? && fallback == nil
+        @j_del.java_method(:executeAndReportWithFallback, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call(resultFuture.j_del,(Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) }))
         return self
       end
-      raise ArgumentError, "Invalid arguments when calling execute_and_report_with_fallback(resultFuture,operation,fallback)"
+      raise ArgumentError, "Invalid arguments when calling execute_and_report_with_fallback(resultFuture,command,fallback)"
     end
     #  Sets a <em>default</em>  invoked when the bridge is open to handle the "request", or on failure
     #  if {Hash#is_fallback_on_failure} is enabled.

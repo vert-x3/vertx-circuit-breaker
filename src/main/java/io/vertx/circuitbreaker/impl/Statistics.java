@@ -1,36 +1,35 @@
 package io.vertx.circuitbreaker.impl;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import static java.lang.Math.floor;
 
 /**
+ * A class computing a set of statistics on a set of numbers (long).
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class Statistics {
+
+  //TODO This may be a memory leak as we keep adding value to the list.
 
   private final List<Long> values = new ArrayList<>();
 
   /**
    * Create a new {@link Statistics} (empty).
    */
-  public Statistics() {
-
+  Statistics() {
+    // Do nothing.
   }
 
   /**
-   * Create a new {@link Statistics} with the given values.
+   * Adds this value to the set of numbers.
    *
-   * @param values an unordered set of values in the reservoir
+   * @param val the value
+   * @return the current {@link Statistics} instance
    */
-  public Statistics(Collection<Long> values) {
-    this.values.addAll(values);
-    Collections.sort(this.values);
-  }
-
   public Statistics add(long val) {
     values.add(val);
     return this;
@@ -42,7 +41,7 @@ public class Statistics {
    * @param quantile a given quantile, in {@code [0..1]}
    * @return the value in the distribution at {@code quantile}
    */
-  public long getValue(double quantile) {
+  long getValue(double quantile) {
     Collections.sort(this.values);
     if (quantile < 0.0 || quantile > 1.0 || Double.isNaN(quantile)) {
       throw new IllegalArgumentException(quantile + " is not in [0..1]");
@@ -69,29 +68,11 @@ public class Statistics {
   }
 
   /**
-   * Returns the number of values in the snapshot.
-   *
-   * @return the number of values
-   */
-  public int size() {
-    return values.size();
-  }
-
-  /**
-   * Returns the entire set of values in the snapshot.
-   *
-   * @return the entire set of values
-   */
-  public List<Long> getValues() {
-    return new ArrayList<>(values);
-  }
-
-  /**
    * Returns the arithmetic mean of the values in the snapshot.
    *
    * @return the arithmetic mean
    */
-  public double getMean() {
+  double getMean() {
     if (values.size() == 0) {
       return 0;
     }
@@ -108,7 +89,7 @@ public class Statistics {
    *
    * @return the median value
    */
-  public long getMedian() {
+  long getMedian() {
     return getValue(0.5);
   }
 
@@ -117,7 +98,7 @@ public class Statistics {
    *
    * @return the value at the 75th percentile
    */
-  public long get75thPercentile() {
+  long get75thPercentile() {
     return getValue(0.75);
   }
 
@@ -126,7 +107,7 @@ public class Statistics {
    *
    * @return the value at the 95th percentile
    */
-  public long get95thPercentile() {
+  long get95thPercentile() {
     return getValue(0.95);
   }
 
@@ -135,7 +116,7 @@ public class Statistics {
    *
    * @return the value at the 99th percentile
    */
-  public long get99thPercentile() {
+  long get99thPercentile() {
     return getValue(0.99);
   }
 

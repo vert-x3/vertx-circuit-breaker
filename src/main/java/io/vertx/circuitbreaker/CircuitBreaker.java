@@ -106,33 +106,33 @@ public interface CircuitBreaker {
    * being a success or a failure. If the fallback is called, the returned future is successfully completed with the
    * value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
    *
-   * @param operation the operation
+   * @param command the operation
    * @param fallback  the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
    * @param <T>       the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  <T> Future<T> executeWithFallback(Handler<Future<T>> operation, Function<Throwable, T> fallback);
+  <T> Future<T> executeWithFallback(Handler<Future<T>> command, Function<Throwable, T> fallback);
 
   /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
    *
-   * @param operation the operation
+   * @param command the operation
    * @param <T>       the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  <T> Future<T> execute(Handler<Future<T>> operation);
+  <T> Future<T> execute(Handler<Future<T>> command);
 
   /**
    * Same as {@link #executeAndReportWithFallback(Future, Handler, Function)} but using the circuit breaker default
    * fallback.
    *
    * @param resultFuture the future on which the operation result is reported
-   * @param operation the operation
+   * @param command the operation
    * @param <T> the type of result
    * @return the current {@link CircuitBreaker}
    */
   @Fluent
-  <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> operation);
+  <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> command);
 
   /**
    * Executes the given operation with the circuit breaker control. The operation is generally calling an
@@ -150,13 +150,13 @@ public interface CircuitBreaker {
    * the future is marked as failed.
    *
    * @param resultFuture the future on which the operation result is reported
-   * @param operation the operation
+   * @param command the operation
    * @param fallback  the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
    * @param <T>       the type of result
    * @return the current {@link CircuitBreaker}
    */
   @Fluent
-  <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> operation,
+  <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> command,
                                                   Function<Throwable, T> fallback);
 
   /**

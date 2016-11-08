@@ -14,6 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
+ * Implements a handler to servers the Vert.x circuit breaker metrics as a Hystrix circuit
+ * breaker.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class HystrixMetricEventStream implements HystrixMetricHandler {
@@ -26,16 +29,16 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     this.options = options;
     String notificationAddress = options.getNotificationAddress();
     vertx.eventBus().<JsonObject>consumer(notificationAddress)
-        .handler(message -> {
-          JsonObject json = build(message.body());
-          int id = counter.incrementAndGet();
-          connections.forEach(resp -> {
-            String chunk = json.encode() + "\n\n";
-            System.out.println(json.encodePrettily());
-            resp.write("id" + ": " + id + "\n");
-            resp.write("data:" + chunk);
-          });
+      .handler(message -> {
+        JsonObject json = build(message.body());
+        int id = counter.incrementAndGet();
+        connections.forEach(resp -> {
+          String chunk = json.encode() + "\n\n";
+          System.out.println(json.encodePrettily());
+          resp.write("id" + ": " + id + "\n");
+          resp.write("data:" + chunk);
         });
+      });
   }
 
   private JsonObject build(JsonObject body) {
@@ -89,10 +92,10 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
   public void handle(RoutingContext rc) {
     HttpServerResponse response = rc.response();
     response
-        .setChunked(true)
-        .putHeader("Content-Type", "text/event-stream")
-        .putHeader("Cache-Control", "no-cache")
-        .putHeader("Connection", "keep-alive");
+      .setChunked(true)
+      .putHeader("Content-Type", "text/event-stream")
+      .putHeader("Cache-Control", "no-cache")
+      .putHeader("Connection", "keep-alive");
 
     rc.request().connection().closeHandler(v -> {
       connections.remove(response);

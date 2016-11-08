@@ -62,18 +62,39 @@ public class CircuitBreakerOptions {
    */
   private static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
 
+  /**
+   * The operation timeout.
+   */
   private long timeout = DEFAULT_TIMEOUT;
 
+  /**
+   * The max failures.
+   */
   private int maxFailures = DEFAULT_MAX_FAILURES;
 
+  /**
+   * Whether or not the fallback should be called upon failures.
+   */
   private boolean fallbackOnFailure = DEFAULT_FALLBACK_ON_FAILURE;
 
+  /**
+   * The reset timeout.
+   */
   private long resetTimeout = DEFAULT_RESET_TIMEOUT;
 
+  /**
+   * The event bus address on which the circuit breaker state is published.
+   */
   private String notificationAddress = DEFAULT_NOTIFICATION_ADDRESS;
 
+  /**
+   * The state publication period in ms.
+   */
   private long notificationPeriod = DEFAULT_NOTIFICATION_PERIOD;
 
+  /**
+   * The metric rolling window in ms.
+   */
   private long metricsRollingWindow = DEFAULT_METRICS_ROLLING_WINDOW;
 
   /**
