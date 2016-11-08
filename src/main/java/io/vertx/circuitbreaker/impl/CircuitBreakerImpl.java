@@ -56,14 +56,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(vertx);
-    metrics = new CircuitBreakerMetrics(vertx, this, options);
+    this.vertx = vertx;
+    this.name = name;
+
     if (options == null) {
       this.options = new CircuitBreakerOptions();
     } else {
       this.options = new CircuitBreakerOptions(options);
     }
-    this.vertx = vertx;
-    this.name = name;
+
+    this.metrics = new CircuitBreakerMetrics(vertx, this, options);
+
     sendUpdateOnEventBus();
 
     if (this.options.getNotificationPeriod() > 0) {
@@ -78,6 +81,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     if (this.periodicUpdateTask != -1) {
       vertx.cancelTimer(this.periodicUpdateTask);
     }
+    metrics.close();
     return this;
   }
 
@@ -127,8 +131,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private synchronized void sendUpdateOnEventBus() {
     String address = options.getNotificationAddress();
     if (address != null) {
-      JsonObject json = metrics.toJson();
-      vertx.eventBus().publish(address, json);
+      vertx.eventBus().publish(address, metrics.toJson());
     }
   }
 
@@ -328,5 +331,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    */
   public CircuitBreakerMetrics getMetrics() {
     return metrics;
+  }
+
+  public CircuitBreakerOptions options() {
+    return options;
   }
 }

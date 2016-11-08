@@ -18,13 +18,13 @@ package io.vertx.rxjava.circuitbreaker;
 
 import java.util.Map;
 import rx.Observable;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.ext.web.RoutingContext;
 import io.vertx.core.Handler;
 
 /**
- * A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard.
+ * A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard. The handler listens to the circuit
+ * breaker notifications sent on the event bus.
  *
  * <p/>
  * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.HystrixMetricHandler original} non RX-ified interface using Vert.x codegen.
@@ -47,13 +47,23 @@ public class HystrixMetricHandler implements Handler<RoutingContext> {
   }
 
   /**
-   * Creates the handler.
+   * Creates the handler, using the default notification address.
    * @param vertx the Vert.x instance
-   * @param options the circuit breaker options.
    * @return the handler
    */
-  public static HystrixMetricHandler create(Vertx vertx, CircuitBreakerOptions options) { 
-    HystrixMetricHandler ret = HystrixMetricHandler.newInstance(io.vertx.circuitbreaker.HystrixMetricHandler.create((io.vertx.core.Vertx)vertx.getDelegate(), options));
+  public static HystrixMetricHandler create(Vertx vertx) { 
+    HystrixMetricHandler ret = HystrixMetricHandler.newInstance(io.vertx.circuitbreaker.HystrixMetricHandler.create((io.vertx.core.Vertx)vertx.getDelegate()));
+    return ret;
+  }
+
+  /**
+   * Creates the handler.
+   * @param vertx the Vert.x instance
+   * @param address the address to listen on the event bus
+   * @return the handler
+   */
+  public static HystrixMetricHandler create(Vertx vertx, String address) { 
+    HystrixMetricHandler ret = HystrixMetricHandler.newInstance(io.vertx.circuitbreaker.HystrixMetricHandler.create((io.vertx.core.Vertx)vertx.getDelegate(), address));
     return ret;
   }
 

@@ -218,3 +218,37 @@ and returns to the `closed` state, ready for more routine operation. If this tri
 breaker returns to the `open` state until another timeout elapses.
 
 
+== Pushing circuit breaker metrics to the Hystrix Dashboard
+
+Netflix Hystrix comes with a dashboard to present the current state of the circuit breakers. The Vert.x circuit
+breakers can publish their metrics in order to be consumed by this Hystrix Dashboard. The Hystrix dashboard requires
+a SSE stream sending the metrics. This stream is provided by the
+`link:../../yardoc/VertxCircuitBreaker/HystrixMetricHandler.html[HystrixMetricHandler]` Vert.x Web Handler:
+
+
+[source,ruby]
+----
+require 'vertx-circuit-breaker/circuit_breaker'
+require 'vertx-web/router'
+require 'vertx-circuit-breaker/hystrix_metric_handler'
+# Create the circuit breaker as usual.
+breaker = VertxCircuitBreaker::CircuitBreaker.create("my-circuit-breaker", vertx)
+breaker2 = VertxCircuitBreaker::CircuitBreaker.create("my-second-circuit-breaker", vertx)
+
+# Create a Vert.x Web router
+router = VertxWeb::Router.router(vertx)
+# Register the metric handler
+router.get("/metrics").handler(&VertxCircuitBreaker::HystrixMetricHandler.create(vertx).method(:handle))
+
+# Create the HTTP server using the router to dispath the requests
+vertx.create_http_server().request_handler(&router.method(:accept)).listen(8080)
+
+
+----
+
+In the Hystrix Dashboard, configure the stream url like: http://localhost:8080/metrics. The dashboard now consumes
+the metrics from the Vert.x circuit breakers.
+
+Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use
+the default notification address, you need to pass it when creating the metrics handler.
+

@@ -3,7 +3,6 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -162,9 +161,6 @@ public class CircuitBreakerMetricsTest {
           .contains("totalOperationCount", 5)
           .contains("totalSuccessPercentage", (2.0 / 5 * 100))
           .contains("totalErrorPercentage", (3.0 / 5 * 100));
-
-          System.out.println(metrics().encodePrettily());
-
         async.complete();
       });
   }
@@ -179,7 +175,7 @@ public class CircuitBreakerMetricsTest {
     int count = 1000;
 
     List<Future> list = new ArrayList<>();
-    for (int i = 0; i < count; i ++) {
+    for (int i = 0; i < count; i++) {
       list.add(breaker.execute(commandThatWorks()));
     }
 
@@ -203,6 +199,29 @@ public class CircuitBreakerMetricsTest {
       });
   }
 
+  @Test
+  public void testEviction(TestContext tc) {
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx,
+      new CircuitBreakerOptions().setMetricsRollingWindow(10));
+    Async async = tc.async();
+
+
+    int count = 1000;
+
+    List<Future> list = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      list.add(breaker.execute(commandThatWorks()));
+    }
+
+    CompositeFuture.all(list)
+      .setHandler(ar -> {
+        assertThat(ar).succeeded();
+        assertThat(metrics().getInteger("totalOperationCount")).isEqualTo(1000);
+        assertThat(metrics().getInteger("rollingOperationCount")).isLessThan(1000);
+        async.complete();
+      });
+  }
+
 
   private Handler<Future<Void>> commandThatWorks() {
     return (future -> vertx.setTimer(5, l -> future.complete(null)));
@@ -220,10 +239,6 @@ public class CircuitBreakerMetricsTest {
 
   private Handler<Future<Void>> commandThatTimeout(int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.complete(null)));
-  }
-
-  private Handler<Future<Void>> commandThatTimeoutAndFail(int timeout) {
-    return (future -> vertx.setTimer(timeout + 500, l -> future.fail("late failure")));
   }
 
   private JsonObject metrics() {

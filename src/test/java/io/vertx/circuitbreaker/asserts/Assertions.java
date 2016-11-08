@@ -4,6 +4,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.json.JsonObject;
 
 /**
+ * Some simple assertions.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class Assertions {

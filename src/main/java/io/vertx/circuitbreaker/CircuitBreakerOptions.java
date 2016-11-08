@@ -40,27 +40,27 @@ public class CircuitBreakerOptions {
   /**
    * Default value of the fallback on failure property.
    */
-  private static final boolean DEFAULT_FALLBACK_ON_FAILURE = false;
+  public static final boolean DEFAULT_FALLBACK_ON_FAILURE = false;
 
   /**
    * Default time before it attempts to re-close the circuit (half-open state) in milliseconds.
    */
-  private static final long DEFAULT_RESET_TIMEOUT = 30000;
+  public static final long DEFAULT_RESET_TIMEOUT = 30000;
 
   /**
    * Default address on which the circuit breakers are sending their update.
    */
-  private static final String DEFAULT_NOTIFICATION_ADDRESS = "vertx.circuit-breaker";
+  public static final String DEFAULT_NOTIFICATION_ADDRESS = "vertx.circuit-breaker";
 
   /**
    * Default notification period  in milliseconds.
    */
-  private static final long DEFAULT_NOTIFICATION_PERIOD = 2000;
+  public static final long DEFAULT_NOTIFICATION_PERIOD = 2000;
 
   /**
    * Default rolling window for metrics in milliseconds.
    */
-  private static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
+  public static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
 
   /**
    * The operation timeout.

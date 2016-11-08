@@ -22,10 +22,10 @@ var RoutingContext = require('vertx-web-js/routing_context');
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
 var JHystrixMetricHandler = io.vertx.circuitbreaker.HystrixMetricHandler;
-var CircuitBreakerOptions = io.vertx.circuitbreaker.CircuitBreakerOptions;
 
 /**
- A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard.
+ A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard. The handler listens to the circuit
+ breaker notifications sent on the event bus.
 
  @class
 */
@@ -57,13 +57,15 @@ var HystrixMetricHandler = function(j_val) {
 
  @memberof module:vertx-circuit-breaker-js/hystrix_metric_handler
  @param vertx {Vertx} the Vert.x instance 
- @param options {Object} the circuit breaker options. 
+ @param address {string} the address to listen on the event bus 
  @return {HystrixMetricHandler} the handler
  */
-HystrixMetricHandler.create = function(vertx, options) {
+HystrixMetricHandler.create = function() {
   var __args = arguments;
-  if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && (typeof __args[1] === 'object' && __args[1] != null)) {
-    return utils.convReturnVertxGen(JHystrixMetricHandler["create(io.vertx.core.Vertx,io.vertx.circuitbreaker.CircuitBreakerOptions)"](vertx._jdel, options != null ? new CircuitBreakerOptions(new JsonObject(JSON.stringify(options))) : null), HystrixMetricHandler);
+  if (__args.length === 1 && typeof __args[0] === 'object' && __args[0]._jdel) {
+    return utils.convReturnVertxGen(JHystrixMetricHandler["create(io.vertx.core.Vertx)"](__args[0]._jdel), HystrixMetricHandler);
+  }else if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'string') {
+    return utils.convReturnVertxGen(JHystrixMetricHandler["create(io.vertx.core.Vertx,java.lang.String)"](__args[0]._jdel, __args[1]), HystrixMetricHandler);
   } else throw new TypeError('function invoked with invalid arguments');
 };
 

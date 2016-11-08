@@ -121,14 +121,14 @@ public class CircuitBreaker {
    * This method returns a  object to retrieve the status and result of the operation, with the status
    * being a success or a failure. If the fallback is called, the returned future is successfully completed with the
    * value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
-   * @param operation the operation
+   * @param command the operation
    * @param fallback the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
    * @return a future object completed when the operation or its fallback completes
    */
-  public <T> Future<T> executeWithFallback(Handler<Future<T>> operation, Function<Throwable,T> fallback) { 
+  public <T> Future<T> executeWithFallback(Handler<Future<T>> command, Function<Throwable,T> fallback) { 
     Future<T> ret = Future.newInstance(delegate.executeWithFallback(new Handler<io.vertx.core.Future<T>>() {
       public void handle(io.vertx.core.Future<T> event) {
-        operation.handle(Future.newInstance(event));
+        command.handle(Future.newInstance(event));
       }
     }, new java.util.function.Function<java.lang.Throwable,T>() {
       public T apply(java.lang.Throwable arg) {
@@ -141,13 +141,13 @@ public class CircuitBreaker {
 
   /**
    * Same as {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker#executeWithFallback} but using the circuit breaker default fallback.
-   * @param operation the operation
+   * @param command the operation
    * @return a future object completed when the operation or its fallback completes
    */
-  public <T> Future<T> execute(Handler<Future<T>> operation) { 
+  public <T> Future<T> execute(Handler<Future<T>> command) { 
     Future<T> ret = Future.newInstance(delegate.execute(new Handler<io.vertx.core.Future<T>>() {
       public void handle(io.vertx.core.Future<T> event) {
-        operation.handle(Future.newInstance(event));
+        command.handle(Future.newInstance(event));
       }
     }));
     return ret;
@@ -157,13 +157,13 @@ public class CircuitBreaker {
    * Same as {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker#executeAndReportWithFallback} but using the circuit breaker default
    * fallback.
    * @param resultFuture the future on which the operation result is reported
-   * @param operation the operation
+   * @param command the operation
    * @return the current {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker}
    */
-  public <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> operation) { 
+  public <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> command) { 
     delegate.executeAndReport((io.vertx.core.Future<T>)resultFuture.getDelegate(), new Handler<io.vertx.core.Future<T>>() {
       public void handle(io.vertx.core.Future<T> event) {
-        operation.handle(Future.newInstance(event));
+        command.handle(Future.newInstance(event));
       }
     });
     return this;
@@ -184,14 +184,14 @@ public class CircuitBreaker {
    * is successfully completed with the value returned by the fallback function. If the fallback throws an exception,
    * the future is marked as failed.
    * @param resultFuture the future on which the operation result is reported
-   * @param operation the operation
+   * @param command the operation
    * @param fallback the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
    * @return the current {@link io.vertx.rxjava.circuitbreaker.CircuitBreaker}
    */
-  public <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> operation, Function<Throwable,T> fallback) { 
+  public <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> command, Function<Throwable,T> fallback) { 
     delegate.executeAndReportWithFallback((io.vertx.core.Future<T>)resultFuture.getDelegate(), new Handler<io.vertx.core.Future<T>>() {
       public void handle(io.vertx.core.Future<T> event) {
-        operation.handle(Future.newInstance(event));
+        command.handle(Future.newInstance(event));
       }
     }, new java.util.function.Function<java.lang.Throwable,T>() {
       public T apply(java.lang.Throwable arg) {

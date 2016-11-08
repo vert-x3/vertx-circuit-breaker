@@ -1,0 +1,4 @@
+moduleName = vertx-circuit-breaker-module
+moduleVersion = 1.0
+extensionClasses = io.vertx.groovy.circuitbreaker.GroovyExtension
+staticExtensionClasses = io.vertx.groovy.circuitbreaker.GroovyStaticExtension

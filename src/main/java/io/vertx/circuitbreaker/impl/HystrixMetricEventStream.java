@@ -1,6 +1,5 @@
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Vertx;
@@ -10,6 +9,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -22,19 +22,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HystrixMetricEventStream implements HystrixMetricHandler {
 
   private final List<HttpServerResponse> connections = new ArrayList<>();
-  private final CircuitBreakerOptions options;
   private AtomicInteger counter = new AtomicInteger();
 
-  public HystrixMetricEventStream(Vertx vertx, CircuitBreakerOptions options) {
-    this.options = options;
-    String notificationAddress = options.getNotificationAddress();
-    vertx.eventBus().<JsonObject>consumer(notificationAddress)
+  public HystrixMetricEventStream(Vertx vertx, String address) {
+    Objects.requireNonNull(vertx);
+    Objects.requireNonNull(address);
+
+    vertx.eventBus().<JsonObject>consumer(address)
       .handler(message -> {
         JsonObject json = build(message.body());
         int id = counter.incrementAndGet();
         connections.forEach(resp -> {
           String chunk = json.encode() + "\n\n";
-          System.out.println(json.encodePrettily());
           resp.write("id" + ": " + id + "\n");
           resp.write("data:" + chunk);
         });
@@ -46,7 +45,7 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     JsonObject json = new JsonObject();
     json.put("type", "HystrixCommand");
     json.put("name", body.getString("name"));
-    json.put("group", body.getString("node")); // TODO
+    json.put("group", body.getString("node"));
     json.put("currentTime", System.currentTimeMillis());
     json.put("isCircuitBreakerOpen", state.equalsIgnoreCase(CircuitBreakerState.OPEN.toString()));
     json.put("errorPercentage", body.getInteger("totalErrorPercentage", 0));
@@ -70,18 +69,18 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("latencyExecute", body.getJsonObject("rollingLatency", new JsonObject()));
 
     json.put("propertyValue_circuitBreakerRequestVolumeThreshold", 0);
-    json.put("propertyValue_circuitBreakerSleepWindowInMilliseconds", options.getResetTimeout());
+    json.put("propertyValue_circuitBreakerSleepWindowInMilliseconds", body.getLong("resetTimeout", 0L));
     json.put("propertyValue_circuitBreakerErrorThresholdPercentage", 0);
     json.put("propertyValue_circuitBreakerForceOpen", false);
     json.put("propertyValue_circuitBreakerForceClosed", false);
     json.put("propertyValue_circuitBreakerEnabled", true);
     json.put("propertyValue_executionIsolationStrategy", "THREAD");
-    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds", options.getTimeout());
+    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds",body.getLong("timeout", 0L));
     json.put("propertyValue_executionIsolationThreadInterruptOnTimeout", true);
     json.put("propertyValue_executionIsolationThreadPoolKeyOverride", "");
     json.put("propertyValue_executionIsolationSemaphoreMaxConcurrentRequests", 0);
     json.put("propertyValue_fallbackIsolationSemaphoreMaxConcurrentRequests", 0);
-    json.put("propertyValue_metricsRollingStatisticalWindowInMilliseconds", options.getMetricsRollingWindow());
+    json.put("propertyValue_metricsRollingStatisticalWindowInMilliseconds", body.getLong("metricRollingWindow", 0L));
     json.put("propertyValue_requestCacheEnabled", false);
     json.put("propertyValue_requestLogEnabled", false);
     json.put("reportingHosts", 1);
@@ -102,7 +101,6 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
       response.end();
     });
 
-    System.out.println("Adding connection");
     connections.add(response);
   }
 }

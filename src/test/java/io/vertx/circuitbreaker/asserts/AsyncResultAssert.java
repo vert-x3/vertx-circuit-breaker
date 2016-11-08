@@ -4,6 +4,8 @@ import io.vertx.core.AsyncResult;
 import org.assertj.core.api.AbstractAssert;
 
 /**
+ * Assertion for Async Result.
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class AsyncResultAssert<T> extends AbstractAssert<AsyncResultAssert<T>, AsyncResult<T>> {

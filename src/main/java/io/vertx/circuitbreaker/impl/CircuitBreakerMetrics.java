@@ -1,10 +1,10 @@
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import org.HdrHistogram.Histogram;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +19,11 @@ public class CircuitBreakerMetrics {
   private final long rollingWindow;
   private final Vertx vertx;
   private final long timer;
-  private final CircuitBreaker circuitBreaker;
+  private final CircuitBreakerImpl circuitBreaker;
   private final String node;
+
+  private final long circuitBreakerResetTimeout;
+  private final long circuitBreakerTimeout;
 
   // Global statistics
 
@@ -32,21 +35,24 @@ public class CircuitBreakerMetrics {
 
   private List<Operation> window = new ArrayList<>();
 
-  private Statistics statistics = new Statistics();
+  private Histogram statistics = new Histogram(3);
 
-  CircuitBreakerMetrics(Vertx vertx, CircuitBreaker circuitBreaker, CircuitBreakerOptions options) {
+  CircuitBreakerMetrics(Vertx vertx, CircuitBreakerImpl circuitBreaker, CircuitBreakerOptions options) {
     this.vertx = vertx;
     this.circuitBreaker = circuitBreaker;
-    rollingWindow = options.getMetricsRollingWindow();
-    timer = vertx.setPeriodic(rollingWindow, l -> evictOutdatedCalls());
-    node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local";
+    this.circuitBreakerTimeout = circuitBreaker.options().getTimeout();
+    this.circuitBreakerResetTimeout = circuitBreaker.options().getResetTimeout();
+    this.rollingWindow = options.getMetricsRollingWindow();
+    this.timer = vertx.setPeriodic(this.rollingWindow, l -> evictOutdatedCalls());
+    this.node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local";
   }
 
   private synchronized void evictOutdatedCalls() {
-    long beginningOfTheWindow = System.currentTimeMillis() - rollingWindow;
+    // IMPORTANT: operation.begin is in nanosecond.
+    long beginningOfTheWindow = System.nanoTime() - (rollingWindow * 1000000);
     List<Operation> toRemove = window.stream()
-        .filter(operation -> operation.begin < beginningOfTheWindow)
-        .collect(Collectors.toList());
+      .filter(operation -> operation.begin < beginningOfTheWindow)
+      .collect(Collectors.toList());
     window.removeAll(toRemove);
   }
 
@@ -76,7 +82,7 @@ public class CircuitBreakerMetrics {
     }
 
     synchronized void failed() {
-      if (timeout  || exception) {
+      if (timeout || exception) {
         // Already completed.
         return;
       }
@@ -126,7 +132,7 @@ public class CircuitBreakerMetrics {
     window.add(operation);
 
     // Compute global statistics
-    statistics.add(operation.durationInMs());
+    statistics.recordValue(operation.durationInMs());
     calls++;
     if (operation.exception) {
       exceptions++;
@@ -142,12 +148,16 @@ public class CircuitBreakerMetrics {
   public synchronized JsonObject toJson() {
     JsonObject json = new JsonObject();
 
+    // Configuration
+    json.put("resetTimeout", circuitBreakerResetTimeout);
+    json.put("timeout", circuitBreakerTimeout);
+    json.put("metricRollingWindow", rollingWindow);
     json.put("name", circuitBreaker.name());
+    json.put("node", node);
 
     // Current state
     json.put("state", circuitBreaker.state());
     json.put("failures", circuitBreaker.failureCount());
-    json.put("node", node);
 
     // Global metrics
     json.put("totalErrorCount", failures + exceptions + timeout);
@@ -164,17 +174,7 @@ public class CircuitBreakerMetrics {
       json.put("totalErrorPercentage", ((double) (failures + exceptions + timeout) / calls) * 100);
     }
 
-    json.put("totalLatencyMean", statistics.getMean());
-    json.put("totalLatency", new JsonObject()
-        .put("0", statistics.getValue(0.0))
-        .put("25", statistics.getValue(0.25))
-        .put("50", statistics.getMedian())
-        .put("75", statistics.get75thPercentile())
-        .put("90", statistics.getValue(0.90))
-        .put("95", statistics.get95thPercentile())
-        .put("99", statistics.get99thPercentile())
-        .put("99.5", statistics.getValue(0.995))
-        .put("100", statistics.getValue(1)));
+    addLatency(json, statistics, "total");
 
     // Window metrics
     int rollingException = 0;
@@ -184,16 +184,16 @@ public class CircuitBreakerMetrics {
     int rollingFallbackSuccess = 0;
     int rollingFallbackFailure = 0;
     int rollingShortCircuited = 0;
-    Statistics rollingStatistic = new Statistics();
+    Histogram rollingStatistic = new Histogram(3);
     for (Operation op : window) {
-      rollingStatistic.add(op.durationInMs());
+      rollingStatistic.recordValue(op.durationInMs());
       if (op.complete) {
         rollingSuccess = rollingSuccess + 1;
       } else if (op.failed) {
         rollingFailure = rollingFailure + 1;
       } else if (op.exception) {
         rollingException = rollingException + 1;
-      } else if (op.timeout){
+      } else if (op.timeout) {
         rollingTimeout = rollingTimeout + 1;
       }
 
@@ -220,7 +220,7 @@ public class CircuitBreakerMetrics {
     } else {
       json.put("rollingSuccessPercentage", ((double) rollingSuccess / calls) * 100);
       json.put("rollingErrorPercentage",
-          ((double) (rollingException + rollingFailure + rollingTimeout) / calls) * 100);
+        ((double) (rollingException + rollingFailure + rollingTimeout) / calls) * 100);
 
     }
 
@@ -228,18 +228,22 @@ public class CircuitBreakerMetrics {
     json.put("rollingFallbackFailureCount", rollingFallbackFailure);
     json.put("rollingShortCircuitedCount", rollingShortCircuited);
 
-    json.put("rollingLatencyMean", rollingStatistic.getMean());
-    json.put("rollingLatency", new JsonObject()
-        .put("0", rollingStatistic.getValue(0.0))
-        .put("25", rollingStatistic.getValue(0.25))
-        .put("50", rollingStatistic.getMedian())
-        .put("75", rollingStatistic.get75thPercentile())
-        .put("90", rollingStatistic.getValue(0.90))
-        .put("95", rollingStatistic.get95thPercentile())
-        .put("99", rollingStatistic.get99thPercentile())
-        .put("99.5", rollingStatistic.getValue(0.995))
-        .put("100", rollingStatistic.getValue(1)));
-
+    addLatency(json, rollingStatistic, "rolling");
     return json;
+  }
+
+
+  private void addLatency(JsonObject json, Histogram histogram, String prefix) {
+    json.put(prefix + "LatencyMean", histogram.getMean());
+    json.put(prefix + "Latency", new JsonObject()
+      .put("0", histogram.getValueAtPercentile(0))
+      .put("25", histogram.getValueAtPercentile(25))
+      .put("50", histogram.getValueAtPercentile(50))
+      .put("75", histogram.getValueAtPercentile(75))
+      .put("90", histogram.getValueAtPercentile(90))
+      .put("95", histogram.getValueAtPercentile(95))
+      .put("99", histogram.getValueAtPercentile(99))
+      .put("99.5", histogram.getValueAtPercentile(99.5))
+      .put("100", histogram.getValueAtPercentile(100)));
   }
 }

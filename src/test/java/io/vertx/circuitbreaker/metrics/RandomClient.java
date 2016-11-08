@@ -24,15 +24,13 @@ public class RandomClient extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    paths.add("/ok");
-//    paths.add("/ok");
-//    paths.add("/ok");
-    paths.add("/failure");
-    paths.add("/timeout");
-    paths.add("/error");
+    paths.add("/A");
+    paths.add("/A");
+    paths.add("/B");
+    paths.add("/C");
 
     AtomicInteger counter = new AtomicInteger();
-    vertx.setPeriodic(200, l -> {
+    vertx.setPeriodic(500, l -> {
       int index = random.nextInt(paths.size());
       int count = counter.getAndIncrement();
       vertx.createHttpClient().get(8080, "localhost", paths.get(index), response -> {

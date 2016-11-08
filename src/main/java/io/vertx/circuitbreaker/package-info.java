@@ -136,6 +136,25 @@
  * breaker returns to the {@code open} state until another timeout elapses.
  *
  *
+ * == Pushing circuit breaker metrics to the Hystrix Dashboard
+ *
+ * Netflix Hystrix comes with a dashboard to present the current state of the circuit breakers. The Vert.x circuit
+ * breakers can publish their metrics in order to be consumed by this Hystrix Dashboard. The Hystrix dashboard requires
+ * a SSE stream sending the metrics. This stream is provided by the
+ * {@link io.vertx.circuitbreaker.HystrixMetricHandler} Vert.x Web Handler:
+ *
+ *
+ * [source,$lang]
+ * ----
+ * {@link examples.Examples#example7(io.vertx.core.Vertx)}
+ * ----
+ *
+ * In the Hystrix Dashboard, configure the stream url like: http://localhost:8080/metrics. The dashboard now consumes
+ * the metrics from the Vert.x circuit breakers.
+ *
+ * Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use
+ * the default notification address, you need to pass it when creating the metrics handler.
+ *
  * [language, java]
  * ----
  * == Using Netflix Hystrix

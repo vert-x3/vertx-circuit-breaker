@@ -4,6 +4,8 @@ import io.vertx.core.json.JsonObject;
 import org.assertj.core.api.AbstractAssert;
 
 /**
+ * Assertions for Json Objects
+ *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class JsonObjectAssert extends AbstractAssert<JsonObjectAssert, JsonObject> {
