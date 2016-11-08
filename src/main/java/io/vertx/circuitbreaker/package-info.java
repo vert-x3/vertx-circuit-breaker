@@ -99,6 +99,12 @@
  * {@link examples.Examples#example4(io.vertx.core.Vertx)}
  * ----
  *
+ * You can also specify how often the circuit breaker should try your code before failing with
+ * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setMaxRetries(int)}.
+ * If you set this to something higher than 0 your code gets executed several times before finally failing
+ * in the last execution. If the code succeeded in one of the retries your handler gets notified and any
+ * retries left are skipped. Retries are only supported when the circuit is closed.
+ *
  * == Callbacks
  *
  * You can also configures callbacks invoked when the circuit is opened or closed:
