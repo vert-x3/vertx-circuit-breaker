@@ -18,7 +18,7 @@
  * == Vert.x Circuit Breaker
  *
  * Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. It keeps track of the
- * number of failures and _open the circuit_ when a threshold is reached. Optionally, a fallback is executed.
+ * number of failures and _opens the circuit_ when a threshold is reached. Optionally, a fallback is executed.
  *
  * Supported failures are:
  *
@@ -26,7 +26,7 @@
  * * exception thrown by your code
  * * uncompleted futures (timeout)
  *
- * Operations guarded by a circuit breaker are intended to by non-blocking and asynchronous in order to benefits from
+ * Operations guarded by a circuit breaker are intended to be non-blocking and asynchronous in order to benefit from
  * the Vert.x execution model.
  *
  * == Using the vert.x circuit breaker
@@ -80,7 +80,7 @@
  * * returned {@link io.vertx.core.Future} when calling `execute` methods
  * * provided {@link io.vertx.core.Future} when calling the `executeAndReport` methods
  *
- * Optionally, you can provide a fallback executed when the circuit is open:
+ * Optionally, you can provide a fallback which is executed when the circuit is open:
  *
  * [source,$lang]
  * ----
@@ -90,7 +90,7 @@
  * The fallback is called whenever the circuit is open, or if the
  * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#isFallbackOnFailure()} is enabled. When a fallback is
  * set, the result is using the output of the fallback function. The fallback function takes as parameter a
- * {@link java.lang.Throwable} object and returned an object of the expected type.
+ * {@link java.lang.Throwable} object and returns an object of the expected type.
  *
  * The fallback can also be set on the {@link io.vertx.circuitbreaker.CircuitBreaker} object directly:
  *
@@ -114,12 +114,12 @@
  * {@link examples.Examples#example5(io.vertx.core.Vertx)}
  * ----
  *
- * You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
- * such as callback with {@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)}.
+ * You can also be notified when the circuit breaker decides to attempt to reset (half-open state). You can register
+ * such a callback with {@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)}.
  *
  * == Event bus notification
  *
- * Every time the circuit state changes, an event is published on the event bus. The address on which the event are
+ * Every time the circuit state changes, an event is published on the event bus. The address on which the events are
  * sent is configurable with
  * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationAddress(java.lang.String)}. If `null` is
  * passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
@@ -129,7 +129,7 @@
  * * `state` : the new circuit breaker state (`OPEN`, `CLOSED`, `HALF_OPEN`)
  * * `name` : the name of the circuit breaker
  * * `failures` : the number of failures
- * * `node` : the identifier of the node (`local` is Vert.x is not running in cluster mode)
+ * * `node` : the identifier of the node (`local` if Vert.x is not running in cluster mode)
  *
  * == The half-open state
  *
@@ -170,7 +170,7 @@
  * to use Hystrix in a vert.x application.
  *
  * First you would need to add the Hystrix dependency to your classpath or build descriptor. Refer to the Hystrix
- * page to details. Them, you need to isolate the "protected" call in a `Command`. Once you have your command, you
+ * page for details. Then, you need to isolate the "protected" call in a `Command`. Once you have your command, you
  * can execute it:
  *
  * [source, $lang]

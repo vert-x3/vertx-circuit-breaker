@@ -3,7 +3,7 @@
 Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x.
 
 It keeps track of the
-number of failures and _open the circuit_ when a threshold is reached. Optionally, a fallback is executed.
+number of failures and _opens the circuit_ when a threshold is reached. Optionally, a fallback is executed.
 
 Supported failures are:
 
@@ -11,7 +11,7 @@ Supported failures are:
 * exception thrown by your code
 * uncompleted futures (timeout)
 
-Operations guarded by a circuit breaker are intended to by non-blocking and asynchronous in order to benefits from
+Operations guarded by a circuit breaker are intended to be non-blocking and asynchronous in order to benefit from
 the Vert.x execution model.
 
 == Using the vert.x circuit breaker
@@ -100,7 +100,7 @@ The result of the operation is provided using the:
 * returned `link:../../yardoc/Vertx/Future.html[Future]` when calling `execute` methods
 * provided `link:../../yardoc/Vertx/Future.html[Future]` when calling the `executeAndReport` methods
 
-Optionally, you can provide a fallback executed when the circuit is open:
+Optionally, you can provide a fallback which is executed when the circuit is open:
 
 [source,ruby]
 ----
@@ -132,7 +132,7 @@ breaker.execute_with_fallback(lambda { |future|
 The fallback is called whenever the circuit is open, or if the
 `link:../dataobjects.html#CircuitBreakerOptions#is_fallback_on_failure-instance_method[isFallbackOnFailure]` is enabled. When a fallback is
 set, the result is using the output of the fallback function. The fallback function takes as parameter a
-`link:unavailable[Throwable]` object and returned an object of the expected type.
+`link:unavailable[Throwable]` object and returns an object of the expected type.
 
 The fallback can also be set on the `link:../../yardoc/VertxCircuitBreaker/CircuitBreaker.html[CircuitBreaker]` object directly:
 
@@ -196,12 +196,12 @@ breaker.execute() { |future|
 
 ----
 
-You can also be notified when the circuit breaker decide to attempt to reset (half-open state). You can register
-such as callback with `link:../../yardoc/VertxCircuitBreaker/CircuitBreaker.html#half_open_handler-instance_method[halfOpenHandler]`.
+You can also be notified when the circuit breaker decides to attempt to reset (half-open state). You can register
+such a callback with `link:../../yardoc/VertxCircuitBreaker/CircuitBreaker.html#half_open_handler-instance_method[halfOpenHandler]`.
 
 == Event bus notification
 
-Every time the circuit state changes, an event is published on the event bus. The address on which the event are
+Every time the circuit state changes, an event is published on the event bus. The address on which the events are
 sent is configurable with
 `link:../dataobjects.html#CircuitBreakerOptions#set_notification_address-instance_method[notificationAddress]`. If `null` is
 passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
@@ -211,7 +211,7 @@ Each event contains a Json Object with:
 * `state` : the new circuit breaker state (`OPEN`, `CLOSED`, `HALF_OPEN`)
 * `name` : the name of the circuit breaker
 * `failures` : the number of failures
-* `node` : the identifier of the node (`local` is Vert.x is not running in cluster mode)
+* `node` : the identifier of the node (`local` if Vert.x is not running in cluster mode)
 
 == The half-open state
 
