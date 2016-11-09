@@ -3,25 +3,24 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * Implements a handler to servers the Vert.x circuit breaker metrics as a Hystrix circuit
+ * Implements a handler to serve the Vert.x circuit breaker metrics as a Hystrix circuit
  * breaker.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class HystrixMetricEventStream implements HystrixMetricHandler {
 
-  private final List<HttpServerResponse> connections = new ArrayList<>();
+  private final List<HttpServerResponse> connections = Collections.synchronizedList(new LinkedList<>());
   private AtomicInteger counter = new AtomicInteger();
 
   public HystrixMetricEventStream(Vertx vertx, String address) {
@@ -92,9 +91,9 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     HttpServerResponse response = rc.response();
     response
       .setChunked(true)
-      .putHeader("Content-Type", "text/event-stream")
-      .putHeader("Cache-Control", "no-cache")
-      .putHeader("Connection", "keep-alive");
+      .putHeader(HttpHeaders.CONTENT_TYPE, "text/event-stream")
+      .putHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
+      .putHeader(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
 
     rc.request().connection().closeHandler(v -> {
       connections.remove(response);

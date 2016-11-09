@@ -244,15 +244,15 @@ breaker2 = VertxCircuitBreaker::CircuitBreaker.create("my-second-circuit-breaker
 # Create a Vert.x Web router
 router = VertxWeb::Router.router(vertx)
 # Register the metric handler
-router.get("/metrics").handler(&VertxCircuitBreaker::HystrixMetricHandler.create(vertx).method(:handle))
+router.get("/hystrix-metrics").handler(&VertxCircuitBreaker::HystrixMetricHandler.create(vertx).method(:handle))
 
-# Create the HTTP server using the router to dispath the requests
+# Create the HTTP server using the router to dispatch the requests
 vertx.create_http_server().request_handler(&router.method(:accept)).listen(8080)
 
 
 ----
 
-In the Hystrix Dashboard, configure the stream url like: http://localhost:8080/metrics. The dashboard now consumes
+In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
 the metrics from the Vert.x circuit breakers.
 
 Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use

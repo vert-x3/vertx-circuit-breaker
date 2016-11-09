@@ -155,7 +155,7 @@
  * {@link examples.Examples#example7(io.vertx.core.Vertx)}
  * ----
  *
- * In the Hystrix Dashboard, configure the stream url like: http://localhost:8080/metrics. The dashboard now consumes
+ * In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
  * the metrics from the Vert.x circuit breakers.
  *
  * Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use

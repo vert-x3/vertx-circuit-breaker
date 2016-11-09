@@ -237,15 +237,15 @@ CircuitBreaker breaker2 = CircuitBreaker.create("my-second-circuit-breaker", ver
 // Create a Vert.x Web router
 Router router = Router.router(vertx);
 // Register the metric handler
-router.get("/metrics").handler(HystrixMetricHandler.create(vertx));
+router.get("/hystrix-metrics").handler(HystrixMetricHandler.create(vertx));
 
-// Create the HTTP server using the router to dispath the requests
+// Create the HTTP server using the router to dispatch the requests
 vertx.createHttpServer()
   .requestHandler(router::accept)
   .listen(8080);
 ----
 
-In the Hystrix Dashboard, configure the stream url like: http://localhost:8080/metrics. The dashboard now consumes
+In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
 the metrics from the Vert.x circuit breakers.
 
 Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use

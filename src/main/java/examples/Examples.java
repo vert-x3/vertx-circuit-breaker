@@ -183,9 +183,9 @@ public class Examples {
     // Create a Vert.x Web router
     Router router = Router.router(vertx);
     // Register the metric handler
-    router.get("/metrics").handler(HystrixMetricHandler.create(vertx));
+    router.get("/hystrix-metrics").handler(HystrixMetricHandler.create(vertx));
 
-    // Create the HTTP server using the router to dispath the requests
+    // Create the HTTP server using the router to dispatch the requests
     vertx.createHttpServer()
       .requestHandler(router::accept)
       .listen(8080);
