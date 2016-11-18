@@ -16,13 +16,29 @@ module VertxCircuitBreaker
     def j_del
       @j_del
     end
+    @@j_api_type = Object.new
+    def @@j_api_type.accept?(obj)
+      obj.class == HystrixMetricHandler
+    end
+    def @@j_api_type.wrap(obj)
+      HystrixMetricHandler.new(obj)
+    end
+    def @@j_api_type.unwrap(obj)
+      obj.j_del
+    end
+    def self.j_api_type
+      @@j_api_type
+    end
+    def self.j_class
+      Java::IoVertxCircuitbreaker::HystrixMetricHandler.java_class
+    end
     # @param [::VertxWeb::RoutingContext] arg0 
     # @return [void]
     def handle(arg0=nil)
       if arg0.class.method_defined?(:j_del) && !block_given?
         return @j_del.java_method(:handle, [Java::IoVertxExtWeb::RoutingContext.java_class]).call(arg0.j_del)
       end
-      raise ArgumentError, "Invalid arguments when calling handle(arg0)"
+      raise ArgumentError, "Invalid arguments when calling handle(#{arg0})"
     end
     #  Creates the handler.
     # @param [::Vertx::Vertx] vertx the Vert.x instance
@@ -34,7 +50,7 @@ module VertxCircuitBreaker
       elsif vertx.class.method_defined?(:j_del) && address.class == String && !block_given?
         return ::Vertx::Util::Utils.safe_create(Java::IoVertxCircuitbreaker::HystrixMetricHandler.java_method(:create, [Java::IoVertxCore::Vertx.java_class,Java::java.lang.String.java_class]).call(vertx.j_del,address),::VertxCircuitBreaker::HystrixMetricHandler)
       end
-      raise ArgumentError, "Invalid arguments when calling create(vertx,address)"
+      raise ArgumentError, "Invalid arguments when calling create(#{vertx},#{address})"
     end
   end
 end

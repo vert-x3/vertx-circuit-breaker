@@ -15,6 +15,22 @@ module VertxCircuitBreaker
     def j_del
       @j_del
     end
+    @@j_api_type = Object.new
+    def @@j_api_type.accept?(obj)
+      obj.class == CircuitBreaker
+    end
+    def @@j_api_type.wrap(obj)
+      CircuitBreaker.new(obj)
+    end
+    def @@j_api_type.unwrap(obj)
+      obj.j_del
+    end
+    def self.j_api_type
+      @@j_api_type
+    end
+    def self.j_class
+      Java::IoVertxCircuitbreaker::CircuitBreaker.java_class
+    end
     #  Creates a new instance of {::VertxCircuitBreaker::CircuitBreaker}.
     # @param [String] name the name
     # @param [::Vertx::Vertx] vertx the Vert.x instance
@@ -26,7 +42,7 @@ module VertxCircuitBreaker
       elsif name.class == String && vertx.class.method_defined?(:j_del) && options.class == Hash && !block_given?
         return ::Vertx::Util::Utils.safe_create(Java::IoVertxCircuitbreaker::CircuitBreaker.java_method(:create, [Java::java.lang.String.java_class,Java::IoVertxCore::Vertx.java_class,Java::IoVertxCircuitbreaker::CircuitBreakerOptions.java_class]).call(name,vertx.j_del,Java::IoVertxCircuitbreaker::CircuitBreakerOptions.new(::Vertx::Util::Utils.to_json_object(options))),::VertxCircuitBreaker::CircuitBreaker)
       end
-      raise ArgumentError, "Invalid arguments when calling create(name,vertx,options)"
+      raise ArgumentError, "Invalid arguments when calling create(#{name},#{vertx},#{options})"
     end
     #  Closes the circuit breaker. It stops sending events on its state on the event bus.
     #  This method is not related to the <code>close</code> state of the circuit breaker. To set the circuit breaker in the
@@ -86,16 +102,16 @@ module VertxCircuitBreaker
     # @return [::Vertx::Future] a future object completed when the operation or its fallback completes
     def execute_with_fallback(command=nil,fallback=nil)
       if command.class == Proc && block_given? && fallback == nil
-        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:executeWithFallback, [Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call((Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) })),::Vertx::Future)
+        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:executeWithFallback, [Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call((Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future, nil)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) })),::Vertx::Future, nil)
       end
-      raise ArgumentError, "Invalid arguments when calling execute_with_fallback(command,fallback)"
+      raise ArgumentError, "Invalid arguments when calling execute_with_fallback(#{command},#{fallback})"
     end
     #  Same as {::VertxCircuitBreaker::CircuitBreaker#execute_with_fallback} but using the circuit breaker default fallback.
     # @yield the operation
     # @return [::Vertx::Future] a future object completed when the operation or its fallback completes
     def execute
       if block_given?
-        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:execute, [Java::IoVertxCore::Handler.java_class]).call((Proc.new { |event| yield(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) })),::Vertx::Future)
+        return ::Vertx::Util::Utils.safe_create(@j_del.java_method(:execute, [Java::IoVertxCore::Handler.java_class]).call((Proc.new { |event| yield(::Vertx::Util::Utils.safe_create(event,::Vertx::Future, nil)) })),::Vertx::Future, nil)
       end
       raise ArgumentError, "Invalid arguments when calling execute()"
     end
@@ -106,10 +122,10 @@ module VertxCircuitBreaker
     # @return [self]
     def execute_and_report(resultFuture=nil)
       if resultFuture.class.method_defined?(:j_del) && block_given?
-        @j_del.java_method(:executeAndReport, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class]).call(resultFuture.j_del,(Proc.new { |event| yield(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }))
+        @j_del.java_method(:executeAndReport, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class]).call(resultFuture.j_del,(Proc.new { |event| yield(::Vertx::Util::Utils.safe_create(event,::Vertx::Future, nil)) }))
         return self
       end
-      raise ArgumentError, "Invalid arguments when calling execute_and_report(resultFuture)"
+      raise ArgumentError, "Invalid arguments when calling execute_and_report(#{resultFuture})"
     end
     #  Executes the given operation with the circuit breaker control. The operation is generally calling an
     #  <em>external</em> system. The operation receives a  object as parameter and <strong>must</strong>
@@ -130,10 +146,10 @@ module VertxCircuitBreaker
     # @return [self]
     def execute_and_report_with_fallback(resultFuture=nil,command=nil,fallback=nil)
       if resultFuture.class.method_defined?(:j_del) && command.class == Proc && block_given? && fallback == nil
-        @j_del.java_method(:executeAndReportWithFallback, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call(resultFuture.j_del,(Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) }))
+        @j_del.java_method(:executeAndReportWithFallback, [Java::IoVertxCore::Future.java_class,Java::IoVertxCore::Handler.java_class,Java::JavaUtilFunction::Function.java_class]).call(resultFuture.j_del,(Proc.new { |event| command.call(::Vertx::Util::Utils.safe_create(event,::Vertx::Future, nil)) }),(Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) }))
         return self
       end
-      raise ArgumentError, "Invalid arguments when calling execute_and_report_with_fallback(resultFuture,command,fallback)"
+      raise ArgumentError, "Invalid arguments when calling execute_and_report_with_fallback(#{resultFuture},#{command},#{fallback})"
     end
     #  Sets a <em>default</em>  invoked when the bridge is open to handle the "request", or on failure
     #  if {Hash#is_fallback_on_failure} is enabled.
@@ -146,7 +162,7 @@ module VertxCircuitBreaker
         @j_del.java_method(:fallback, [Java::JavaUtilFunction::Function.java_class]).call((Proc.new { |event| ::Vertx::Util::Utils.to_object(yield(::Vertx::Util::Utils.from_throwable(event))) }))
         return self
       end
-      raise ArgumentError, "Invalid arguments when calling fallback(handler)"
+      raise ArgumentError, "Invalid arguments when calling fallback(#{handler})"
     end
     #  Resets the circuit breaker state (number of failure set to 0 and state set to closed).
     # @return [self]

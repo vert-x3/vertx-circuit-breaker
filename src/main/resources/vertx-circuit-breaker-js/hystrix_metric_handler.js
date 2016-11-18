@@ -52,6 +52,25 @@ var HystrixMetricHandler = function(j_val) {
   this._jdel = j_hystrixMetricHandler;
 };
 
+HystrixMetricHandler._jclass = utils.getJavaClass("io.vertx.circuitbreaker.HystrixMetricHandler");
+HystrixMetricHandler._jtype = {
+  accept: function(obj) {
+    return HystrixMetricHandler._jclass.isInstance(obj._jdel);
+  },
+  wrap: function(jdel) {
+    var obj = Object.create(HystrixMetricHandler.prototype, {});
+    HystrixMetricHandler.apply(obj, arguments);
+    return obj;
+  },
+  unwrap: function(obj) {
+    return obj._jdel;
+  }
+};
+HystrixMetricHandler._create = function(jdel) {
+  var obj = Object.create(HystrixMetricHandler.prototype, {});
+  HystrixMetricHandler.apply(obj, arguments);
+  return obj;
+}
 /**
  Creates the handler.
 
@@ -63,11 +82,10 @@ var HystrixMetricHandler = function(j_val) {
 HystrixMetricHandler.create = function() {
   var __args = arguments;
   if (__args.length === 1 && typeof __args[0] === 'object' && __args[0]._jdel) {
-    return utils.convReturnVertxGen(JHystrixMetricHandler["create(io.vertx.core.Vertx)"](__args[0]._jdel), HystrixMetricHandler);
+    return utils.convReturnVertxGen(HystrixMetricHandler, JHystrixMetricHandler["create(io.vertx.core.Vertx)"](__args[0]._jdel));
   }else if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'string') {
-    return utils.convReturnVertxGen(JHystrixMetricHandler["create(io.vertx.core.Vertx,java.lang.String)"](__args[0]._jdel, __args[1]), HystrixMetricHandler);
+    return utils.convReturnVertxGen(HystrixMetricHandler, JHystrixMetricHandler["create(io.vertx.core.Vertx,java.lang.String)"](__args[0]._jdel, __args[1]));
   } else throw new TypeError('function invoked with invalid arguments');
 };
 
-// We export the Constructor function
 module.exports = HystrixMetricHandler;

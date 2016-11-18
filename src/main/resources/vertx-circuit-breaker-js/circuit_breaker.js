@@ -118,12 +118,12 @@ var CircuitBreaker = function(j_val) {
   this.executeWithFallback = function(command, fallback) {
     var __args = arguments;
     if (__args.length === 2 && typeof __args[0] === 'function' && typeof __args[1] === 'function') {
-      return utils.convReturnVertxGen(j_circuitBreaker["executeWithFallback(io.vertx.core.Handler,java.util.function.Function)"](function(jVal) {
-      command(utils.convReturnVertxGen(jVal, Future));
+      return utils.convReturnVertxGen(Future, j_circuitBreaker["executeWithFallback(io.vertx.core.Handler,java.util.function.Function)"](function(jVal) {
+      command(utils.convReturnVertxGen(Future, jVal, undefined));
     }, function(jVal) {
       var jRet = fallback(utils.convReturnThrowable(jVal));
       return utils.convParamTypeUnknown(jRet);
-    }), Future);
+    }), undefined);
     } else throw new TypeError('function invoked with invalid arguments');
   };
 
@@ -137,9 +137,9 @@ var CircuitBreaker = function(j_val) {
   this.execute = function(command) {
     var __args = arguments;
     if (__args.length === 1 && typeof __args[0] === 'function') {
-      return utils.convReturnVertxGen(j_circuitBreaker["execute(io.vertx.core.Handler)"](function(jVal) {
-      command(utils.convReturnVertxGen(jVal, Future));
-    }), Future);
+      return utils.convReturnVertxGen(Future, j_circuitBreaker["execute(io.vertx.core.Handler)"](function(jVal) {
+      command(utils.convReturnVertxGen(Future, jVal, undefined));
+    }), undefined);
     } else throw new TypeError('function invoked with invalid arguments');
   };
 
@@ -156,7 +156,7 @@ var CircuitBreaker = function(j_val) {
     var __args = arguments;
     if (__args.length === 2 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'function') {
       j_circuitBreaker["executeAndReport(io.vertx.core.Future,io.vertx.core.Handler)"](resultFuture._jdel, function(jVal) {
-      command(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(Future, jVal, undefined));
     });
       return that;
     } else throw new TypeError('function invoked with invalid arguments');
@@ -187,7 +187,7 @@ var CircuitBreaker = function(j_val) {
     var __args = arguments;
     if (__args.length === 3 && typeof __args[0] === 'object' && __args[0]._jdel && typeof __args[1] === 'function' && typeof __args[2] === 'function') {
       j_circuitBreaker["executeAndReportWithFallback(io.vertx.core.Future,io.vertx.core.Handler,java.util.function.Function)"](resultFuture._jdel, function(jVal) {
-      command(utils.convReturnVertxGen(jVal, Future));
+      command(utils.convReturnVertxGen(Future, jVal, undefined));
     }, function(jVal) {
       var jRet = fallback(utils.convReturnThrowable(jVal));
       return utils.convParamTypeUnknown(jRet);
@@ -295,6 +295,25 @@ var CircuitBreaker = function(j_val) {
   this._jdel = j_circuitBreaker;
 };
 
+CircuitBreaker._jclass = utils.getJavaClass("io.vertx.circuitbreaker.CircuitBreaker");
+CircuitBreaker._jtype = {
+  accept: function(obj) {
+    return CircuitBreaker._jclass.isInstance(obj._jdel);
+  },
+  wrap: function(jdel) {
+    var obj = Object.create(CircuitBreaker.prototype, {});
+    CircuitBreaker.apply(obj, arguments);
+    return obj;
+  },
+  unwrap: function(obj) {
+    return obj._jdel;
+  }
+};
+CircuitBreaker._create = function(jdel) {
+  var obj = Object.create(CircuitBreaker.prototype, {});
+  CircuitBreaker.apply(obj, arguments);
+  return obj;
+}
 /**
  Creates a new instance of {@link CircuitBreaker}.
 
@@ -307,11 +326,10 @@ var CircuitBreaker = function(j_val) {
 CircuitBreaker.create = function() {
   var __args = arguments;
   if (__args.length === 2 && typeof __args[0] === 'string' && typeof __args[1] === 'object' && __args[1]._jdel) {
-    return utils.convReturnVertxGen(JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx)"](__args[0], __args[1]._jdel), CircuitBreaker);
+    return utils.convReturnVertxGen(CircuitBreaker, JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx)"](__args[0], __args[1]._jdel));
   }else if (__args.length === 3 && typeof __args[0] === 'string' && typeof __args[1] === 'object' && __args[1]._jdel && (typeof __args[2] === 'object' && __args[2] != null)) {
-    return utils.convReturnVertxGen(JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx,io.vertx.circuitbreaker.CircuitBreakerOptions)"](__args[0], __args[1]._jdel, __args[2] != null ? new CircuitBreakerOptions(new JsonObject(JSON.stringify(__args[2]))) : null), CircuitBreaker);
+    return utils.convReturnVertxGen(CircuitBreaker, JCircuitBreaker["create(java.lang.String,io.vertx.core.Vertx,io.vertx.circuitbreaker.CircuitBreakerOptions)"](__args[0], __args[1]._jdel, __args[2] != null ? new CircuitBreakerOptions(new JsonObject(JSON.stringify(__args[2]))) : null));
   } else throw new TypeError('function invoked with invalid arguments');
 };
 
-// We export the Constructor function
 module.exports = CircuitBreaker;
