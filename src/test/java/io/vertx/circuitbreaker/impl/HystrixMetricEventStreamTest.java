@@ -82,22 +82,21 @@ public class HystrixMetricEventStreamTest {
     List<JsonObject> responses = new CopyOnWriteArrayList<>();
     HttpClient client = vertx.createHttpClient();
     client.get(8080, "localhost", "/metrics")
-      .handler(response -> {
-        response.handler(buffer -> {
+      .handler(response
+        -> response.handler(buffer -> {
           if (buffer.toString().startsWith("data:")) {
             String json = buffer.toString().substring("data:".length());
             responses.add(new JsonObject(json));
           }
-        });
-      }).end();
+      })).end();
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
       breakerA.execute(choose());
       breakerB.execute(choose());
       breakerC.execute(choose());
     }
 
-    await().until(() -> responses.size() > 50);
+    await().until(() -> responses.size() > 100);
 
     // Check that we got metrics for A, B and C
     JsonObject a = null;
