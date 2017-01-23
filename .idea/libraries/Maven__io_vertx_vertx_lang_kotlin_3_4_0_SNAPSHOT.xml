@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: io.vertx:vertx-lang-kotlin:3.4.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-lang-kotlin/3.4.0-SNAPSHOT/vertx-lang-kotlin-3.4.0-20161118.004343-8.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-lang-kotlin/3.4.0-SNAPSHOT/vertx-lang-kotlin-3.4.0-20161118.004343-8-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-lang-kotlin/3.4.0-SNAPSHOT/vertx-lang-kotlin-3.4.0-20161118.004343-8-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: io.vertx:vertx-hazelcast:3.4.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-hazelcast/3.4.0-SNAPSHOT/vertx-hazelcast-3.4.0-20161118.022755-53.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-hazelcast/3.4.0-SNAPSHOT/vertx-hazelcast-3.4.0-20161118.022755-53-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-hazelcast/3.4.0-SNAPSHOT/vertx-hazelcast-3.4.0-20161118.022755-53-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

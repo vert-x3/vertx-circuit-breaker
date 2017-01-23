@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: io.vertx:vertx-codetrans:3.4.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-codetrans/3.4.0-SNAPSHOT/vertx-codetrans-3.4.0-20161118.010132-244.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-codetrans/3.4.0-SNAPSHOT/vertx-codetrans-3.4.0-20161118.010132-244-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/io/vertx/vertx-codetrans/3.4.0-SNAPSHOT/vertx-codetrans-3.4.0-20161118.010132-244-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
