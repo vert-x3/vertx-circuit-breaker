@@ -21,7 +21,7 @@ var RoutingContext = require('vertx-web-js/routing_context');
 
 var io = Packages.io;
 var JsonObject = io.vertx.core.json.JsonObject;
-var JHystrixMetricHandler = io.vertx.circuitbreaker.HystrixMetricHandler;
+var JHystrixMetricHandler = Java.type('io.vertx.circuitbreaker.HystrixMetricHandler');
 
 /**
  A Vert.x web handler to expose the circuit breaker to the Hystrix dasbboard. The handler listens to the circuit

@@ -1,4 +1,4 @@
-moduleName = vertx-circuit-breaker-module
+moduleName = io.vertx.circuitbreaker.HystrixMetricHandler-module
 moduleVersion = 1.0
-extensionClasses = io.vertx.groovy.circuitbreaker.GroovyExtension
-staticExtensionClasses = io.vertx.groovy.circuitbreaker.GroovyStaticExtension
+extensionClasses = io.vertx.groovy.circuitbreaker.CircuitBreaker_GroovyExtension
+staticExtensionClasses = io.vertx.groovy.circuitbreaker.CircuitBreaker_GroovyStaticExtension
