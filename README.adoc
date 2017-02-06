@@ -42,7 +42,7 @@ The manual is available from:
 * link:src/main/asciidoc/java/index.adoc[in-source java docs]
 * link:src/main/asciidoc/groovy/index.adoc[in-source groovy docs]
 * link:src/main/asciidoc/js/index.adoc[in-source javascript docs]
-* link:src/main/asciidoc/ruby/index.adoc[in-source java docs]
+* link:src/main/asciidoc/ruby/index.adoc[in-source ruby docs]
 
 
 
