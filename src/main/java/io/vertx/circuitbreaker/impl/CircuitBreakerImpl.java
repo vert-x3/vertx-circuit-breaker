@@ -19,10 +19,10 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -176,6 +176,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     Handler<Future<T>> command,
     Function<Throwable, T> fallback) {
 
+    Context context = vertx.getOrCreateContext();
+
     CircuitBreakerState currentState;
     synchronized (this) {
       currentState = state;
@@ -187,27 +189,30 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     // This future is marked as failed on operation failures and timeout.
     Future<T> operationResult = Future.future();
     operationResult.setHandler(event -> {
-      if (event.failed()) {
-        incrementFailures();
-        call.failed();
-        if (options.isFallbackOnFailure()) {
-          invokeFallback(event.cause(), userFuture, fallback, call);
+      context.runOnContext(v -> {
+        if (event.failed()) {
+          incrementFailures();
+          call.failed();
+          if (options.isFallbackOnFailure()) {
+            invokeFallback(event.cause(), userFuture, fallback, call);
+          } else {
+            userFuture.fail(event.cause());
+          }
         } else {
-          userFuture.fail(event.cause());
+          call.complete();
+          reset();
+          userFuture.complete(event.result());
         }
-      } else {
-        call.complete();
-        reset();
-        userFuture.complete(event.result());
-      }
-      // Else the operation has been canceled because of a time out.
+        // Else the operation has been canceled because of a time out.
+      });
+
     });
 
     if (currentState == CircuitBreakerState.CLOSED) {
       if (options.getMaxRetries() > 0) {
-        executeOperation(command, retryFuture(1, command, operationResult, call), call);
+        executeOperation(context, command, retryFuture(context, 1, command, operationResult, call), call);
       } else {
-        executeOperation(command, operationResult, call);
+        executeOperation(context, command, operationResult, call);
       }
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
@@ -229,7 +234,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           }
         });
         // Execute the operation
-        executeOperation(command, operationResult, call);
+        executeOperation(context, command, operationResult, call);
       } else {
         // Not selected, fallback.
         call.shortCircuited();
@@ -239,13 +244,16 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return this;
   }
 
-  private <T> Future<T> retryFuture(int retryCount, Handler<Future<T>> command, Future<T> operationResult,
-                                    CircuitBreakerMetrics.Operation call) {
+  private <T> Future<T> retryFuture(Context context, int retryCount, Handler<Future<T>> command, Future<T>
+    operationResult, CircuitBreakerMetrics.Operation call) {
     Future<T> retry = Future.future();
+
     retry.setHandler(event -> {
       if (event.succeeded()) {
         reset();
-        operationResult.complete(event.result());
+        context.runOnContext(v -> {
+          operationResult.complete(event.result());
+        });
         return;
       }
 
@@ -256,13 +264,21 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
       if (currentState == CircuitBreakerState.CLOSED) {
         if (retryCount < options.getMaxRetries() - 1) {
-          // Don't report timeout or error in the retry attempt, only the last one.
-          executeOperation(command, retryFuture(retryCount + 1, command, operationResult, null), call);
+          context.runOnContext(v -> {
+            // Don't report timeout or error in the retry attempt, only the last one.
+            executeOperation(context, command, retryFuture(context, retryCount + 1, command, operationResult, null),
+              call);
+          });
+
         } else {
-          executeOperation(command, operationResult, call);
+          context.runOnContext(v -> {
+            executeOperation(context, command, operationResult, call);
+          });
         }
       } else {
-        operationResult.fail(new RuntimeException("open circuit"));
+        context.runOnContext(v -> {
+          operationResult.fail(new RuntimeException("open circuit"));
+        });
       }
     });
     return retry;
@@ -286,43 +302,50 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
   }
 
-  private <T> void executeOperation(Handler<Future<T>> operation, Future<T> operationResult,
+  private <T> void executeOperation(Context context, Handler<Future<T>> operation, Future<T> operationResult,
                                     CircuitBreakerMetrics.Operation call) {
     // Execute the operation
     if (options.getTimeout() != -1) {
       vertx.setTimer(options.getTimeout(), (l) -> {
-        // Check if the operation has not already been completed
-        if (!operationResult.isComplete()) {
-          if (call != null) {
-            call.timeout();
+        context.runOnContext(v -> {
+          // Check if the operation has not already been completed
+          if (!operationResult.isComplete()) {
+            if (call != null) {
+              call.timeout();
+            }
+            operationResult.fail("operation timeout");
           }
-          operationResult.fail("operation timeout");
-        }
-        // Else  Operation has completed
+          // Else  Operation has completed
+        });
       });
     }
     try {
       // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
       Future<T> passedFuture = Future.future();
       passedFuture.setHandler(ar -> {
-        if (ar.failed()) {
-          if (!operationResult.isComplete()) {
-            operationResult.fail(ar.cause());
+        context.runOnContext(v -> {
+          if (ar.failed()) {
+            if (!operationResult.isComplete()) {
+              operationResult.fail(ar.cause());
+            }
+          } else {
+            if (!operationResult.isComplete()) {
+              operationResult.complete(ar.result());
+            }
           }
-        } else {
-          if (!operationResult.isComplete()) {
-            operationResult.complete(ar.result());
-          }
-        }
+        });
       });
+
       operation.handle(passedFuture);
     } catch (Throwable e) {
-      if (!operationResult.isComplete()) {
-        if (call != null) {
-          call.error();
+      context.runOnContext(v -> {
+        if (!operationResult.isComplete()) {
+          if (call != null) {
+            call.error();
+          }
+          operationResult.fail(e);
         }
-        operationResult.fail(e);
-      }
+      });
     }
   }
 
@@ -365,6 +388,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   /**
    * For testing purpose only.
+   *
    * @return retrieve the metrics.
    */
   public CircuitBreakerMetrics getMetrics() {
