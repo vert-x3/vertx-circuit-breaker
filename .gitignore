@@ -2,6 +2,13 @@
 .idea
 *.iml
 
+.settings
+.project
+.classpath
+.vertx
+
+
+
 ### Java template
 *.class
 
@@ -26,3 +33,5 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 # Created by .ignore support plugin (hsz.mobi)
+.vertx/
+src/main/asciidoc/kotlin/
