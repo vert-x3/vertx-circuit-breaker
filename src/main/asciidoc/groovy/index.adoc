@@ -26,7 +26,7 @@ descriptor:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>3.4.0.Beta1</version>
+  <version>3.4.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -34,7 +34,7 @@ descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-circuit-breaker:3.4.0.Beta1'
+compile 'io.vertx:vertx-circuit-breaker:3.4.0-SNAPSHOT'
 ----
 
 == Using the circuit breaker
@@ -48,7 +48,6 @@ Here is an example:
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000,
@@ -73,7 +72,6 @@ output of a REST endpoint invocation:
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -104,7 +102,6 @@ Optionally, you can provide a fallback which is executed when the circuit is ope
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -138,7 +135,6 @@ The fallback can also be set on the `link:../../apidocs/io/vertx/circuitbreaker/
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -173,7 +169,6 @@ You can also configures callbacks invoked when the circuit is opened or closed:
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx, [
   maxFailures:5,
   timeout:2000
@@ -234,9 +229,6 @@ a SSE stream sending the metrics. This stream is provided by the
 
 [source,groovy]
 ----
-import io.vertx.circuitbreaker.CircuitBreaker
-import io.vertx.ext.web.Router
-import io.vertx.circuitbreaker.HystrixMetricHandler
 // Create the circuit breaker as usual.
 def breaker = CircuitBreaker.create("my-circuit-breaker", vertx)
 def breaker2 = CircuitBreaker.create("my-second-circuit-breaker", vertx)
