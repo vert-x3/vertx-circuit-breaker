@@ -77,6 +77,7 @@ public class CircuitBreakerImplTest {
   }
 
   @Test
+  @Repeat(5)
   public void testOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -88,8 +89,8 @@ public class CircuitBreakerImplTest {
       fut.complete("hello");
     }).setHandler(ar -> completionCalled.set(ar.result()));
 
-    assertThat(operationCalled.get()).isTrue();
-    assertThat(completionCalled.get()).isEqualTo("hello");
+    await().until(operationCalled::get);
+    await().until(() -> completionCalled.get().equalsIgnoreCase("hello"));
   }
 
   @Test
