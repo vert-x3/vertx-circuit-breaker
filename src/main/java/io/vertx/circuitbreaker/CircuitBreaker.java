@@ -19,7 +19,9 @@ package io.vertx.circuitbreaker;
 import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -120,7 +122,20 @@ public interface CircuitBreaker {
    * @param <T>       the type of result
    * @return a future object completed when the operation or its fallback completes
    */
+  @GenIgnore
   <T> Future<T> execute(Handler<Future<T>> command);
+
+  /**
+   * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
+   *
+   * @param command the operation
+   * @param <T>       the type of result
+   * @return a future object completed when the operation or its fallback completes
+   */
+  default <T> void execute(Handler<Future<T>> command, Handler<AsyncResult<T>> handler) {
+    Future<T> fut = execute(command);
+    fut.setHandler(handler);
+  }
 
   /**
    * Same as {@link #executeAndReportWithFallback(Future, Handler, Function)} but using the circuit breaker default
