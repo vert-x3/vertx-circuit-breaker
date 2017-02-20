@@ -11,6 +11,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.junit.Repeat;
+import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +36,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
  */
 @RunWith(VertxUnitRunner.class)
 public class UsageTest {
+
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
 
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(8089);
@@ -67,6 +72,7 @@ public class UsageTest {
   }
 
   @Test
+  @Repeat(10)
   public void testCBWithReadOperation() {
     prepareHttpServer();
 
