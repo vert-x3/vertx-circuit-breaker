@@ -19,7 +19,6 @@ package io.vertx.circuitbreaker;
 import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -108,31 +107,47 @@ public interface CircuitBreaker {
    * being a success or a failure. If the fallback is called, the returned future is successfully completed with the
    * value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
    *
-   * @param command the operation
-   * @param fallback  the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
-   * @param <T>       the type of result
+   * @param command  the operation
+   * @param fallback the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
+   * @param <T>      the type of result
    * @return a future object completed when the operation or its fallback completes
    */
   <T> Future<T> executeWithFallback(Handler<Future<T>> command, Function<Throwable, T> fallback);
 
   /**
+   * Same as {@link #executeWithFallback(Handler, Function)} but using a callback.
+   *
+   * @param command  the operation
+   * @param fallback the fallback
+   * @param handler  the completion handler receiving either the operation result or the fallback result. The
+   *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
+   *                 to the handler.
+   * @param <T>      the type of result
+   * @return a future object completed when the operation or its fallback completes
+   */
+  default <T> void executeCommandWithFallback(Handler<Future<T>> command, Function<Throwable, T> fallback,
+                                              Handler<AsyncResult<T>> handler) {
+    Future<T> fut = executeWithFallback(command, fallback);
+    fut.setHandler(handler);
+  }
+
+  /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
    *
    * @param command the operation
-   * @param <T>       the type of result
+   * @param <T>     the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  @GenIgnore
   <T> Future<T> execute(Handler<Future<T>> command);
 
   /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
    *
    * @param command the operation
-   * @param <T>       the type of result
+   * @param <T>     the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  default <T> void execute(Handler<Future<T>> command, Handler<AsyncResult<T>> handler) {
+  default <T> void executeCommand(Handler<Future<T>> command, Handler<AsyncResult<T>> handler) {
     Future<T> fut = execute(command);
     fut.setHandler(handler);
   }
@@ -142,8 +157,8 @@ public interface CircuitBreaker {
    * fallback.
    *
    * @param resultFuture the future on which the operation result is reported
-   * @param command the operation
-   * @param <T> the type of result
+   * @param command      the operation
+   * @param <T>          the type of result
    * @return the current {@link CircuitBreaker}
    */
   @Fluent
@@ -165,9 +180,9 @@ public interface CircuitBreaker {
    * the future is marked as failed.
    *
    * @param resultFuture the future on which the operation result is reported
-   * @param command the operation
-   * @param fallback  the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
-   * @param <T>       the type of result
+   * @param command      the operation
+   * @param fallback     the fallback function. It gets an exception as parameter and returns the <em>fallback</em> result
+   * @param <T>          the type of result
    * @return the current {@link CircuitBreaker}
    */
   @Fluent

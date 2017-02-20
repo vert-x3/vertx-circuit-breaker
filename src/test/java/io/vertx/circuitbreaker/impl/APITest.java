@@ -69,6 +69,19 @@ public class APITest {
   }
 
   @Test
+  public void testWithOperationWithCompletionHandler() {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
+
+    AtomicInteger result = new AtomicInteger();
+
+    breaker.executeCommandWithFallback(fut -> {
+      MyAsyncOperations.operation(1, 1, fut.completer());
+    }, v -> 0, ar -> result.set(ar.result()));
+
+    await().untilAtomic(result, is(2));
+  }
+
+  @Test
   public void testWithFailingOperationWithHandler() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
         .setFallbackOnFailure(true));
@@ -79,6 +92,20 @@ public class APITest {
       MyAsyncOperations.fail(fut.completer());
     }, v -> -1)
         .setHandler(ar -> result.set(ar.result()));
+
+    await().untilAtomic(result, is(-1));
+  }
+
+  @Test
+  public void testWithFailingOperationWithCompletionHandler() {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
+      .setFallbackOnFailure(true));
+
+    AtomicInteger result = new AtomicInteger();
+
+    breaker.<Integer>executeCommandWithFallback(fut -> {
+      MyAsyncOperations.fail(fut.completer());
+    }, v -> -1, ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(-1));
   }
