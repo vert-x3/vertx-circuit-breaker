@@ -47,8 +47,8 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("group", body.getString("node"));
     json.put("currentTime", System.currentTimeMillis());
     json.put("isCircuitBreakerOpen", state.equalsIgnoreCase(CircuitBreakerState.OPEN.toString()));
-    json.put("errorPercentage", body.getInteger("totalErrorPercentage", 0));
-    json.put("errorCount", body.getInteger("totalErrorCount", 0));
+    json.put("errorPercentage", body.getInteger("rollingErrorPercentage", 0));
+    json.put("errorCount", body.getInteger("rollingErrorCount", 0));
     json.put("requestCount", body.getInteger("rollingOperationCount", 0));
     json.put("rollingCountCollapsedRequests", 0); // TODO
     json.put("rollingCountExceptionsThrown", body.getInteger("rollingExceptionCount", 0));

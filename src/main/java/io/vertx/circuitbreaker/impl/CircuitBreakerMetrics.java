@@ -60,7 +60,7 @@ public class CircuitBreakerMetrics {
 
   class Operation {
     final long begin;
-    private long end;
+    private volatile long end;
     private boolean complete;
     private boolean failed;
     private boolean timeout;
@@ -117,7 +117,7 @@ public class CircuitBreakerMetrics {
       CircuitBreakerMetrics.this.complete(this);
     }
 
-    synchronized long durationInMs() {
+    long durationInMs() {
       return (end - begin) / 1000000;
     }
   }
@@ -207,7 +207,6 @@ public class CircuitBreakerMetrics {
       }
     }
 
-    System.out.println("window size: " + window.size() + " / SRC: " + rollingSuccess);
     json.put("rollingOperationCount", window.size());
     json.put("rollingErrorCount", rollingException + rollingFailure + rollingTimeout);
     json.put("rollingSuccessCount", rollingSuccess);
@@ -220,8 +219,7 @@ public class CircuitBreakerMetrics {
     } else {
       json.put("rollingSuccessPercentage", ((double) rollingSuccess / window.size()) * 100);
       json.put("rollingErrorPercentage",
-        ((double) (rollingException + rollingFailure + rollingTimeout) / window.size()) * 100);
-
+        ((double) (rollingException + rollingFailure + rollingTimeout + rollingShortCircuited) / window.size()) * 100);
     }
 
     json.put("rollingFallbackSuccessCount", rollingFallbackSuccess);
