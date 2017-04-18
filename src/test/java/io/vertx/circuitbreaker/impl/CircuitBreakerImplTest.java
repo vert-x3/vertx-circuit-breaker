@@ -471,7 +471,7 @@ public class CircuitBreakerImplTest {
   }
 
   @Test
-  @Repeat(5)
+  @Repeat(10)
   public void testResetAttemptThatFailsOnTimeout() {
     AtomicBoolean called = new AtomicBoolean(false);
     AtomicBoolean hasBeenOpened = new AtomicBoolean(false);
@@ -502,7 +502,7 @@ public class CircuitBreakerImplTest {
       // Do nothing with the future, this is a very bad thing.
     });
     // Failed again, open circuit
-    await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
+    await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
     await().untilAtomic(called, is(true));
     await().untilAtomic(hasBeenOpened, is(true));
 
