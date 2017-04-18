@@ -49,11 +49,11 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("isCircuitBreakerOpen", state.equalsIgnoreCase(CircuitBreakerState.OPEN.toString()));
     json.put("errorPercentage", body.getInteger("totalErrorPercentage", 0));
     json.put("errorCount", body.getInteger("totalErrorCount", 0));
-    json.put("requestCount", body.getInteger("totalOperationCount", 0));
-    json.put("rollingCountCollapsedRequests", body.getInteger("rollingOperationCount", 0));
+    json.put("requestCount", body.getInteger("rollingOperationCount", 0));
+    json.put("rollingCountCollapsedRequests", 0); // TODO
     json.put("rollingCountExceptionsThrown", body.getInteger("rollingExceptionCount", 0));
     json.put("rollingCountFailure", body.getInteger("rollingFailureCount", 0));
-    json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCound", 0));
+    json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCount", 0));
     json.put("rollingCountFallbackFailure", body.getInteger("rollingFallbackFailureCount", 0));
     json.put("rollingCountFallbackRejection", body.getInteger("fallbackRejection", 0));
     json.put("rollingCountFallbackSuccess", body.getInteger("rollingFallbackSuccessCount", 0));

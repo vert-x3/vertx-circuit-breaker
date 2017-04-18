@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject;
 import org.HdrHistogram.Histogram;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,13 +18,12 @@ import java.util.stream.Collectors;
  */
 public class CircuitBreakerMetrics {
   private final long rollingWindow;
-  private final Vertx vertx;
-  private final long timer;
   private final CircuitBreakerImpl circuitBreaker;
   private final String node;
 
   private final long circuitBreakerResetTimeout;
   private final long circuitBreakerTimeout;
+  private final long windowPeriodInNs;
 
   // Global statistics
 
@@ -38,26 +38,24 @@ public class CircuitBreakerMetrics {
   private Histogram statistics = new Histogram(3);
 
   CircuitBreakerMetrics(Vertx vertx, CircuitBreakerImpl circuitBreaker, CircuitBreakerOptions options) {
-    this.vertx = vertx;
     this.circuitBreaker = circuitBreaker;
     this.circuitBreakerTimeout = circuitBreaker.options().getTimeout();
     this.circuitBreakerResetTimeout = circuitBreaker.options().getResetTimeout();
     this.rollingWindow = options.getMetricsRollingWindow();
-    this.timer = vertx.setPeriodic(this.rollingWindow, l -> evictOutdatedCalls());
     this.node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local";
+    this.windowPeriodInNs =  rollingWindow * 1000000;
   }
 
-  private synchronized void evictOutdatedCalls() {
+  private synchronized List<Operation> evictOutdatedOperations() {
     // IMPORTANT: operation.begin is in nanosecond.
-    long beginningOfTheWindow = System.nanoTime() - (rollingWindow * 1000000);
-    List<Operation> toRemove = window.stream()
-      .filter(operation -> operation.begin < beginningOfTheWindow)
-      .collect(Collectors.toList());
-    window.removeAll(toRemove);
+    long beginningOfTheWindow = System.nanoTime() - windowPeriodInNs;
+    // Remove the current element from the iterator and the list.
+    window.removeIf(operation -> operation.begin < beginningOfTheWindow);
+    return window;
   }
 
   public void close() {
-    vertx.cancelTimer(timer);
+    // do nothing by default.
   }
 
   class Operation {
@@ -177,6 +175,7 @@ public class CircuitBreakerMetrics {
     addLatency(json, statistics, "total");
 
     // Window metrics
+    evictOutdatedOperations();
     int rollingException = 0;
     int rollingFailure = 0;
     int rollingSuccess = 0;
@@ -208,19 +207,20 @@ public class CircuitBreakerMetrics {
       }
     }
 
+    System.out.println("window size: " + window.size() + " / SRC: " + rollingSuccess);
     json.put("rollingOperationCount", window.size());
     json.put("rollingErrorCount", rollingException + rollingFailure + rollingTimeout);
     json.put("rollingSuccessCount", rollingSuccess);
     json.put("rollingTimeoutCount", rollingTimeout);
     json.put("rollingExceptionCount", rollingException);
     json.put("rollingFailureCount", rollingFailure);
-    if (calls == 0) {
+    if (window.size() == 0) {
       json.put("rollingSuccessPercentage", 0);
       json.put("rollingErrorPercentage", 0);
     } else {
-      json.put("rollingSuccessPercentage", ((double) rollingSuccess / calls) * 100);
+      json.put("rollingSuccessPercentage", ((double) rollingSuccess / window.size()) * 100);
       json.put("rollingErrorPercentage",
-        ((double) (rollingException + rollingFailure + rollingTimeout) / calls) * 100);
+        ((double) (rollingException + rollingFailure + rollingTimeout) / window.size()) * 100);
 
     }
 
