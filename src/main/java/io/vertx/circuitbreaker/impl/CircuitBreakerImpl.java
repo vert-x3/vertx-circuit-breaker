@@ -223,12 +223,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         operationResult.setHandler(event -> {
           if (event.failed()) {
             open();
+            call.failed();
             if (options.isFallbackOnFailure()) {
               invokeFallback(event.cause(), userFuture, fallback, call);
             } else {
               userFuture.fail(event.cause());
             }
           } else {
+            call.complete();
             reset();
             userFuture.complete(event.result());
           }

@@ -207,7 +207,7 @@ public class CircuitBreakerMetrics {
       }
     }
 
-    json.put("rollingOperationCount", window.size());
+    json.put("rollingOperationCount", window.size() - rollingShortCircuited);
     json.put("rollingErrorCount", rollingException + rollingFailure + rollingTimeout);
     json.put("rollingSuccessCount", rollingSuccess);
     json.put("rollingTimeoutCount", rollingTimeout);
