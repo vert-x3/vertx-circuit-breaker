@@ -8,7 +8,10 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -50,7 +53,7 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("errorPercentage", body.getInteger("rollingErrorPercentage", 0));
     json.put("errorCount", body.getInteger("rollingErrorCount", 0));
     json.put("requestCount", body.getInteger("rollingOperationCount", 0));
-    json.put("rollingCountCollapsedRequests", 0); // TODO
+    json.put("rollingCountCollapsedRequests", 0);
     json.put("rollingCountExceptionsThrown", body.getInteger("rollingExceptionCount", 0));
     json.put("rollingCountFailure", body.getInteger("rollingFailureCount", 0));
     json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCount", 0));
@@ -74,7 +77,7 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("propertyValue_circuitBreakerForceClosed", false);
     json.put("propertyValue_circuitBreakerEnabled", true);
     json.put("propertyValue_executionIsolationStrategy", "THREAD");
-    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds",body.getLong("timeout", 0L));
+    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds", body.getLong("timeout", 0L));
     json.put("propertyValue_executionIsolationThreadInterruptOnTimeout", true);
     json.put("propertyValue_executionIsolationThreadPoolKeyOverride", "");
     json.put("propertyValue_executionIsolationSemaphoreMaxConcurrentRequests", 0);

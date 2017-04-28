@@ -7,9 +7,7 @@ import io.vertx.core.json.JsonObject;
 import org.HdrHistogram.Histogram;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Circuit breaker metrics.
