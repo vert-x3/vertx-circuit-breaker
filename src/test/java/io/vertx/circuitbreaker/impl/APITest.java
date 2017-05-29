@@ -17,6 +17,7 @@
 package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.jayway.awaitility.Awaitility.await;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
@@ -51,6 +53,17 @@ public class APITest {
     AtomicBoolean completed = new AtomicBoolean();
     vertx.close(ar -> completed.set(ar.succeeded()));
     await().untilAtomic(completed, is(true));
+  }
+
+  /**
+   * Reproducer of https://github.com/vert-x3/vertx-circuit-breaker/issues/9
+   */
+  @Test
+  public void testWhenOptionsAreNull() {
+    CircuitBreaker cb = CircuitBreaker.create("name", vertx, null);
+    assertThat(cb).isNotNull();
+    assertThat(cb.name()).isEqualTo("name");
+    assertThat(cb.state()).isEqualTo(CircuitBreakerState.CLOSED);
   }
 
 

@@ -44,7 +44,7 @@ public interface CircuitBreaker {
    * @return the created instance
    */
   static CircuitBreaker create(String name, Vertx vertx, CircuitBreakerOptions options) {
-    return new CircuitBreakerImpl(name, vertx, options);
+    return new CircuitBreakerImpl(name, vertx, options == null ? new CircuitBreakerOptions() : options);
   }
 
   /**

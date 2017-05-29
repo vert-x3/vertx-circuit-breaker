@@ -26,7 +26,7 @@ descriptor:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>3.4.1</version>
+  <version>3.4.2-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -34,7 +34,7 @@ descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-circuit-breaker:3.4.1'
+compile 'io.vertx:vertx-circuit-breaker:3.4.2-SNAPSHOT'
 ----
 
 == Using the circuit breaker
@@ -82,10 +82,10 @@ breaker = VertxCircuitBreaker::CircuitBreaker.create("my-circuit-breaker", vertx
 breaker.execute() { |future|
   vertx.create_http_client().get_now(8080, "localhost", "/") { |response|
     if (response.status_code() != 200)
-      future.fail?("HTTP error")
+      future.fail("HTTP error")
     else
       response.exception_handler(&future.method(:fail)).body_handler() { |buffer|
-        future.complete?(buffer.to_string())
+        future.complete(buffer.to_string())
       }
     end
   }
@@ -113,10 +113,10 @@ breaker = VertxCircuitBreaker::CircuitBreaker.create("my-circuit-breaker", vertx
 breaker.execute_with_fallback(lambda { |future|
   vertx.create_http_client().get_now(8080, "localhost", "/") { |response|
     if (response.status_code() != 200)
-      future.fail?("HTTP error")
+      future.fail("HTTP error")
     else
       response.exception_handler(&future.method(:fail)).body_handler() { |buffer|
-        future.complete?(buffer.to_string())
+        future.complete(buffer.to_string())
       }
     end
   }
@@ -150,10 +150,10 @@ breaker = VertxCircuitBreaker::CircuitBreaker.create("my-circuit-breaker", vertx
 breaker.execute() { |future|
   vertx.create_http_client().get_now(8080, "localhost", "/") { |response|
     if (response.status_code() != 200)
-      future.fail?("HTTP error")
+      future.fail("HTTP error")
     else
       response.exception_handler(&future.method(:fail)).body_handler() { |buffer|
-        future.complete?(buffer.to_string())
+        future.complete(buffer.to_string())
       }
     end
   }
@@ -186,10 +186,10 @@ breaker = VertxCircuitBreaker::CircuitBreaker.create("my-circuit-breaker", vertx
 breaker.execute() { |future|
   vertx.create_http_client().get_now(8080, "localhost", "/") { |response|
     if (response.status_code() != 200)
-      future.fail?("HTTP error")
+      future.fail("HTTP error")
     else
       # Do something with the response
-      future.complete?()
+      future.complete()
     end
   }
 }
