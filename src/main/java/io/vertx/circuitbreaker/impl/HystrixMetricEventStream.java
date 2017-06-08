@@ -8,7 +8,10 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -47,13 +50,13 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("group", body.getString("node"));
     json.put("currentTime", System.currentTimeMillis());
     json.put("isCircuitBreakerOpen", state.equalsIgnoreCase(CircuitBreakerState.OPEN.toString()));
-    json.put("errorPercentage", body.getInteger("totalErrorPercentage", 0));
-    json.put("errorCount", body.getInteger("totalErrorCount", 0));
-    json.put("requestCount", body.getInteger("totalOperationCount", 0));
-    json.put("rollingCountCollapsedRequests", body.getInteger("rollingOperationCount", 0));
+    json.put("errorPercentage", body.getInteger("rollingErrorPercentage", 0));
+    json.put("errorCount", body.getInteger("rollingErrorCount", 0));
+    json.put("requestCount", body.getInteger("rollingOperationCount", 0));
+    json.put("rollingCountCollapsedRequests", 0);
     json.put("rollingCountExceptionsThrown", body.getInteger("rollingExceptionCount", 0));
     json.put("rollingCountFailure", body.getInteger("rollingFailureCount", 0));
-    json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCound", 0));
+    json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCount", 0));
     json.put("rollingCountFallbackFailure", body.getInteger("rollingFallbackFailureCount", 0));
     json.put("rollingCountFallbackRejection", body.getInteger("fallbackRejection", 0));
     json.put("rollingCountFallbackSuccess", body.getInteger("rollingFallbackSuccessCount", 0));
@@ -74,7 +77,7 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("propertyValue_circuitBreakerForceClosed", false);
     json.put("propertyValue_circuitBreakerEnabled", true);
     json.put("propertyValue_executionIsolationStrategy", "THREAD");
-    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds",body.getLong("timeout", 0L));
+    json.put("propertyValue_executionIsolationThreadTimeoutInMilliseconds", body.getLong("timeout", 0L));
     json.put("propertyValue_executionIsolationThreadInterruptOnTimeout", true);
     json.put("propertyValue_executionIsolationThreadPoolKeyOverride", "");
     json.put("propertyValue_executionIsolationSemaphoreMaxConcurrentRequests", 0);
