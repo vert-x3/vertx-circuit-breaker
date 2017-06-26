@@ -527,7 +527,14 @@ public class CircuitBreakerImplTest {
 
     // If HO - need to get next request executed and wait until we are closed
     breaker.execute(Future::complete);
-    await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
+    await().until(() -> {
+      if (breaker.state() == CircuitBreakerState.CLOSED) {
+        return true;
+      } else {
+        breaker.execute(Future::complete);
+        return false;
+      }
+    });
     called.set(false);
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(f -> f.complete(null));
