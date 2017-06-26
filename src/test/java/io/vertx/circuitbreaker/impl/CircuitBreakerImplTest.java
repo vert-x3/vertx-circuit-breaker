@@ -541,7 +541,6 @@ public class CircuitBreakerImplTest {
     }
 
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
-    await().untilAtomic(called, is(false));
     await().untilAtomic(hasBeenOpened, is(false));
   }
 
