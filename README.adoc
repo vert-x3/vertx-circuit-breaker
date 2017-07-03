@@ -3,7 +3,7 @@
 Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. More details on this pattern on https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern
 
 It keeps track of the
-number of failures and _open the circuit_ when a threshold is reached. Optionally, a fallback is executed.
+number of failures and _opens the circuit_ when a threshold is reached. Optionally, a fallback is executed.
 
 Supported failures are:
 
@@ -11,10 +11,10 @@ Supported failures are:
 * exception thrown by your code
 * uncompleted futures (timeout)
 
-Operations guarded by a circuit breaker are intended to by non-blocking and asynchronous in order to benefits from
+Operations guarded by a circuit breaker are intended to be non-blocking and asynchronous in order to benefit from
 the Vert.x execution model.
 
-== Using the vert.x circuit breaker
+== Using the Vert.x Circuit Breaker
 
 To use the Vert.x Circuit Breaker, add the following dependency to the _dependencies_ section of your build
 descriptor:
