@@ -208,7 +208,7 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * Sets the time in ms before it attempts to re-close the circuit (by going to the hal-open state). If the cricuit
+   * Sets the time in ms before it attempts to re-close the circuit (by going to the half-open state). If the circuit
    * is closed when the timeout is reached, nothing happens. {@code -1} disables this feature.
    *
    * @param resetTimeout the time in ms

@@ -133,7 +133,7 @@
  *
  * == The half-open state
  *
- * When the circuit is “open,” calls to the circuit breaker fail immediately, without any attempt to execute the real
+ * When the circuit is "open", calls to the circuit breaker fail immediately, without any attempt to execute the real
  * operation. After a suitable amount of time (configured from
  * {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setResetTimeout(long)}, the circuit breaker decides that the
  * operation has a chance of succeeding, so it goes into the {@code half-open} state. In this state, the next call to the

@@ -13,7 +13,7 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions
  * @param metricsRollingWindow  Sets the rolling window used for metrics.
  * @param notificationAddress  Sets the event bus address on which the circuit breaker publish its state change.
  * @param notificationPeriod  Configures the period in milliseconds where the circuit breaker send a notification on the event bus with its current state.
- * @param resetTimeout  Sets the time in ms before it attempts to re-close the circuit (by going to the hal-open state). If the cricuit is closed when the timeout is reached, nothing happens. <code>-1</code> disables this feature.
+ * @param resetTimeout  Sets the time in ms before it attempts to re-close the circuit (by going to the half-open state). If the circuit is closed when the timeout is reached, nothing happens. <code>-1</code> disables this feature.
  * @param timeout  Sets the timeout in milliseconds. If an action is not completed before this timeout, the action is considered as a failure.
  *
  * <p/>
