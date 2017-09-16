@@ -66,9 +66,16 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
     json.put("rollingCountSuccess", body.getInteger("rollingSuccessCount", 0));
     json.put("rollingCountThreadPoolRejected", 0);
     json.put("rollingCountTimeout", body.getInteger("rollingTimeoutCount", 0));
+    json.put("rollingCountBadRequests", 0);
+    json.put("rollingCountEmit", 0);
+    json.put("rollingCountFallbackEmit", 0);
+    json.put("rollingCountFallbackMissing", 0);
+    json.put("rollingMaxConcurrentExecutionCount", 0);
     json.put("currentConcurrentExecutionCount", 0);
     json.put("latencyExecute_mean", body.getInteger("rollingLatencyMean", 0));
     json.put("latencyExecute", body.getJsonObject("rollingLatency", new JsonObject()));
+    json.put("latencyTotal_mean", body.getInteger("totalLatencyMean", 0));
+    json.put("latencyTotal", body.getJsonObject("totalLatency", new JsonObject()));
 
     json.put("propertyValue_circuitBreakerRequestVolumeThreshold", 0);
     json.put("propertyValue_circuitBreakerSleepWindowInMilliseconds", body.getLong("resetTimeout", 0L));
