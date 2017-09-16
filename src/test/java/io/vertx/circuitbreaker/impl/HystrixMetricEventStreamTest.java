@@ -8,6 +8,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.parsetools.RecordParser;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -26,9 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jayway.awaitility.Awaitility.await;
-import static io.vertx.circuitbreaker.asserts.Assertions.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.core.Is.is;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -91,15 +91,25 @@ public class HystrixMetricEventStreamTest {
     List<JsonObject> responses = new CopyOnWriteArrayList<>();
     HttpClient client = vertx.createHttpClient();
 
+    RecordParser parser = RecordParser.newDelimited("\n\n");
+    parser.exceptionHandler(Throwable::printStackTrace);
+    parser.setOutput(buffer -> {
+      String record = buffer.toString();
+      String[] lines = record.split("\n");
+      for (String line : lines) {
+        String l = line.trim();
+        if (l.startsWith("data:")) {
+          String json = l.substring("data:".length());
+          JsonObject object = new JsonObject(json);
+          responses.add(object);
+        }
+      }
+    });
+
     client.get(8080, "localhost", "/metrics")
       .handler(response
-        -> response.handler(buffer -> {
-          if (buffer.toString().startsWith("data:")) {
-            String json = buffer.toString().substring("data:".length());
-            JsonObject object = new JsonObject(json);
-            responses.add(object);
-          }
-      })).end();
+        -> response.handler(parser))
+      .end();
 
     for (int i = 0; i < 1000; i++) {
       breakerA.execute(choose());
@@ -123,7 +133,7 @@ public class HystrixMetricEventStreamTest {
       }
     }
 
-    assertThat((a == null  && b == null  && c == null));
+    assertThat((a == null && b == null && c == null));
 
   }
 
