@@ -91,9 +91,7 @@ public class HystrixMetricEventStreamTest {
     List<JsonObject> responses = new CopyOnWriteArrayList<>();
     HttpClient client = vertx.createHttpClient();
 
-    RecordParser parser = RecordParser.newDelimited("\n\n");
-    parser.exceptionHandler(Throwable::printStackTrace);
-    parser.setOutput(buffer -> {
+    RecordParser parser = RecordParser.newDelimited("\n\n", buffer -> {
       String record = buffer.toString();
       String[] lines = record.split("\n");
       for (String line : lines) {
