@@ -34,8 +34,8 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
       .handler(message -> {
         JsonObject json = build(message.body());
         int id = counter.incrementAndGet();
+        String chunk = json.encode() + "\n\n";
         connections.forEach(resp -> {
-          String chunk = json.encode() + "\n\n";
           resp.write("id" + ": " + id + "\n");
           resp.write("data:" + chunk);
         });
