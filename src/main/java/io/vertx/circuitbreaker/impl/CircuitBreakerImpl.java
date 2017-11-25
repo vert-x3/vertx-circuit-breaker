@@ -226,7 +226,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     if (currentState == CircuitBreakerState.CLOSED) {
       if (options.getMaxRetries() > 0) {
-        executeOperation(context, command, retryFuture(context, 1, command, operationResult, call), call);
+        executeOperation(context, command, retryFuture(context, 0, command, operationResult, call), call);
       } else {
         executeOperation(context, command, operationResult, call);
       }

@@ -742,7 +742,7 @@ public class CircuitBreakerImplTest {
       }));
     });
 
-    await().untilAtomic(calls, is(5));
+    await().untilAtomic(calls, is(6));
     assertThat(result.get().failed()).isTrue();
     assertThat(breaker.failureCount()).isEqualTo(1);
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
