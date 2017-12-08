@@ -105,11 +105,27 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
       .putHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
       .putHeader(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
 
-    rc.request().connection().closeHandler(v -> {
-      connections.remove(response);
-      response.end();
-    });
+    rc.request().connection()
+      .closeHandler(v -> {
+        connections.remove(response);
+        endQuietly(response);
+      })
+      .exceptionHandler(t -> {
+        connections.remove(response);
+        rc.fail(t);
+      });
 
     connections.add(response);
+  }
+
+  private static void endQuietly(HttpServerResponse response) {
+    if (response.ended()) {
+      return;
+    }
+    try {
+      response.end();
+    } catch (IllegalStateException e) {
+      // Ignore it.
+    }
   }
 }
