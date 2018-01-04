@@ -10,6 +10,7 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions
  * @param fallbackOnFailure  Sets whether or not the fallback is executed on failure, even when the circuit is closed.
  * @param maxFailures  Sets the maximum number of failures before opening the circuit.
  * @param maxRetries  Configures the number of times the circuit breaker tries to redo the operation before failing.
+ * @param metricsRollingBuckets  Sets the configured number of buckets the rolling window is divided into. The following must be true - metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0 - otherwise it will throw an exception. In other words, 10000/10 is okay, so is 10000/20 but 10000/7 is not.
  * @param metricsRollingWindow  Sets the rolling window used for metrics.
  * @param notificationAddress  Sets the event bus address on which the circuit breaker publish its state change.
  * @param notificationPeriod  Configures the period in milliseconds where the circuit breaker send a notification on the event bus with its current state.
@@ -23,6 +24,7 @@ fun CircuitBreakerOptions(
   fallbackOnFailure: Boolean? = null,
   maxFailures: Int? = null,
   maxRetries: Int? = null,
+  metricsRollingBuckets: Int? = null,
   metricsRollingWindow: Long? = null,
   notificationAddress: String? = null,
   notificationPeriod: Long? = null,
@@ -37,6 +39,9 @@ fun CircuitBreakerOptions(
   }
   if (maxRetries != null) {
     this.setMaxRetries(maxRetries)
+  }
+  if (metricsRollingBuckets != null) {
+    this.setMetricsRollingBuckets(metricsRollingBuckets)
   }
   if (metricsRollingWindow != null) {
     this.setMetricsRollingWindow(metricsRollingWindow)
