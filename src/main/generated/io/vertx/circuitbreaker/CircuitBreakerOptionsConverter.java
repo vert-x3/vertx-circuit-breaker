@@ -36,6 +36,9 @@ public class CircuitBreakerOptionsConverter {
     if (json.getValue("maxRetries") instanceof Number) {
       obj.setMaxRetries(((Number)json.getValue("maxRetries")).intValue());
     }
+    if (json.getValue("metricsRollingBuckets") instanceof Number) {
+      obj.setMetricsRollingBuckets(((Number)json.getValue("metricsRollingBuckets")).intValue());
+    }
     if (json.getValue("metricsRollingWindow") instanceof Number) {
       obj.setMetricsRollingWindow(((Number)json.getValue("metricsRollingWindow")).longValue());
     }
@@ -57,6 +60,7 @@ public class CircuitBreakerOptionsConverter {
     json.put("fallbackOnFailure", obj.isFallbackOnFailure());
     json.put("maxFailures", obj.getMaxFailures());
     json.put("maxRetries", obj.getMaxRetries());
+    json.put("metricsRollingBuckets", obj.getMetricsRollingBuckets());
     json.put("metricsRollingWindow", obj.getMetricsRollingWindow());
     if (obj.getNotificationAddress() != null) {
       json.put("notificationAddress", obj.getNotificationAddress());

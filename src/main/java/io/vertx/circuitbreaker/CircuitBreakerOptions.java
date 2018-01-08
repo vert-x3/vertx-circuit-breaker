@@ -63,6 +63,11 @@ public class CircuitBreakerOptions {
   public static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
 
   /**
+   * Default number of buckets used for the rolling window.
+   */
+  public static final int DEFAULT_METRICS_ROLLING_BUCKETS = 10;
+
+  /**
    * Default number of retries.
    */
   private static final int DEFAULT_MAX_RETRIES = 0;
@@ -105,6 +110,11 @@ public class CircuitBreakerOptions {
   private long metricsRollingWindow = DEFAULT_METRICS_ROLLING_WINDOW;
 
   /**
+   * The number of buckets used for the metric rolling window.
+   */
+  private int metricsRollingBuckets = DEFAULT_METRICS_ROLLING_BUCKETS;
+
+  /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
    */
   public CircuitBreakerOptions() {
@@ -124,6 +134,7 @@ public class CircuitBreakerOptions {
     this.notificationPeriod = other.notificationPeriod;
     this.resetTimeout = other.resetTimeout;
     this.maxRetries = other.maxRetries;
+    this.metricsRollingBuckets = other.metricsRollingBuckets;
   }
 
   /**
@@ -250,7 +261,7 @@ public class CircuitBreakerOptions {
    * current state.
    *
    * @param notificationPeriod the period, 0 to disable this feature.
-   * @return the current {@link CircuitBreaker} instance
+   * @return the current {@link CircuitBreakerOptions} instance
    */
   public CircuitBreakerOptions setNotificationPeriod(long notificationPeriod) {
     this.notificationPeriod = notificationPeriod;
@@ -268,10 +279,32 @@ public class CircuitBreakerOptions {
    * Sets the rolling window used for metrics.
    *
    * @param metricsRollingWindow the period in milliseconds.
-   * @return the current {@link CircuitBreaker} instance
+   * @return the current {@link CircuitBreakerOptions} instance
    */
   public CircuitBreakerOptions setMetricsRollingWindow(long metricsRollingWindow) {
     this.metricsRollingWindow = metricsRollingWindow;
+    return this;
+  }
+
+  /**
+   * @return the configured number of buckets the rolling window is divided into.
+   */
+  public int getMetricsRollingBuckets() {
+    return metricsRollingBuckets;
+  }
+
+  /**
+   * Sets the configured number of buckets the rolling window is divided into.
+   *
+   * The following must be true - metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0 - otherwise it will throw an exception.
+   *
+   * In other words, 10000/10 is okay, so is 10000/20 but 10000/7 is not.
+   *
+   * @param metricsRollingBuckets the number of rolling buckets.
+   * @return the current {@link CircuitBreakerOptions} instance
+   */
+  public CircuitBreakerOptions setMetricsRollingBuckets(int metricsRollingBuckets) {
+    this.metricsRollingBuckets = metricsRollingBuckets;
     return this;
   }
 
@@ -286,7 +319,7 @@ public class CircuitBreakerOptions {
    * Configures the number of times the circuit breaker tries to redo the operation before failing.
    *
    * @param maxRetries the number of retries, 0 to disable this feature.
-   * @return the current {@link CircuitBreaker} instance
+   * @return the current {@link CircuitBreakerOptions} instance
    */
   public CircuitBreakerOptions setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;

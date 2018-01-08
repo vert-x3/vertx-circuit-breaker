@@ -6,50 +6,32 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import org.HdrHistogram.Histogram;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Circuit breaker metrics.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class CircuitBreakerMetrics {
-  private final long rollingWindow;
   private final CircuitBreakerImpl circuitBreaker;
   private final String node;
 
   private final long circuitBreakerResetTimeout;
   private final long circuitBreakerTimeout;
-  private final long windowPeriodInNs;
 
   // Global statistics
 
-  private int calls = 0;
-  private int failures = 0;
-  private int success = 0;
-  private int timeout = 0;
-  private int exceptions = 0;
-
-  private List<Operation> window = new ArrayList<>();
-
-  private Histogram statistics = new Histogram(3);
+  private final RollingWindow rollingWindow;
 
   CircuitBreakerMetrics(Vertx vertx, CircuitBreakerImpl circuitBreaker, CircuitBreakerOptions options) {
     this.circuitBreaker = circuitBreaker;
     this.circuitBreakerTimeout = circuitBreaker.options().getTimeout();
     this.circuitBreakerResetTimeout = circuitBreaker.options().getResetTimeout();
-    this.rollingWindow = options.getMetricsRollingWindow();
     this.node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local";
-    this.windowPeriodInNs =  rollingWindow * 1000000;
+    this.rollingWindow = new RollingWindow(options.getMetricsRollingWindow(), options.getMetricsRollingBuckets());
   }
 
-  private synchronized List<Operation> evictOutdatedOperations() {
-    // IMPORTANT: operation.begin is in nanosecond.
-    long beginningOfTheWindow = System.nanoTime() - windowPeriodInNs;
-    // Remove the current element from the iterator and the list.
-    window.removeIf(operation -> operation.begin < beginningOfTheWindow);
-    return window;
+  private synchronized void evictOutdatedOperations() {
+    rollingWindow.updateTime();
   }
 
   public void close() {
@@ -116,7 +98,7 @@ public class CircuitBreakerMetrics {
     }
 
     long durationInMs() {
-      return (end - begin) / 1000000;
+      return (end - begin) / 1_000_000;
     }
   }
 
@@ -125,20 +107,7 @@ public class CircuitBreakerMetrics {
   }
 
   public synchronized void complete(Operation operation) {
-    window.add(operation);
-
-    // Compute global statistics
-    statistics.recordValue(operation.durationInMs());
-    calls++;
-    if (operation.exception) {
-      exceptions++;
-    } else if (operation.complete) {
-      success++;
-    } else if (operation.timeout) {
-      timeout++;
-    } else if (operation.failed) {
-      failures++;
-    }
+    rollingWindow.add(operation);
   }
 
   public synchronized JsonObject toJson() {
@@ -147,7 +116,7 @@ public class CircuitBreakerMetrics {
     // Configuration
     json.put("resetTimeout", circuitBreakerResetTimeout);
     json.put("timeout", circuitBreakerTimeout);
-    json.put("metricRollingWindow", rollingWindow);
+    json.put("metricRollingWindow", rollingWindow.getMetricRollingWindowSizeInMs());
     json.put("name", circuitBreaker.name());
     json.put("node", node);
 
@@ -156,76 +125,39 @@ public class CircuitBreakerMetrics {
     json.put("failures", circuitBreaker.failureCount());
 
     // Global metrics
-    json.put("totalErrorCount", failures + exceptions + timeout);
-    json.put("totalSuccessCount", success);
-    json.put("totalTimeoutCount", timeout);
-    json.put("totalExceptionCount", exceptions);
-    json.put("totalFailureCount", failures);
-    json.put("totalOperationCount", calls);
-    if (calls == 0) {
-      json.put("totalSuccessPercentage", 0);
-      json.put("totalErrorPercentage", 0);
-    } else {
-      json.put("totalSuccessPercentage", ((double) success / calls) * 100);
-      json.put("totalErrorPercentage", ((double) (failures + exceptions + timeout) / calls) * 100);
-    }
-
-    addLatency(json, statistics, "total");
+    addSummary(json, rollingWindow.totalSummary(), "total");
 
     // Window metrics
     evictOutdatedOperations();
-    int rollingException = 0;
-    int rollingFailure = 0;
-    int rollingSuccess = 0;
-    int rollingTimeout = 0;
-    int rollingFallbackSuccess = 0;
-    int rollingFallbackFailure = 0;
-    int rollingShortCircuited = 0;
-    Histogram rollingStatistic = new Histogram(3);
-    for (Operation op : window) {
-      rollingStatistic.recordValue(op.durationInMs());
-      if (op.complete) {
-        rollingSuccess = rollingSuccess + 1;
-      } else if (op.failed) {
-        rollingFailure = rollingFailure + 1;
-      } else if (op.exception) {
-        rollingException = rollingException + 1;
-      } else if (op.timeout) {
-        rollingTimeout = rollingTimeout + 1;
-      }
+    addSummary(json, rollingWindow.windowSummary(), "rolling");
 
-      if (op.fallbackSucceed) {
-        rollingFallbackSuccess++;
-      } else if (op.fallbackFailed) {
-        rollingFallbackFailure++;
-      }
-
-      if (op.shortCircuited) {
-        rollingShortCircuited++;
-      }
-    }
-
-    json.put("rollingOperationCount", window.size() - rollingShortCircuited);
-    json.put("rollingErrorCount", rollingException + rollingFailure + rollingTimeout);
-    json.put("rollingSuccessCount", rollingSuccess);
-    json.put("rollingTimeoutCount", rollingTimeout);
-    json.put("rollingExceptionCount", rollingException);
-    json.put("rollingFailureCount", rollingFailure);
-    if (window.size() == 0) {
-      json.put("rollingSuccessPercentage", 0);
-      json.put("rollingErrorPercentage", 0);
-    } else {
-      json.put("rollingSuccessPercentage", ((double) rollingSuccess / window.size()) * 100);
-      json.put("rollingErrorPercentage",
-        ((double) (rollingException + rollingFailure + rollingTimeout + rollingShortCircuited) / window.size()) * 100);
-    }
-
-    json.put("rollingFallbackSuccessCount", rollingFallbackSuccess);
-    json.put("rollingFallbackFailureCount", rollingFallbackFailure);
-    json.put("rollingShortCircuitedCount", rollingShortCircuited);
-
-    addLatency(json, rollingStatistic, "rolling");
     return json;
+  }
+
+  private void addSummary(JsonObject json, RollingWindow.Summary summary, String prefix) {
+    long calls = summary.count();
+    int errorCount = summary.failures + summary.exceptions + summary.timeouts;
+
+    json.put(prefix + "OperationCount", calls - summary.shortCircuited);
+    json.put(prefix + "ErrorCount", errorCount);
+    json.put(prefix + "SuccessCount", summary.successes);
+    json.put(prefix + "TimeoutCount", summary.timeouts);
+    json.put(prefix + "ExceptionCount", summary.exceptions);
+    json.put(prefix + "FailureCount", summary.failures);
+
+    if (calls == 0) {
+      json.put(prefix + "SuccessPercentage", 0);
+      json.put(prefix + "ErrorPercentage", 0);
+    } else {
+      json.put(prefix + "SuccessPercentage", ((double) summary.successes / calls) * 100);
+      json.put(prefix + "ErrorPercentage", ((double) (errorCount) / calls) * 100);
+    }
+
+    json.put(prefix + "FallbackSuccessCount", summary.fallbackSuccess);
+    json.put(prefix + "FallbackFailureCount", summary.fallbackFailure);
+    json.put(prefix + "ShortCircuitedCount", summary.shortCircuited);
+
+    addLatency(json, summary.statistics, prefix);
   }
 
 
@@ -241,5 +173,146 @@ public class CircuitBreakerMetrics {
       .put("99", histogram.getValueAtPercentile(99))
       .put("99.5", histogram.getValueAtPercentile(99.5))
       .put("100", histogram.getValueAtPercentile(100)));
+  }
+
+  private static class RollingWindow {
+    private final Summary history;
+    private final Summary[] buckets;
+    private final long bucketSizeInNs;
+
+    RollingWindow(long windowSizeInMs, int numberOfBuckets) {
+      if (windowSizeInMs % numberOfBuckets != 0) {
+        throw new IllegalArgumentException("Window size should be divisible by number of buckets.");
+      }
+      this.buckets = new Summary[numberOfBuckets];
+      for (int i = 0; i < buckets.length; i++) {
+        this.buckets[i] = new Summary();
+      }
+      this.bucketSizeInNs = 1_000_000 * windowSizeInMs / numberOfBuckets;
+      this.history = new Summary();
+    }
+
+    public void add(Operation operation) {
+      getBucket(operation.end).add(operation);
+    }
+
+    public Summary totalSummary() {
+      Summary total = new Summary();
+
+      total.add(history);
+      total.add(windowSummary());
+
+      return total;
+    }
+
+    public Summary windowSummary() {
+      Summary window = new Summary(buckets[0].bucketIndex);
+      for (Summary bucket : buckets) {
+        window.add(bucket);
+      }
+
+      return window;
+    }
+
+    public void updateTime() {
+      getBucket(System.nanoTime());
+    }
+
+    private Summary getBucket(long timeInNs) {
+      long bucketIndex = timeInNs / bucketSizeInNs;
+
+      //sample too old:
+      if (bucketIndex < buckets[0].bucketIndex) {
+        return history;
+      }
+
+      shiftIfNecessary(bucketIndex);
+
+      return buckets[(int) (bucketIndex - buckets[0].bucketIndex)];
+    }
+
+    private void shiftIfNecessary(long bucketIndex) {
+      long shiftUnlimited = bucketIndex - buckets[buckets.length - 1].bucketIndex;
+      if (shiftUnlimited <= 0) {
+        return;
+      }
+      int shift = (int) Long.min(buckets.length, shiftUnlimited);
+
+      // Add old buckets to history
+      for(int i = 0; i < shift; i++) {
+        history.add(buckets[i]);
+      }
+
+      System.arraycopy(buckets, shift, buckets, 0, buckets.length - shift);
+
+      for(int i = buckets.length - shift; i < buckets.length; i++) {
+        buckets[i] = new Summary(bucketIndex + i + 1 - buckets.length);
+      }
+    }
+
+    public long getMetricRollingWindowSizeInMs() {
+      return bucketSizeInNs * buckets.length / 1_000_000;
+    }
+
+    private static class Summary {
+      final long bucketIndex;
+      final Histogram statistics;
+
+      private int successes;
+      private int failures;
+      private int exceptions;
+      private int timeouts;
+      private int fallbackSuccess;
+      private int fallbackFailure;
+      private int shortCircuited;
+
+      private Summary() {
+        this(-1);
+      }
+
+      private Summary(long bucketIndex) {
+        this.bucketIndex = bucketIndex;
+        statistics = new Histogram(2);
+      }
+
+      public void add(Summary other) {
+        statistics.add(other.statistics);
+
+        successes += other.successes;
+        failures += other.failures;
+        exceptions += other.exceptions;
+        timeouts += other.timeouts;
+        fallbackSuccess += other.fallbackSuccess ;
+        fallbackFailure += other.fallbackFailure ;
+        shortCircuited += other.shortCircuited ;
+      }
+
+      public void add(Operation operation) {
+        statistics.recordValue(operation.durationInMs());
+        if (operation.complete) {
+          successes++;
+        } else if (operation.failed) {
+          failures++;
+        } else if (operation.exception) {
+          exceptions++;
+        } else if (operation.timeout) {
+          timeouts++;
+        }
+
+        if (operation.fallbackSucceed) {
+          fallbackSuccess++;
+        } else if (operation.fallbackFailed) {
+          fallbackFailure++;
+        }
+
+        if (operation.shortCircuited) {
+          shortCircuited++;
+        }
+      }
+
+      public long count() {
+        return statistics.getTotalCount();
+      }
+    }
   }
 }
