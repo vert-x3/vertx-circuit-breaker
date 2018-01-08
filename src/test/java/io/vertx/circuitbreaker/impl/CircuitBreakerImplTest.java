@@ -860,4 +860,11 @@ public class CircuitBreakerImplTest {
 
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testInvalidBucketSize() {
+    CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setMetricsRollingBuckets(7);
+    CircuitBreaker.create("test", vertx, options);
+  }
+
 }
