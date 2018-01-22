@@ -102,6 +102,9 @@ public class CircuitBreakerOptions {
    */
   private long notificationPeriod = DEFAULT_NOTIFICATION_PERIOD;
 
+  /**
+   * The number of retries
+   */
   private int maxRetries = DEFAULT_MAX_RETRIES;
 
   /**
@@ -135,6 +138,7 @@ public class CircuitBreakerOptions {
     this.resetTimeout = other.resetTimeout;
     this.maxRetries = other.maxRetries;
     this.metricsRollingBuckets = other.metricsRollingBuckets;
+    this.metricsRollingWindow = other.metricsRollingWindow;
   }
 
   /**
