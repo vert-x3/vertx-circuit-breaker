@@ -22,6 +22,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -94,7 +95,7 @@ public class UsageTest {
         },
         t -> null
     ).setHandler(ar -> json.set(ar.result()));
-    await().untilAtomic(json, is(notNullValue()));
+    await().atMost(1, TimeUnit.MINUTES).untilAtomic(json, is(notNullValue()));
     assertThat(json.get().getString("status")).isEqualTo("OK");
 
     json.set(null);
