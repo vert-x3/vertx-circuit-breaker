@@ -96,4 +96,27 @@ public class NumberOfRetryTest {
     await().untilAtomic(counter, is(6));
   }
 
+  @Test
+  public void testWithRetryPolicy() {
+    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
+      new CircuitBreakerOptions().setMaxFailures(5).setMaxRetries(5));
+    AtomicInteger counter = new AtomicInteger();
+    AtomicInteger retryPolicyCounter = new AtomicInteger();
+
+    breaker.retryPolicy(retry -> {
+      retryPolicyCounter.incrementAndGet();
+      return retry * 100;
+    });
+
+    breaker.execute(future -> {
+      counter.incrementAndGet();
+      future.fail("FAILED");
+    }).setHandler(ar -> {
+
+    });
+
+    await().untilAtomic(counter, is(6));
+    await().untilAtomic(retryPolicyCounter, is(5));
+  }
+
 }
