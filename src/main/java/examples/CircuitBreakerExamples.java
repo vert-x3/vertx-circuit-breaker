@@ -191,4 +191,26 @@ public class CircuitBreakerExamples {
       .listen(8080);
 
   }
+
+  public void example8(Vertx vertx) {
+    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
+      new CircuitBreakerOptions().setMaxFailures(5).setMaxRetries(5).setTimeout(2000)
+    ).openHandler(v -> {
+      System.out.println("Circuit opened");
+    }).closeHandler(v -> {
+      System.out.println("Circuit closed");
+    }).retryPolicy(retryCount -> retryCount * 100);
+
+    breaker.execute(
+      future -> {
+        vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
+          if (response.statusCode() != 200) {
+            future.fail("HTTP error");
+          } else {
+            // Do something with the response
+            future.complete();
+          }
+        });
+      });
+  }
 }
