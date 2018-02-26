@@ -19,7 +19,6 @@ package examples.hystrix;
 import com.netflix.hystrix.HystrixCommand;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import rx.Observer;
 
 /**
  * Examples for Hystrix
