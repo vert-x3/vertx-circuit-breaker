@@ -26,7 +26,7 @@ import io.vertx.ext.web.Router;
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class Examples {
+public class CircuitBreakerExamples {
 
   //TODO Change method name
   //TODO update documentation

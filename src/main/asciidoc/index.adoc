@@ -46,7 +46,7 @@ Here is an example:
 
 [source,$lang]
 ----
-{@link examples.Examples#example1(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example1(io.vertx.core.Vertx)}
 ----
 
 The executed block receives a {@link io.vertx.core.Future} object as parameter, to denote the
@@ -55,7 +55,7 @@ output of a REST endpoint invocation:
 
 [source,$lang]
 ----
-{@link examples.Examples#example2(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example2(io.vertx.core.Vertx)}
 ----
 
 The result of the operation is provided using the:
@@ -67,7 +67,7 @@ Optionally, you can provide a fallback which is executed when the circuit is ope
 
 [source,$lang]
 ----
-{@link examples.Examples#example3(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example3(io.vertx.core.Vertx)}
 ----
 
 The fallback is called whenever the circuit is open, or if the
@@ -79,7 +79,7 @@ The fallback can also be set on the {@link io.vertx.circuitbreaker.CircuitBreake
 
 [source,$lang]
 ----
-{@link examples.Examples#example4(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example4(io.vertx.core.Vertx)}
 ----
 
 You can also specify how often the circuit breaker should try your code before failing with
@@ -97,7 +97,7 @@ You can also configures callbacks invoked when the circuit is opened or closed:
 
 [source,$lang]
 ----
-{@link examples.Examples#example5(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example5(io.vertx.core.Vertx)}
 ----
 
 You can also be notified when the circuit breaker decides to attempt to reset (half-open state). You can register
@@ -138,7 +138,7 @@ a SSE stream sending the metrics. This stream is provided by the
 
 [source,$lang]
 ----
-{@link examples.Examples#example7(io.vertx.core.Vertx)}
+{@link examples.CircuitBreakerExamples#example7(io.vertx.core.Vertx)}
 ----
 
 In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
