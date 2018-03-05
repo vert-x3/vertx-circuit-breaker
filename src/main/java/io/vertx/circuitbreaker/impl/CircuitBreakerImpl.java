@@ -19,7 +19,6 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -58,7 +57,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private final AtomicInteger passed = new AtomicInteger();
 
   private CircuitBreakerMetrics metrics;
-  private RetryPolicy retryPolicy = retry -> 0;
+  private Function<Integer, Long> retryPolicy = retry -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
@@ -312,7 +311,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private void executeRetryWithTimeout(int retryCount, Handler<Void> action) {
-    long retryTimeout = retryPolicy.getTimeout(retryCount + 1);
+    long retryTimeout = retryPolicy.apply(retryCount + 1);
 
     if (retryTimeout > 0) {
       vertx.setTimer(retryTimeout, (l) -> {
@@ -439,7 +438,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
+  public CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }

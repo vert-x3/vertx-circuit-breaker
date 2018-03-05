@@ -199,7 +199,7 @@ public class CircuitBreakerExamples {
       System.out.println("Circuit opened");
     }).closeHandler(v -> {
       System.out.println("Circuit closed");
-    }).retryPolicy(retryCount -> retryCount * 100);
+    }).retryPolicy(retryCount -> retryCount * 100L);
 
     breaker.execute(
       future -> {

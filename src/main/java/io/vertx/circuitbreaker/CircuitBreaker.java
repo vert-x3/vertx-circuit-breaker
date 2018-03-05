@@ -234,5 +234,5 @@ public interface CircuitBreaker {
   String name();
 
   @Fluent
-  CircuitBreaker retryPolicy(RetryPolicy retryPolicy);
+  CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
 }

@@ -105,7 +105,7 @@ public class NumberOfRetryTest {
 
     breaker.retryPolicy(retry -> {
       retryPolicyCounter.incrementAndGet();
-      return retry * 100;
+      return retry * 100L;
     });
 
     breaker.execute(future -> {
