@@ -395,7 +395,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void incrementFailures() {
-	rollingFailures.inc();
+	rollingFailures.increment();
     if (rollingFailures.count() >= options.getMaxFailures()) {
       if (state != CircuitBreakerState.OPEN) {
         open();
@@ -434,8 +434,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         this.timeUnitsInWindow = timeUnitsInWindow;
     }
 
-    public void inc() {
-    	//long second = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    public void increment() {
     	long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
     	Long current = window.getOrDefault(timeSlot, 0L);
     	window.put(timeSlot, ++current);
@@ -449,8 +448,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     public long count() {
-    	long nowMinusTenUnits = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(10), TimeUnit.MILLISECONDS);
-    	return window.entrySet().stream().filter(entry -> entry.getKey() > nowMinusTenUnits).mapToLong(entry -> entry.getValue()).sum();
+    	long windowStartTime = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(timeUnitsInWindow), TimeUnit.MILLISECONDS);
+    	return window.entrySet().stream().filter(entry -> entry.getKey() >= windowStartTime).mapToLong(entry -> entry.getValue()).sum();
     }
     
     public void reset() {
