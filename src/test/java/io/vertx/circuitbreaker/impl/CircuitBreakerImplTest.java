@@ -33,9 +33,11 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -153,6 +155,21 @@ public class CircuitBreakerImplTest {
 
     await().until(called::get);
     await().untilAtomic(result, is("hello"));
+  }
+  
+  @Test
+  public void testRollingWindowFailuresAreDecreased() {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
+    														.setMaxFailures(10));
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    IntStream.range(0,  9).forEach(i -> breaker.execute(v -> v.fail(new RuntimeException("oh no, but this is expected"))));
+    await().until(() -> breaker.failureCount() == 9);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    await().atMost(11, TimeUnit.SECONDS).until(() -> breaker.failureCount() < 9);
+    
+    assertThat(breaker.failureCount()).isLessThan(9);    
   }
 
   @Test

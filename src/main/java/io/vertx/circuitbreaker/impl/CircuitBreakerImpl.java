@@ -16,6 +16,14 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
@@ -23,10 +31,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -48,7 +52,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private Function fallback = null;
 
   private CircuitBreakerState state = CircuitBreakerState.CLOSED;
-  private long failures = 0;
+  private RollingCounter rollingFailures;
+  
   private final AtomicInteger passed = new AtomicInteger();
 
   private CircuitBreakerMetrics metrics;
@@ -66,7 +71,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     this.metrics = new CircuitBreakerMetrics(vertx, this, options);
-
+    this.rollingFailures = new RollingCounter(options.getFailuresRollingWindow(), TimeUnit.MILLISECONDS);
+    
     sendUpdateOnEventBus();
 
     if (this.options.getNotificationPeriod() > 0) {
@@ -121,7 +127,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    * @return the current circuit breaker.
    */
   public synchronized CircuitBreaker reset(boolean force) {
-    failures = 0;
+	rollingFailures.reset();
 
     if (state == CircuitBreakerState.CLOSED) {
       // Do nothing else.
@@ -168,7 +174,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public synchronized long failureCount() {
-    return failures;
+	return rollingFailures.count();
   }
 
   @Override
@@ -389,8 +395,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void incrementFailures() {
-    failures++;
-    if (failures >= options.getMaxFailures()) {
+	rollingFailures.inc();
+    if (rollingFailures.count() >= options.getMaxFailures()) {
       if (state != CircuitBreakerState.OPEN) {
         open();
       } else {
@@ -415,5 +421,40 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   public CircuitBreakerOptions options() {
     return options;
+  }
+  
+  public static class RollingCounter {		
+    private Map<Long, Long> window;
+    private long timeUnitsInWindow;
+	private TimeUnit windowTimeUnit;
+    
+    public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
+        this.windowTimeUnit = windowTimeUnit;
+		this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);	       
+        this.timeUnitsInWindow = timeUnitsInWindow;
+    }
+
+    public void inc() {
+    	//long second = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    	long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+    	Long current = window.getOrDefault(timeSlot, 0L);
+    	window.put(timeSlot, ++current);
+    	
+    	if (window.size() > timeUnitsInWindow){
+	    	Iterator<Long> iterator = window.keySet().iterator();
+	        if (iterator.hasNext()){
+	        	window.remove(iterator.next());
+	        }
+    	}
+    }
+
+    public long count() {
+    	long nowMinusTenUnits = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(10), TimeUnit.MILLISECONDS);
+    	return window.entrySet().stream().filter(entry -> entry.getKey() > nowMinusTenUnits).mapToLong(entry -> entry.getValue()).sum();
+    }
+    
+    public void reset() {
+    	window.clear();
+    }
   }
 }
