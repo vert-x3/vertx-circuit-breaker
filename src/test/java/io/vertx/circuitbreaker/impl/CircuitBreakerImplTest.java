@@ -160,7 +160,8 @@ public class CircuitBreakerImplTest {
   @Test
   public void testRollingWindowFailuresAreDecreased() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
-    														.setMaxFailures(10));
+    														.setMaxFailures(10)
+    														.setFailuresRollingWindow(10000));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     IntStream.range(0,  9).forEach(i -> breaker.execute(v -> v.fail(new RuntimeException("oh no, but this is expected"))));

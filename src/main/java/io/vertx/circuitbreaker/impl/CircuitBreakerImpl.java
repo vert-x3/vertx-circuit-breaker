@@ -71,7 +71,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     this.metrics = new CircuitBreakerMetrics(vertx, this, options);
-    this.rollingFailures = new RollingCounter(options.getFailuresRollingWindow(), TimeUnit.MILLISECONDS);
+    this.rollingFailures = new RollingCounter(options.getFailuresRollingWindow() / 1000, TimeUnit.SECONDS);
     
     sendUpdateOnEventBus();
 
