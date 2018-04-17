@@ -127,7 +127,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    * @return the current circuit breaker.
    */
   public synchronized CircuitBreaker reset(boolean force) {
-	rollingFailures.reset();
+  rollingFailures.reset();
 
     if (state == CircuitBreakerState.CLOSED) {
       // Do nothing else.
@@ -174,7 +174,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public synchronized long failureCount() {
-	return rollingFailures.count();
+  return rollingFailures.count();
   }
 
   @Override
@@ -395,7 +395,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void incrementFailures() {
-	rollingFailures.increment();
+  rollingFailures.increment();
     if (rollingFailures.count() >= options.getMaxFailures()) {
       if (state != CircuitBreakerState.OPEN) {
         open();
@@ -423,37 +423,37 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return options;
   }
   
-  public static class RollingCounter {		
+  public static class RollingCounter {
     private Map<Long, Long> window;
     private long timeUnitsInWindow;
-	private TimeUnit windowTimeUnit;
+    private TimeUnit windowTimeUnit;
     
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
-        this.windowTimeUnit = windowTimeUnit;
-		this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);	       
-        this.timeUnitsInWindow = timeUnitsInWindow;
+      this.windowTimeUnit = windowTimeUnit;
+      this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);
+      this.timeUnitsInWindow = timeUnitsInWindow;
     }
 
     public void increment() {
-    	long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-    	Long current = window.getOrDefault(timeSlot, 0L);
-    	window.put(timeSlot, ++current);
-    	
-    	if (window.size() > timeUnitsInWindow){
-	    	Iterator<Long> iterator = window.keySet().iterator();
-	        if (iterator.hasNext()){
-	        	window.remove(iterator.next());
-	        }
-    	}
+      long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+      Long current = window.getOrDefault(timeSlot, 0L);
+      window.put(timeSlot, ++current);
+      
+      if (window.size() > timeUnitsInWindow){
+        Iterator<Long> iterator = window.keySet().iterator();
+          if (iterator.hasNext()){
+            window.remove(iterator.next());
+          }
+      }
     }
 
     public long count() {
-    	long windowStartTime = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(timeUnitsInWindow), TimeUnit.MILLISECONDS);
-    	return window.entrySet().stream().filter(entry -> entry.getKey() >= windowStartTime).mapToLong(entry -> entry.getValue()).sum();
+      long windowStartTime = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(timeUnitsInWindow), TimeUnit.MILLISECONDS);
+      return window.entrySet().stream().filter(entry -> entry.getKey() >= windowStartTime).mapToLong(entry -> entry.getValue()).sum();
     }
     
     public void reset() {
-    	window.clear();
+      window.clear();
     }
   }
 }

@@ -170,7 +170,7 @@ public class CircuitBreakerImplTest {
 
     await().atMost(11, TimeUnit.SECONDS).until(() -> breaker.failureCount() < 9);
     
-    assertThat(breaker.failureCount()).isLessThan(9);    
+    assertThat(breaker.failureCount()).isLessThan(9);
   }
 
   @Test
