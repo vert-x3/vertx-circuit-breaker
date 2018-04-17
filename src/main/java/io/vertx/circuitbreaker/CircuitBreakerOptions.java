@@ -73,6 +73,11 @@ public class CircuitBreakerOptions {
   private static final int DEFAULT_MAX_RETRIES = 0;
 
   /**
+   * The default rolling window span in milliseconds.
+   */
+  private static final int DEFAULT_FAILURES_ROLLING_WINDOW = 10000;
+  
+  /**
    * The operation timeout.
    */
   private long timeout = DEFAULT_TIMEOUT;
@@ -116,6 +121,11 @@ public class CircuitBreakerOptions {
    * The number of buckets used for the metric rolling window.
    */
   private int metricsRollingBuckets = DEFAULT_METRICS_ROLLING_BUCKETS;
+  
+  /**
+   * The failure rolling window in ms.
+   */
+  private long failuresRollingWindow = DEFAULT_FAILURES_ROLLING_WINDOW;
 
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
@@ -139,6 +149,7 @@ public class CircuitBreakerOptions {
     this.maxRetries = other.maxRetries;
     this.metricsRollingBuckets = other.metricsRollingBuckets;
     this.metricsRollingWindow = other.metricsRollingWindow;
+    this.failuresRollingWindow = other.failuresRollingWindow;
   }
 
   /**
@@ -290,6 +301,24 @@ public class CircuitBreakerOptions {
     return this;
   }
 
+  /**
+   * @return the configured rolling window for failures.
+   */
+  public long getFailuresRollingWindow() {
+    return failuresRollingWindow;
+  }
+  
+  /**
+   * Sets the rolling window used for metrics.
+   *
+   * @param metricsRollingWindow the period in milliseconds.
+   * @return the current {@link CircuitBreakerOptions} instance
+   */
+  public CircuitBreakerOptions setFailuresRollingWindow(long failureRollingWindow) {
+    this.failuresRollingWindow = failureRollingWindow;
+    return this;
+  }
+  
   /**
    * @return the configured number of buckets the rolling window is divided into.
    */
