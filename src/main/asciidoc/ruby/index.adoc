@@ -26,7 +26,7 @@ descriptor:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>3.5.2.CR1</version>
+  <version>3.5.2.CR2</version>
 </dependency>
 ----
 
@@ -34,7 +34,7 @@ descriptor:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-circuit-breaker:3.5.2.CR1'
+compile 'io.vertx:vertx-circuit-breaker:3.5.2.CR2'
 ----
 
 == Using the circuit breaker
