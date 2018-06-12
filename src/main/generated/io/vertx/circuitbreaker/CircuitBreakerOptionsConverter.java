@@ -1,62 +1,78 @@
-/*
- * Copyright (c) 2014 Red Hat, Inc. and others
- *
- * Red Hat licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package io.vertx.circuitbreaker;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
- *
- * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link "io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
  */
 public class CircuitBreakerOptionsConverter {
 
-  public static void fromJson(JsonObject json, CircuitBreakerOptions obj) {
-    if (json.getValue("fallbackOnFailure") instanceof Boolean) {
-      obj.setFallbackOnFailure((Boolean)json.getValue("fallbackOnFailure"));
-    }
-    if (json.getValue("maxFailures") instanceof Number) {
-      obj.setMaxFailures(((Number)json.getValue("maxFailures")).intValue());
-    }
-    if (json.getValue("maxRetries") instanceof Number) {
-      obj.setMaxRetries(((Number)json.getValue("maxRetries")).intValue());
-    }
-    if (json.getValue("metricsRollingBuckets") instanceof Number) {
-      obj.setMetricsRollingBuckets(((Number)json.getValue("metricsRollingBuckets")).intValue());
-    }
-    if (json.getValue("metricsRollingWindow") instanceof Number) {
-      obj.setMetricsRollingWindow(((Number)json.getValue("metricsRollingWindow")).longValue());
-    }
-    if (json.getValue("notificationAddress") instanceof String) {
-      obj.setNotificationAddress((String)json.getValue("notificationAddress"));
-    }
-    if (json.getValue("notificationPeriod") instanceof Number) {
-      obj.setNotificationPeriod(((Number)json.getValue("notificationPeriod")).longValue());
-    }
-    if (json.getValue("resetTimeout") instanceof Number) {
-      obj.setResetTimeout(((Number)json.getValue("resetTimeout")).longValue());
-    }
-    if (json.getValue("timeout") instanceof Number) {
-      obj.setTimeout(((Number)json.getValue("timeout")).longValue());
+  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CircuitBreakerOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : json) {
+      switch (member.getKey()) {
+        case "failuresRollingWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setFailuresRollingWindow(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "fallbackOnFailure":
+          if (member.getValue() instanceof Boolean) {
+            obj.setFallbackOnFailure((Boolean)member.getValue());
+          }
+          break;
+        case "maxFailures":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFailures(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxRetries":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxRetries(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "metricsRollingBuckets":
+          if (member.getValue() instanceof Number) {
+            obj.setMetricsRollingBuckets(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "metricsRollingWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setMetricsRollingWindow(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "notificationAddress":
+          if (member.getValue() instanceof String) {
+            obj.setNotificationAddress((String)member.getValue());
+          }
+          break;
+        case "notificationPeriod":
+          if (member.getValue() instanceof Number) {
+            obj.setNotificationPeriod(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "resetTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setResetTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "timeout":
+          if (member.getValue() instanceof Number) {
+            obj.setTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+      }
     }
   }
 
   public static void toJson(CircuitBreakerOptions obj, JsonObject json) {
+    toJson(obj, json.getMap());
+  }
+
+  public static void toJson(CircuitBreakerOptions obj, java.util.Map<String, Object> json) {
+    json.put("failuresRollingWindow", obj.getFailuresRollingWindow());
     json.put("fallbackOnFailure", obj.isFallbackOnFailure());
     json.put("maxFailures", obj.getMaxFailures());
     json.put("maxRetries", obj.getMaxRetries());
@@ -69,4 +85,5 @@ public class CircuitBreakerOptionsConverter {
     json.put("resetTimeout", obj.getResetTimeout());
     json.put("timeout", obj.getTimeout());
   }
+
 }

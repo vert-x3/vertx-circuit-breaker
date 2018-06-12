@@ -31,6 +31,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.NoStackTraceThrowable;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -40,6 +41,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private static final Handler<Void> NOOP = (v) -> {
     // Nothing...
   };
+
+  private static final String OPEN_CIRCUIT_MESSAGE = "open circuit";
 
   private final Vertx vertx;
   private final CircuitBreakerOptions options;
@@ -53,7 +56,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   private CircuitBreakerState state = CircuitBreakerState.CLOSED;
   private RollingCounter rollingFailures;
-  
+
   private final AtomicInteger passed = new AtomicInteger();
 
   private CircuitBreakerMetrics metrics;
@@ -72,7 +75,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     this.metrics = new CircuitBreakerMetrics(vertx, this, options);
     this.rollingFailures = new RollingCounter(options.getFailuresRollingWindow() / 1000, TimeUnit.SECONDS);
-    
+
     sendUpdateOnEventBus();
 
     if (this.options.getNotificationPeriod() > 0) {
@@ -239,7 +242,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       call.shortCircuited();
-      invokeFallback(new RuntimeException("open circuit"), userFuture, fallback, call);
+      invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
@@ -262,7 +265,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       } else {
         // Not selected, fallback.
         call.shortCircuited();
-        invokeFallback(new RuntimeException("open circuit"), userFuture, fallback, call);
+        invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
       }
     }
     return this;
@@ -295,14 +298,10 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           });
 
         } else {
-          context.runOnContext(v -> {
-            executeOperation(context, command, operationResult, call);
-          });
+          context.runOnContext(v -> executeOperation(context, command, operationResult, call));
         }
       } else {
-        context.runOnContext(v -> {
-          operationResult.fail(new RuntimeException("open circuit"));
-        });
+        context.runOnContext(v -> operationResult.fail(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE)));
       }
     });
     return retry;
@@ -422,12 +421,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public CircuitBreakerOptions options() {
     return options;
   }
-  
+
   public static class RollingCounter {
     private Map<Long, Long> window;
     private long timeUnitsInWindow;
     private TimeUnit windowTimeUnit;
-    
+
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
       this.windowTimeUnit = windowTimeUnit;
       this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);
@@ -438,7 +437,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
       Long current = window.getOrDefault(timeSlot, 0L);
       window.put(timeSlot, ++current);
-      
+
       if (window.size() > timeUnitsInWindow){
         Iterator<Long> iterator = window.keySet().iterator();
           if (iterator.hasNext()){
@@ -451,7 +450,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       long windowStartTime = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(timeUnitsInWindow), TimeUnit.MILLISECONDS);
       return window.entrySet().stream().filter(entry -> entry.getKey() >= windowStartTime).mapToLong(entry -> entry.getValue()).sum();
     }
-    
+
     public void reset() {
       window.clear();
     }
