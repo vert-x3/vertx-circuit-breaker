@@ -16,6 +16,12 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.*;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,15 +29,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.impl.NoStackTraceThrowable;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -41,8 +38,6 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private static final Handler<Void> NOOP = (v) -> {
     // Nothing...
   };
-
-  private static final String OPEN_CIRCUIT_MESSAGE = "open circuit";
 
   private final Vertx vertx;
   private final CircuitBreakerOptions options;
@@ -242,7 +237,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       call.shortCircuited();
-      invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
+      invokeFallback(new OpenCircuitException(), userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
@@ -265,7 +260,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       } else {
         // Not selected, fallback.
         call.shortCircuited();
-        invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
+        invokeFallback(new OpenCircuitException(), userFuture, fallback, call);
       }
     }
     return this;
@@ -301,7 +296,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           context.runOnContext(v -> executeOperation(context, command, operationResult, call));
         }
       } else {
-        context.runOnContext(v -> operationResult.fail(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE)));
+        context.runOnContext(v -> operationResult.fail(new OpenCircuitException()));
       }
     });
     return retry;
@@ -336,7 +331,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             if (call != null) {
               call.timeout();
             }
-            operationResult.fail("operation timeout");
+            operationResult.fail(new TimeoutException());
           }
           // Else  Operation has completed
         });
