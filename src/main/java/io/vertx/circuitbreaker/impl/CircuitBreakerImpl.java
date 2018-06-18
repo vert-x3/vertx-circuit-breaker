@@ -125,7 +125,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    * @return the current circuit breaker.
    */
   public synchronized CircuitBreaker reset(boolean force) {
-  rollingFailures.reset();
+    rollingFailures.reset();
 
     if (state == CircuitBreakerState.CLOSED) {
       // Do nothing else.
@@ -172,7 +172,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public synchronized long failureCount() {
-  return rollingFailures.count();
+    return rollingFailures.count();
   }
 
   @Override
@@ -237,7 +237,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       call.shortCircuited();
-      invokeFallback(new OpenCircuitException(), userFuture, fallback, call);
+      invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
@@ -260,7 +260,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       } else {
         // Not selected, fallback.
         call.shortCircuited();
-        invokeFallback(new OpenCircuitException(), userFuture, fallback, call);
+        invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
       }
     }
     return this;
@@ -296,7 +296,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           context.runOnContext(v -> executeOperation(context, command, operationResult, call));
         }
       } else {
-        context.runOnContext(v -> operationResult.fail(new OpenCircuitException()));
+        context.runOnContext(v -> operationResult.fail(OpenCircuitException.INSTANCE));
       }
     });
     return retry;
@@ -331,7 +331,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             if (call != null) {
               call.timeout();
             }
-            operationResult.fail(new TimeoutException());
+            operationResult.fail(TimeoutException.INSTANCE);
           }
           // Else  Operation has completed
         });
@@ -389,7 +389,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void incrementFailures() {
-  rollingFailures.increment();
+    rollingFailures.increment();
     if (rollingFailures.count() >= options.getMaxFailures()) {
       if (state != CircuitBreakerState.OPEN) {
         open();
@@ -424,7 +424,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
       this.windowTimeUnit = windowTimeUnit;
-      this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);
+      this.window = new LinkedHashMap<>((int) timeUnitsInWindow + 1);
       this.timeUnitsInWindow = timeUnitsInWindow;
     }
 
@@ -433,11 +433,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       Long current = window.getOrDefault(timeSlot, 0L);
       window.put(timeSlot, ++current);
 
-      if (window.size() > timeUnitsInWindow){
+      if (window.size() > timeUnitsInWindow) {
         Iterator<Long> iterator = window.keySet().iterator();
-          if (iterator.hasNext()){
-            window.remove(iterator.next());
-          }
+        if (iterator.hasNext()) {
+          window.remove(iterator.next());
+        }
       }
     }
 
