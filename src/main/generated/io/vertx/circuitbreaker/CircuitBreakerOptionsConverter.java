@@ -2,7 +2,6 @@ package io.vertx.circuitbreaker;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import java.util.Objects;
 
 /**
  * Converter for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
@@ -85,5 +84,4 @@ public class CircuitBreakerOptionsConverter {
     json.put("resetTimeout", obj.getResetTimeout());
     json.put("timeout", obj.getTimeout());
   }
-
 }

@@ -16,9 +16,7 @@
 
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.CircuitBreakerState;
+import io.vertx.circuitbreaker.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -156,7 +154,7 @@ public class CircuitBreakerImplTest {
     await().until(called::get);
     await().untilAtomic(result, is("hello"));
   }
-  
+
   @Test
   public void testRollingWindowFailuresAreDecreased() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
@@ -169,7 +167,7 @@ public class CircuitBreakerImplTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     await().atMost(11, TimeUnit.SECONDS).until(() -> breaker.failureCount() < 9);
-    
+
     assertThat(breaker.failureCount()).isLessThan(9);
   }
 
@@ -629,7 +627,9 @@ public class CircuitBreakerImplTest {
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isNotNull().hasMessage("open circuit");
+      assertThat(ar.cause()).isNotNull()
+        .isInstanceOf(OpenCircuitException.class)
+        .hasMessage("open circuit");
     });
 
     ((CircuitBreakerImpl) breaker).reset(true);
@@ -648,6 +648,7 @@ public class CircuitBreakerImplTest {
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
+      assertThat(ar.cause()).isInstanceOf(TimeoutException.class);
       assertThat(ar.cause()).isNotNull().hasMessage("operation timeout");
     });
   }
@@ -727,7 +728,9 @@ public class CircuitBreakerImplTest {
       }
     });
     await().until(() -> failures.size() == 1);
-    failures.forEach(ar -> assertThat(ar).isNotNull().hasMessage("operation timeout"));
+    failures.forEach(ar -> assertThat(ar).isNotNull()
+      .isInstanceOf(TimeoutException.class)
+      .hasMessage("operation timeout"));
 
     ((CircuitBreakerImpl) breaker).reset(true);
 
@@ -848,7 +851,9 @@ public class CircuitBreakerImplTest {
 
 
     await().until(() -> failures.size() == 1);
-    failures.forEach(ar -> assertThat(ar).isNotNull().hasMessage("operation timeout"));
+    failures.forEach(ar -> assertThat(ar).isNotNull()
+      .isInstanceOf(TimeoutException.class)
+      .hasMessage("operation timeout"));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     ((CircuitBreakerImpl) breaker).reset(true);

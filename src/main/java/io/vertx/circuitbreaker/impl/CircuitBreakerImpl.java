@@ -16,6 +16,12 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.*;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,15 +29,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.impl.NoStackTraceThrowable;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -41,8 +38,6 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private static final Handler<Void> NOOP = (v) -> {
     // Nothing...
   };
-
-  private static final String OPEN_CIRCUIT_MESSAGE = "open circuit";
 
   private final Vertx vertx;
   private final CircuitBreakerOptions options;
@@ -130,7 +125,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    * @return the current circuit breaker.
    */
   public synchronized CircuitBreaker reset(boolean force) {
-  rollingFailures.reset();
+    rollingFailures.reset();
 
     if (state == CircuitBreakerState.CLOSED) {
       // Do nothing else.
@@ -177,7 +172,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public synchronized long failureCount() {
-  return rollingFailures.count();
+    return rollingFailures.count();
   }
 
   @Override
@@ -242,7 +237,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
       call.shortCircuited();
-      invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
+      invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.setHandler(event -> {
@@ -265,7 +260,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       } else {
         // Not selected, fallback.
         call.shortCircuited();
-        invokeFallback(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE), userFuture, fallback, call);
+        invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
       }
     }
     return this;
@@ -301,7 +296,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           context.runOnContext(v -> executeOperation(context, command, operationResult, call));
         }
       } else {
-        context.runOnContext(v -> operationResult.fail(new NoStackTraceThrowable(OPEN_CIRCUIT_MESSAGE)));
+        context.runOnContext(v -> operationResult.fail(OpenCircuitException.INSTANCE));
       }
     });
     return retry;
@@ -336,7 +331,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             if (call != null) {
               call.timeout();
             }
-            operationResult.fail("operation timeout");
+            operationResult.fail(TimeoutException.INSTANCE);
           }
           // Else  Operation has completed
         });
@@ -394,7 +389,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void incrementFailures() {
-  rollingFailures.increment();
+    rollingFailures.increment();
     if (rollingFailures.count() >= options.getMaxFailures()) {
       if (state != CircuitBreakerState.OPEN) {
         open();
@@ -429,7 +424,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
       this.windowTimeUnit = windowTimeUnit;
-      this.window = new LinkedHashMap<>((int)timeUnitsInWindow + 1);
+      this.window = new LinkedHashMap<>((int) timeUnitsInWindow + 1);
       this.timeUnitsInWindow = timeUnitsInWindow;
     }
 
@@ -438,11 +433,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       Long current = window.getOrDefault(timeSlot, 0L);
       window.put(timeSlot, ++current);
 
-      if (window.size() > timeUnitsInWindow){
+      if (window.size() > timeUnitsInWindow) {
         Iterator<Long> iterator = window.keySet().iterator();
-          if (iterator.hasNext()){
-            window.remove(iterator.next());
-          }
+        if (iterator.hasNext()) {
+          window.remove(iterator.next());
+        }
       }
     }
 
