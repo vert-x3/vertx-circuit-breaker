@@ -95,5 +95,4 @@ public class NumberOfRetryTest {
 
     await().untilAtomic(counter, is(6));
   }
-
 }
