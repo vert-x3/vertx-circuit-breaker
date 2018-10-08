@@ -2,10 +2,12 @@ package io.vertx.circuitbreaker;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Converter for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
- * NOTE: This class has been automatically generated from the {@link "io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
  */
 public class CircuitBreakerOptionsConverter {
 
