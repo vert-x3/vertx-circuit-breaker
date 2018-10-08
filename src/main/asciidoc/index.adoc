@@ -42,6 +42,9 @@ To use the circuit breaker you need to:
 1. Create a circuit breaker, with the configuration you want (timeout, number of failure before opening the circuit)
 2. Execute some code using the breaker
 
+**Important**: Don't recreate a circuit breaker on every call. A circuit breaker is a staful entity. It is recommended
+to store the circuit breaker instance in a field.
+
 Here is an example:
 
 [source,$lang]
