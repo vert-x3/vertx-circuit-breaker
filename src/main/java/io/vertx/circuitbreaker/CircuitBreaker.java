@@ -232,4 +232,7 @@ public interface CircuitBreaker {
    */
   @CacheReturn
   String name();
+
+  @Fluent
+  CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
 }
