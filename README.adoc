@@ -1,6 +1,6 @@
 = Vert.x Circuit Breaker
 
-image:https://travis-ci.org/vert-x3/vertx-circuit-breaker.svg?branch=master?branch=master["Build Status",link="https://travis-ci.org/vert-x3/vertx-circuit-breaker"]
+image:https://travis-ci.org/vert-x3/vertx-circuit-breaker.svg?branch=master["Build Status", link="https://travis-ci.org/vert-x3/vertx-circuit-breaker"]
 
 Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. More details on this pattern on https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern
 
