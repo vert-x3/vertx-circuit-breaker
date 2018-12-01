@@ -6,8 +6,10 @@ import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
@@ -83,7 +85,7 @@ public class HystrixMetricEventStreamTest {
 
     AtomicBoolean ready = new AtomicBoolean();
     vertx.createHttpServer()
-      .requestHandler(router::accept)
+      .requestHandler(router)
       .listen(8080, ar -> ready.set(ar.succeeded()));
 
     await().untilAtomic(ready, is(true));
@@ -91,6 +93,9 @@ public class HystrixMetricEventStreamTest {
     List<JsonObject> responses = new CopyOnWriteArrayList<>();
     HttpClient client = vertx.createHttpClient();
 
+    JsonParser jp = JsonParser.newParser().objectValueMode().handler(
+      jsonEvent -> responses.add(jsonEvent.objectValue())
+    );
     RecordParser parser = RecordParser.newDelimited("\n\n", buffer -> {
       String record = buffer.toString();
       String[] lines = record.split("\n");
@@ -98,8 +103,7 @@ public class HystrixMetricEventStreamTest {
         String l = line.trim();
         if (l.startsWith("data:")) {
           String json = l.substring("data:".length());
-          JsonObject object = new JsonObject(json);
-          responses.add(object);
+          jp.handle(Buffer.buffer(json));
         }
       }
     });
@@ -115,24 +119,31 @@ public class HystrixMetricEventStreamTest {
       breakerC.execute(choose());
     }
 
-    await().atMost(1, TimeUnit.MINUTES).until(() -> responses.size() > 100);
+    await().atMost(1, TimeUnit.MINUTES).until(() -> responses.size() > 50);
 
     // Check that we got metrics for A, B and C
     JsonObject a = null;
     JsonObject b = null;
     JsonObject c = null;
     for (JsonObject json : responses) {
-      if (json.getString("name").equals("A")) {
-        a = json;
-      } else if (json.getString("name").equals("B")) {
-        b = json;
-      } else if (json.getString("name").equals("C")) {
-        c = json;
+      switch (json.getString("name")) {
+        case "A":
+          a = json;
+          break;
+        case "B":
+          b = json;
+          break;
+        case "C":
+          c = json;
+          break;
       }
     }
 
-    assertThat((a == null && b == null && c == null));
+    client.close();
 
+    assertThat(a).isNotNull();
+    assertThat(b).isNotNull();
+    assertThat(c).isNotNull();
   }
 
 

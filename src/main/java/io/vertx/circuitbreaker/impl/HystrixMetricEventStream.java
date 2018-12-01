@@ -36,8 +36,12 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
         int id = counter.incrementAndGet();
         String chunk = json.encode() + "\n\n";
         connections.forEach(resp -> {
-          resp.write("id" + ": " + id + "\n");
-          resp.write("data:" + chunk);
+          try {
+            resp.write("id" + ": " + id + "\n");
+            resp.write("data:" + chunk);
+          } catch (IllegalStateException e) {
+            // Connection close.
+          }
         });
       });
   }
