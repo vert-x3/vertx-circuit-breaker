@@ -10,6 +10,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -82,15 +83,18 @@ public class UsageTest {
     AtomicReference<JsonObject> json = new AtomicReference<>();
     cb.<JsonObject>executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/resource")
-              .handler(response -> {
-                response.exceptionHandler(future::fail)
-                    .bodyHandler(buffer -> {
-                      future.complete(buffer.toJsonObject());
-                    });
-              })
+          client.get(8089, "localhost", "/resource", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              response.exceptionHandler(future::fail);
+              response.bodyHandler(buffer -> {
+                future.complete(buffer.toJsonObject());
+              });
+            } else {
+              future.fail(ar.cause());
+            }
+          })
               .putHeader("Accept", "application/json")
-              .exceptionHandler(future::fail)
               .end();
         },
         t -> null
@@ -101,17 +105,20 @@ public class UsageTest {
     json.set(null);
     cb.executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/error")
-              .handler(response -> {
+          client.get(8089, "localhost", "/error", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("Invalid response");
+              } else {
                 response.exceptionHandler(future::fail);
-                if (response.statusCode() != 200) {
-                  future.fail("Invalid response");
-                } else {
-                  response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
-                }
-              })
+                response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
+              }
+            } else {
+              future.fail(ar.cause());
+            }
+          })
               .putHeader("Accept", "application/json")
-              .exceptionHandler(future::fail)
               .end();
         },
         t -> new JsonObject().put("status", "KO")
@@ -122,17 +129,20 @@ public class UsageTest {
     json.set(null);
     cb.executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/delayed")
-              .handler(response -> {
-                response.exceptionHandler(future::fail);
-                if (response.statusCode() != 200) {
-                  future.fail("Invalid response");
-                } else {
-                  response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
-                }
-              })
+          client.get(8089, "localhost", "/delayed", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              response.exceptionHandler(future::fail);
+              if (response.statusCode() != 200) {
+                future.fail("Invalid response");
+              } else {
+                response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
+              }
+            } else {
+              future.fail(ar.cause());
+            }
+          })
               .putHeader("Accept", "application/json")
-              .exceptionHandler(future::fail)
               .end();
         },
         t -> new JsonObject().put("status", "KO")

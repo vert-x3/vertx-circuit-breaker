@@ -20,6 +20,7 @@ import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,19 +48,22 @@ public class HttpClientCommand extends HystrixCommand<String> {
       latch.countDown();
     };
 
-    client.get(path, response -> {
-      response.exceptionHandler(errorHandler);
-      if (response.statusCode() != 200) {
-        latch.countDown();
-        return;
+    client.getNow(path, ar -> {
+      if (ar.succeeded()) {
+        HttpClientResponse response = ar.result();
+        response.exceptionHandler(errorHandler);
+        if (response.statusCode() != 200) {
+          latch.countDown();
+          return;
+        }
+        response.bodyHandler(content -> {
+          result.set(content.toString());
+          latch.countDown();
+        });
+      } else {
+        errorHandler.handle(ar.cause());
       }
-      response.bodyHandler(content -> {
-        result.set(content.toString());
-        latch.countDown();
-      });
-    })
-        .exceptionHandler(errorHandler)
-        .end();
+    });
 
     latch.await();
 

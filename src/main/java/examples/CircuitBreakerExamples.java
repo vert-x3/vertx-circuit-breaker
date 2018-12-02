@@ -21,6 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.ext.web.Router;
 
 /**
@@ -61,15 +62,20 @@ public class CircuitBreakerExamples {
     // ---
 
     breaker.<String>execute(future -> {
-      vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-        if (response.statusCode() != 200) {
-          future.fail("HTTP error");
-        } else {
-          response
+      vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+        if (ar.succeeded()) {
+          HttpClientResponse response = ar.result();
+          if (response.statusCode() != 200) {
+            future.fail("HTTP error");
+          } else {
+            response
               .exceptionHandler(future::fail)
               .bodyHandler(buffer -> {
                 future.complete(buffer.toString());
               });
+          }
+        } else {
+          future.fail("Request error");
         }
       });
     }).setHandler(ar -> {
@@ -88,15 +94,20 @@ public class CircuitBreakerExamples {
 
     breaker.executeWithFallback(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-            if (response.statusCode() != 200) {
-              future.fail("HTTP error");
-            } else {
-              response
+          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("HTTP error");
+              } else {
+                response
                   .exceptionHandler(future::fail)
                   .bodyHandler(buffer -> {
                     future.complete(buffer.toString());
                   });
+              }
+            } else {
+              future.fail("Connect error");
             }
           });
         }, v -> {
@@ -118,15 +129,20 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-            if (response.statusCode() != 200) {
-              future.fail("HTTP error");
-            } else {
-              response
+          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("HTTP error");
+              } else {
+                response
                   .exceptionHandler(future::fail)
                   .bodyHandler(buffer -> {
                     future.complete(buffer.toString());
                   });
+              }
+            } else {
+              future.fail("Connect error");
             }
           });
         });
@@ -143,12 +159,17 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-            if (response.statusCode() != 200) {
-              future.fail("HTTP error");
+          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("HTTP error");
+              } else {
+                // Do something with the response
+                future.complete();
+              }
             } else {
-              // Do something with the response
-              future.complete();
+              future.fail("Connect error");
             }
           });
         });
@@ -167,15 +188,20 @@ public class CircuitBreakerExamples {
     breaker.executeAndReportWithFallback(
         userFuture,
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-            if (response.statusCode() != 200) {
-              future.fail("HTTP error");
-            } else {
-              response
+          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("HTTP error");
+              } else {
+                response
                   .exceptionHandler(future::fail)
                   .bodyHandler(buffer -> {
                     future.complete(buffer.toString());
                   });
+              }
+            } else {
+              future.fail("Connect error");
             }
           });
         }, v -> {
@@ -212,12 +238,17 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
       future -> {
-        vertx.createHttpClient().getNow(8080, "localhost", "/", response -> {
-          if (response.statusCode() != 200) {
-            future.fail("HTTP error");
+        vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+          if (ar.succeeded()) {
+            HttpClientResponse response = ar.result();
+            if (response.statusCode() != 200) {
+              future.fail("HTTP error");
+            } else {
+              // Do something with the response
+              future.complete();
+            }
           } else {
-            // Do something with the response
-            future.complete();
+            future.fail("Connect error");
           }
         });
       });

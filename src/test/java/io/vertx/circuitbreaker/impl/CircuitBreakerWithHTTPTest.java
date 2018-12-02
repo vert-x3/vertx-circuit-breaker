@@ -20,6 +20,7 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -99,7 +100,12 @@ public class CircuitBreakerWithHTTPTest {
 
     Future<String> result = Future.future();
     breaker.executeAndReport(result, v -> client.getNow(8080, "localhost", "/",
-        response -> response.bodyHandler(buffer -> v.complete(buffer.toString()))));
+      ar -> {
+        if (ar.succeeded()) {
+          HttpClientResponse response = ar.result();
+          response.bodyHandler(buffer -> v.complete(buffer.toString()));
+        }
+      }));
 
     await().until(() -> result.result() != null);
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -116,13 +122,16 @@ public class CircuitBreakerWithHTTPTest {
     for (int i = 0; i < options.getMaxFailures(); i++) {
       Future<String> userFuture = Future.future();
       breaker.executeAndReport(userFuture, future ->
-          client.getNow(8080, "localhost", "/error", response -> {
-            if (response.statusCode() != 200) {
-              future.fail("http error");
-            } else {
-              future.complete();
+          client.getNow(8080, "localhost", "/error", ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              if (response.statusCode() != 200) {
+                future.fail("http error");
+              } else {
+                future.complete();
+              }
+              count.incrementAndGet();
             }
-            count.incrementAndGet();
           })
       );
     }
@@ -132,11 +141,14 @@ public class CircuitBreakerWithHTTPTest {
 
     Future<String> userFuture = Future.future();
     breaker.executeAndReportWithFallback(userFuture, future ->
-        client.getNow(8080, "localhost", "/error", response -> {
-          if (response.statusCode() != 200) {
-            future.fail("http error");
-          } else {
-            future.complete();
+        client.getNow(8080, "localhost", "/error", ar -> {
+          if (ar.succeeded()) {
+            HttpClientResponse response = ar.result();
+            if (response.statusCode() != 200) {
+              future.fail("http error");
+            } else {
+              future.complete();
+            }
           }
         }), v -> "fallback");
 
