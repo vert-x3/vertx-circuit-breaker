@@ -8,6 +8,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.parsetools.RecordParser;
@@ -108,10 +109,12 @@ public class HystrixMetricEventStreamTest {
       }
     });
 
-    client.get(8080, "localhost", "/metrics")
-      .handler(response
-        -> response.handler(parser))
-      .end();
+    client.getNow(8080, "localhost", "/metrics", ar -> {
+      if (ar.succeeded()) {
+        HttpClientResponse response = ar.result();
+        response.handler(parser);
+      }
+    });
 
     for (int i = 0; i < 1000; i++) {
       breakerA.execute(choose());
