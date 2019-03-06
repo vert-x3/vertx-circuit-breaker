@@ -209,7 +209,7 @@ public class UsageTest {
   public void testCBWithWriteOperation() {
     cb.<Void>executeWithFallback(
         future -> {
-          asyncWrite("Hello", Scenario.OK, future.completer());
+          asyncWrite("Hello", Scenario.OK, future);
         },
         t -> null
     );
@@ -224,7 +224,7 @@ public class UsageTest {
     AtomicBoolean fallbackCalled = new AtomicBoolean();
     cb.<Void>executeWithFallback(
         future -> {
-          asyncWrite("Hello", Scenario.FAILURE, future.completer());
+          asyncWrite("Hello", Scenario.FAILURE, future);
         },
         t -> {
           fallbackCalled.set(true);
@@ -244,7 +244,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Void>executeWithFallback(
-        future -> asyncWrite("Hello", Scenario.TIMEOUT, future.completer()),
+        future -> asyncWrite("Hello", Scenario.TIMEOUT, future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -257,7 +257,7 @@ public class UsageTest {
     items.clear();
     fallbackCalled.set(false);
     cb.<Void>executeWithFallback(
-        future -> asyncWrite("Hello", Scenario.RUNTIME_EXCEPTION, future.completer()),
+        future -> asyncWrite("Hello", Scenario.RUNTIME_EXCEPTION, future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -272,7 +272,7 @@ public class UsageTest {
   @Test
   public void testCBWithEventBus() {
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("ok", "", future.completer()),
+        future -> vertx.eventBus().send("ok", "", future),
         t -> null
     ).setHandler(ar -> items.add(ar.result().body()));
 
@@ -285,7 +285,7 @@ public class UsageTest {
 
     AtomicBoolean fallbackCalled = new AtomicBoolean();
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("timeout", "", future.completer()),
+        future -> vertx.eventBus().send("timeout", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -297,7 +297,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("fail", "", future.completer()),
+        future -> vertx.eventBus().send("fail", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -309,7 +309,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("exception", "", future.completer()),
+        future -> vertx.eventBus().send("exception", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
