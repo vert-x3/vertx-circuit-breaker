@@ -183,12 +183,14 @@ public class CircuitBreakerMetricsTest {
 
     int count = 1000;
 
-    List<Future> list = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      list.add(breaker.execute(commandThatWorks()));
+    // Future chain
+    Future<Void> fut = breaker.execute(commandThatWorks());
+    for (int i = 1; i < count; i++) {
+      Future<Void> newFut = breaker.execute(commandThatWorks());
+      fut = fut.compose(v -> newFut); // Chain futures
     }
 
-    CompositeFuture.all(list)
+    fut
       .setHandler(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
@@ -234,11 +236,13 @@ public class CircuitBreakerMetricsTest {
 
 
   private Handler<Promise<Void>> commandThatWorks() {
-    return (future -> vertx.setTimer(5, l -> future.complete(null)));
+    return future -> vertx.setTimer(50, l -> future.complete());
   }
 
-  private Handler<Promise<Void>> commandThatFails() {
-    return (future -> vertx.setTimer(5, l -> future.fail("expected failure")));
+  private Handler<Promise<Void>> commandThatCrashes() {
+    return (future -> {
+      throw new RuntimeException("Expected error");
+    });
   }
 
   private Handler<Promise<Void>> commandThatFails() {
