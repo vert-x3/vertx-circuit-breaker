@@ -74,7 +74,7 @@ public class APITest {
     AtomicInteger result = new AtomicInteger();
 
     breaker.<Integer>executeWithFallback(fut -> {
-      MyAsyncOperations.operation(1, 1, fut.completer());
+      MyAsyncOperations.operation(1, 1, fut);
     }, v -> 0)
         .setHandler(ar -> result.set(ar.result()));
 
@@ -88,7 +88,7 @@ public class APITest {
     AtomicInteger result = new AtomicInteger();
 
     breaker.executeCommandWithFallback(fut -> {
-      MyAsyncOperations.operation(1, 1, fut.completer());
+      MyAsyncOperations.operation(1, 1, fut);
     }, v -> 0, ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(2));
@@ -102,7 +102,7 @@ public class APITest {
     AtomicInteger result = new AtomicInteger();
 
     breaker.<Integer>executeWithFallback(fut -> {
-      MyAsyncOperations.fail(fut.completer());
+      MyAsyncOperations.fail(fut);
     }, v -> -1)
         .setHandler(ar -> result.set(ar.result()));
 
@@ -117,7 +117,7 @@ public class APITest {
     AtomicInteger result = new AtomicInteger();
 
     breaker.<Integer>executeCommandWithFallback(fut -> {
-      MyAsyncOperations.fail(fut.completer());
+      MyAsyncOperations.fail(fut);
     }, v -> -1, ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(-1));

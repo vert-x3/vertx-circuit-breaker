@@ -24,6 +24,7 @@ import io.vertx.circuitbreaker.TimeoutException;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.Iterator;
@@ -197,8 +198,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public <T> CircuitBreaker executeAndReportWithFallback(
-    Future<T> userFuture,
-    Handler<Future<T>> command,
+    Promise<T> userFuture,
+    Handler<Promise<T>> command,
     Function<Throwable, T> fallback) {
 
     Context context = vertx.getOrCreateContext();
@@ -212,8 +213,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
-    Future<T> operationResult = Future.future();
-    operationResult.setHandler(event -> {
+    Promise<T> operationResult = Promise.promise();
+    operationResult.future().setHandler(event -> {
       context.runOnContext(v -> {
         if (event.failed()) {
           incrementFailures();
@@ -245,7 +246,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
-        operationResult.setHandler(event -> {
+        operationResult.future().setHandler(event -> {
           if (event.failed()) {
             open();
             call.failed();
@@ -271,11 +272,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return this;
   }
 
-  private <T> Future<T> retryFuture(Context context, int retryCount, Handler<Future<T>> command, Future<T>
+  private <T> Promise<T> retryFuture(Context context, int retryCount, Handler<Promise<T>> command, Promise<T>
     operationResult, CircuitBreakerMetrics.Operation call) {
-    Future<T> retry = Future.future();
+    Promise<T> retry = Promise.promise();
 
-    retry.setHandler(event -> {
+    retry.future().setHandler(event -> {
       if (event.succeeded()) {
         reset();
         context.runOnContext(v -> {
@@ -324,7 +325,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
   }
 
-  private <T> void invokeFallback(Throwable reason, Future<T> userFuture,
+  private <T> void invokeFallback(Throwable reason, Promise<T> userFuture,
                                   Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation operation) {
     if (fallback == null) {
       // No fallback, mark the user future as failed.
@@ -342,14 +343,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
   }
 
-  private <T> void executeOperation(Context context, Handler<Future<T>> operation, Future<T> operationResult,
+  private <T> void executeOperation(Context context, Handler<Promise<T>> operation, Promise<T> operationResult,
                                     CircuitBreakerMetrics.Operation call) {
     // Execute the operation
     if (options.getTimeout() != -1) {
       vertx.setTimer(options.getTimeout(), (l) -> {
         context.runOnContext(v -> {
           // Check if the operation has not already been completed
-          if (!operationResult.isComplete()) {
+          if (!operationResult.future().isComplete()) {
             if (call != null) {
               call.timeout();
             }
@@ -361,15 +362,15 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
     try {
       // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
-      Future<T> passedFuture = Future.future();
-      passedFuture.setHandler(ar -> {
+      Promise<T> passedFuture = Promise.promise();
+      passedFuture.future().setHandler(ar -> {
         context.runOnContext(v -> {
           if (ar.failed()) {
-            if (!operationResult.isComplete()) {
+            if (!operationResult.future().isComplete()) {
               operationResult.fail(ar.cause());
             }
           } else {
-            if (!operationResult.isComplete()) {
+            if (!operationResult.future().isComplete()) {
               operationResult.complete(ar.result());
             }
           }
@@ -379,7 +380,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       operation.handle(passedFuture);
     } catch (Throwable e) {
       context.runOnContext(v -> {
-        if (!operationResult.isComplete()) {
+        if (!operationResult.future().isComplete()) {
           if (call != null) {
             call.error();
           }
@@ -390,18 +391,18 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public <T> Future<T> executeWithFallback(Handler<Future<T>> operation, Function<Throwable, T> fallback) {
-    Future<T> future = Future.future();
+  public <T> Future<T> executeWithFallback(Handler<Promise<T>> operation, Function<Throwable, T> fallback) {
+    Promise<T> future = Promise.promise();
     executeAndReportWithFallback(future, operation, fallback);
-    return future;
+    return future.future();
   }
 
-  public <T> Future<T> execute(Handler<Future<T>> operation) {
+  public <T> Future<T> execute(Handler<Promise<T>> operation) {
     return executeWithFallback(operation, fallback);
   }
 
   @Override
-  public <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> operation) {
+  public <T> CircuitBreaker executeAndReport(Promise<T> resultFuture, Handler<Promise<T>> operation) {
     return executeAndReportWithFallback(resultFuture, operation, fallback);
   }
 

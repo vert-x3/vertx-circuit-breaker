@@ -19,10 +19,12 @@ package io.vertx.circuitbreaker;
 import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.function.Function;
@@ -112,7 +114,7 @@ public interface CircuitBreaker {
    * @param <T>      the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  <T> Future<T> executeWithFallback(Handler<Future<T>> command, Function<Throwable, T> fallback);
+  <T> Future<T> executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback);
 
   /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using a callback.
@@ -125,7 +127,7 @@ public interface CircuitBreaker {
    * @param <T>      the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  default <T> void executeCommandWithFallback(Handler<Future<T>> command, Function<Throwable, T> fallback,
+  default <T> void executeCommandWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
                                               Handler<AsyncResult<T>> handler) {
     Future<T> fut = executeWithFallback(command, fallback);
     fut.setHandler(handler);
@@ -138,7 +140,7 @@ public interface CircuitBreaker {
    * @param <T>     the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  <T> Future<T> execute(Handler<Future<T>> command);
+  <T> Future<T> execute(Handler<Promise<T>> command);
 
   /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
@@ -147,13 +149,13 @@ public interface CircuitBreaker {
    * @param <T>     the type of result
    * @return a future object completed when the operation or its fallback completes
    */
-  default <T> void executeCommand(Handler<Future<T>> command, Handler<AsyncResult<T>> handler) {
+  default <T> void executeCommand(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
     Future<T> fut = execute(command);
     fut.setHandler(handler);
   }
 
   /**
-   * Same as {@link #executeAndReportWithFallback(Future, Handler, Function)} but using the circuit breaker default
+   * Same as {@link #executeAndReportWithFallback(Promise, Handler, Function)} but using the circuit breaker default
    * fallback.
    *
    * @param resultFuture the future on which the operation result is reported
@@ -162,7 +164,17 @@ public interface CircuitBreaker {
    * @return the current {@link CircuitBreaker}
    */
   @Fluent
-  <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Future<T>> command);
+  <T> CircuitBreaker executeAndReport(Promise<T> resultFuture, Handler<Promise<T>> command);
+
+  /**
+   * @deprecated use {@link #executeAndReport(Promise, Handler)} instead
+   */
+  @GenIgnore
+  @Deprecated
+  @Fluent
+  default <T> CircuitBreaker executeAndReport(Future<T> resultFuture, Handler<Promise<T>> command) {
+    return executeAndReport((Promise<T>) resultFuture, command);
+  }
 
   /**
    * Executes the given operation with the circuit breaker control. The operation is generally calling an
@@ -186,8 +198,19 @@ public interface CircuitBreaker {
    * @return the current {@link CircuitBreaker}
    */
   @Fluent
-  <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Future<T>> command,
+  <T> CircuitBreaker executeAndReportWithFallback(Promise<T> resultFuture, Handler<Promise<T>> command,
                                                   Function<Throwable, T> fallback);
+
+  /**
+   * @deprecated use {@link #executeAndReportWithFallback(Promise, Handler, Function)} instead
+   */
+  @GenIgnore
+  @Deprecated
+  @Fluent
+  default <T> CircuitBreaker executeAndReportWithFallback(Future<T> resultFuture, Handler<Promise<T>> command,
+                                                  Function<Throwable, T> fallback) {
+    return executeAndReportWithFallback((Promise<T>) resultFuture, command, fallback);
+  }
 
   /**
    * Sets a <em>default</em> {@link Function} invoked when the bridge is open to handle the "request", or on failure
