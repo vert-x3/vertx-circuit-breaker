@@ -3,11 +3,7 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -245,10 +241,8 @@ public class CircuitBreakerMetricsTest {
     return (future -> vertx.setTimer(5, l -> future.fail("expected failure")));
   }
 
-  private Handler<Promise<Void>> commandThatCrashes() {
-    return (future -> {
-      throw new RuntimeException("Expected error");
-    });
+  private Handler<Promise<Void>> commandThatFails() {
+    return (future -> vertx.setTimer(50, l -> future.fail("expected failure")));
   }
 
   private Handler<Promise<Void>> commandThatTimeout(int timeout) {
