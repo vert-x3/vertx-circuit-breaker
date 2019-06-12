@@ -6,6 +6,7 @@ import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -238,21 +239,21 @@ public class CircuitBreakerMetricsTest {
   }
 
 
-  private Handler<Future<Void>> commandThatWorks() {
-    return future -> vertx.setTimer(50, l -> future.complete());
+  private Handler<Promise<Void>> commandThatWorks() {
+    return (future -> vertx.setTimer(5, l -> future.complete(null)));
   }
 
-  private Handler<Future<Void>> commandThatFails() {
-    return (future -> vertx.setTimer(50, l -> future.fail("expected failure")));
+  private Handler<Promise<Void>> commandThatFails() {
+    return (future -> vertx.setTimer(5, l -> future.fail("expected failure")));
   }
 
-  private Handler<Future<Void>> commandThatCrashes() {
+  private Handler<Promise<Void>> commandThatCrashes() {
     return (future -> {
       throw new RuntimeException("Expected error");
     });
   }
 
-  private Handler<Future<Void>> commandThatTimeout(int timeout) {
+  private Handler<Promise<Void>> commandThatTimeout(int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.complete(null)));
   }
 

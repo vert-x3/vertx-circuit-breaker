@@ -5,6 +5,7 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -100,25 +101,25 @@ public class DashboardExample {
     }
   }
 
-  private static Handler<Future<String>> commandThatWorks(Vertx vertx) {
+  private static Handler<Promise<String>> commandThatWorks(Vertx vertx) {
     return (future -> vertx.setTimer(5, l -> future.complete("OK !")));
   }
 
-  private static Handler<Future<String>> commandThatFails(Vertx vertx) {
+  private static Handler<Promise<String>> commandThatFails(Vertx vertx) {
     return (future -> vertx.setTimer(5, l -> future.fail("expected failure")));
   }
 
-  private static Handler<Future<String>> commandThatCrashes(Vertx vertx) {
+  private static Handler<Promise<String>> commandThatCrashes(Vertx vertx) {
     return (future -> {
       throw new RuntimeException("Expected error");
     });
   }
 
-  private static Handler<Future<String>> commandThatTimeout(Vertx vertx, int timeout) {
+  private static Handler<Promise<String>> commandThatTimeout(Vertx vertx, int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.complete("Is it too late ?")));
   }
 
-  private static Handler<Future<String>> commandThatTimeoutAndFail(Vertx vertx, int timeout) {
+  private static Handler<Promise<String>> commandThatTimeoutAndFail(Vertx vertx, int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.fail("late failure")));
   }
 

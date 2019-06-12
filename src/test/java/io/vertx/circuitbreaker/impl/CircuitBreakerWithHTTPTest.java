@@ -18,6 +18,7 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
@@ -98,7 +99,7 @@ public class CircuitBreakerWithHTTPTest {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
-    Future<String> result = Future.future();
+    Promise<String> result = Promise.promise();
     breaker.executeAndReport(result, v -> client.getNow(8080, "localhost", "/",
       ar -> {
         if (ar.succeeded()) {
@@ -107,7 +108,7 @@ public class CircuitBreakerWithHTTPTest {
         }
       }));
 
-    await().until(() -> result.result() != null);
+    await().until(() -> result.future().result() != null);
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
   }
 
@@ -120,8 +121,8 @@ public class CircuitBreakerWithHTTPTest {
     AtomicInteger count = new AtomicInteger();
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
-      Future<String> userFuture = Future.future();
-      breaker.executeAndReport(userFuture, future ->
+      Promise<String> result = Promise.promise();
+      breaker.executeAndReport(result, future ->
           client.getNow(8080, "localhost", "/error", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
@@ -139,8 +140,8 @@ public class CircuitBreakerWithHTTPTest {
     await().untilAtomic(count, is(options.getMaxFailures()));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
 
-    Future<String> userFuture = Future.future();
-    breaker.executeAndReportWithFallback(userFuture, future ->
+    Promise<String> result = Promise.promise();
+    breaker.executeAndReportWithFallback(result, future ->
         client.getNow(8080, "localhost", "/error", ar -> {
           if (ar.succeeded()) {
             HttpClientResponse response = ar.result();
@@ -152,7 +153,7 @@ public class CircuitBreakerWithHTTPTest {
           }
         }), v -> "fallback");
 
-    await().until(() -> userFuture.result().equals("fallback"));
+    await().until(() -> result.future().result().equals("fallback"));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
 
   }
@@ -176,14 +177,14 @@ public class CircuitBreakerWithHTTPTest {
     await().untilAtomic(count, is(options.getMaxFailures()));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
 
-    Future<String> result = Future.future();
+    Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
       client.getNow(8080, "localhost", "/long", response -> {
         System.out.println("Got response");
         future.complete();
       }), v -> "fallback");
 
-    await().until(() -> result.result().equals("fallback"));
+    await().until(() -> result.future().result().equals("fallback"));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
   }
 

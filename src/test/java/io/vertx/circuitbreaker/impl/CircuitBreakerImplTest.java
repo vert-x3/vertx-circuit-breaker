@@ -19,6 +19,7 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -102,8 +103,8 @@ public class CircuitBreakerImplTest {
     AtomicBoolean operationCalled = new AtomicBoolean();
     AtomicReference<String> completionCalled = new AtomicReference<>();
 
-    Future<String> userFuture = Future.future();
-    userFuture.setHandler(ar ->
+    Promise<String> userFuture = Promise.promise();
+    userFuture.future().setHandler(ar ->
       completionCalled.set(ar.result()));
 
     breaker.executeAndReport(userFuture, fut -> {
@@ -141,8 +142,8 @@ public class CircuitBreakerImplTest {
     AtomicBoolean called = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
 
-    Future<String> userFuture = Future.future();
-    userFuture.setHandler(ar -> result.set(ar.result()));
+    Promise<String> userFuture = Promise.promise();
+    userFuture.future().setHandler(ar -> result.set(ar.result()));
 
     breaker.executeAndReport(userFuture, future ->
       vertx.setTimer(100, l -> {
@@ -254,12 +255,12 @@ public class CircuitBreakerImplTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
-      Future<String> future = Future.future();
+      Promise<String> future = Promise.promise();
       AtomicReference<String> result = new AtomicReference<>();
       breaker.executeAndReport(future, v -> {
         throw new RuntimeException("oh no, but this is expected");
       });
-      future.setHandler(ar -> result.set(ar.result()));
+      future.future().setHandler(ar -> result.set(ar.result()));
       assertThat(result.get()).isNull();
     }
 
@@ -268,8 +269,8 @@ public class CircuitBreakerImplTest {
 
     AtomicBoolean spy = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
-    Future<String> fut = Future.future();
-    fut.setHandler(ar ->
+    Promise<String> fut = Promise.promise();
+    fut.future().setHandler(ar ->
       result.set(ar.result())
     );
     breaker.executeAndReport(fut, v -> spy.set(true));
@@ -481,7 +482,7 @@ public class CircuitBreakerImplTest {
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
     called.set(false);
 
-    breaker.execute(Future::complete);
+    breaker.execute(Promise::complete);
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
     await().untilAtomic(called, is(false));
   }
@@ -542,12 +543,12 @@ public class CircuitBreakerImplTest {
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED  || breaker.state() == CircuitBreakerState.HALF_OPEN);
 
     // If HO - need to get next request executed and wait until we are closed
-    breaker.execute(Future::complete);
+    breaker.execute(Promise::complete);
     await().until(() -> {
       if (breaker.state() == CircuitBreakerState.CLOSED) {
         return true;
       } else {
-        breaker.execute(Future::complete);
+        breaker.execute(Promise::complete);
         return false;
       }
     });

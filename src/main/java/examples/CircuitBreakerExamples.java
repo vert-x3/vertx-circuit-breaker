@@ -18,6 +18,7 @@ package examples;
 
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
@@ -180,8 +181,8 @@ public class CircuitBreakerExamples {
         new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     );
 
-    Future<String> userFuture = Future.future();
-    userFuture.setHandler(ar -> {
+    Promise<String> userFuture = Promise.promise();
+    userFuture.future().setHandler(ar -> {
       // Do something with the result
     });
 

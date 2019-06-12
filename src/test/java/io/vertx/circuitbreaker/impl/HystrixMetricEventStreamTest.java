@@ -5,6 +5,7 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -152,7 +153,7 @@ public class HystrixMetricEventStreamTest {
 
   private Random random = new Random();
 
-  private Handler<Future<Void>> choose() {
+  private Handler<Promise<Void>> choose() {
     int choice = random.nextInt(5);
     switch (choice) {
       case 0:
@@ -170,25 +171,25 @@ public class HystrixMetricEventStreamTest {
   }
 
 
-  private Handler<Future<Void>> commandThatWorks() {
+  private Handler<Promise<Void>> commandThatWorks() {
     return (future -> vertx.setTimer(5, l -> future.complete(null)));
   }
 
-  private Handler<Future<Void>> commandThatFails() {
+  private Handler<Promise<Void>> commandThatFails() {
     return (future -> vertx.setTimer(5, l -> future.fail("expected failure")));
   }
 
-  private Handler<Future<Void>> commandThatCrashes() {
+  private Handler<Promise<Void>> commandThatCrashes() {
     return (future -> {
       throw new RuntimeException("Expected error");
     });
   }
 
-  private Handler<Future<Void>> commandThatTimeout(int timeout) {
+  private Handler<Promise<Void>> commandThatTimeout(int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.complete(null)));
   }
 
-  private Handler<Future<Void>> commandThatTimeoutAndFail(int timeout) {
+  private Handler<Promise<Void>> commandThatTimeoutAndFail(int timeout) {
     return (future -> vertx.setTimer(timeout + 500, l -> future.fail("late failure")));
   }
 
