@@ -272,7 +272,7 @@ public class UsageTest {
   @Test
   public void testCBWithEventBus() {
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("ok", "", future),
+        future -> vertx.eventBus().request("ok", "", future),
         t -> null
     ).setHandler(ar -> items.add(ar.result().body()));
 
@@ -285,7 +285,7 @@ public class UsageTest {
 
     AtomicBoolean fallbackCalled = new AtomicBoolean();
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("timeout", "", future),
+        future -> vertx.eventBus().request("timeout", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -297,7 +297,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("fail", "", future),
+        future -> vertx.eventBus().request("fail", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -309,7 +309,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().send("exception", "", future),
+        future -> vertx.eventBus().request("exception", "", future),
         t -> {
           fallbackCalled.set(true);
           return null;
