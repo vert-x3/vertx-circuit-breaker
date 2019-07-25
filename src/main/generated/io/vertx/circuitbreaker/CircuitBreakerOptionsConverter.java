@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
+ * Converter and Codec for {@link io.vertx.circuitbreaker.CircuitBreakerOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.circuitbreaker.CircuitBreakerOptions} original class using Vert.x codegen.
  */
-public class CircuitBreakerOptionsConverter {
+public class CircuitBreakerOptionsConverter implements JsonCodec<CircuitBreakerOptions, JsonObject> {
+
+  public static final CircuitBreakerOptionsConverter INSTANCE = new CircuitBreakerOptionsConverter();
+
+  @Override public JsonObject encode(CircuitBreakerOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public CircuitBreakerOptions decode(JsonObject value) { return (value != null) ? new CircuitBreakerOptions(value) : null; }
+
+  @Override public Class<CircuitBreakerOptions> getTargetClass() { return CircuitBreakerOptions.class; }
 
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CircuitBreakerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
