@@ -197,7 +197,7 @@ public class CircuitBreakerExamples {
 
     // Create the HTTP server using the router to dispatch the requests
     vertx.createHttpServer()
-      .requestHandler(router::accept)
+      .requestHandler(router)
       .listen(8080);
 
   }

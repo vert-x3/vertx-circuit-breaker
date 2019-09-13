@@ -67,7 +67,7 @@ public class CircuitBreakerWithHTTPTest {
     });
 
     AtomicBoolean done = new AtomicBoolean();
-    http = vertx.createHttpServer().requestHandler(router::accept).listen(8080, ar -> {
+    http = vertx.createHttpServer().requestHandler(router).listen(8080, ar -> {
       done.set(ar.succeeded());
     });
 
