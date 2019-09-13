@@ -41,7 +41,7 @@ public class DashboardExample {
     router.get("/C").handler(rc -> c(rc, cbc));
 
     vertx.createHttpServer()
-      .requestHandler(router::accept)
+      .requestHandler(router)
       .listen(8080);
   }
 
