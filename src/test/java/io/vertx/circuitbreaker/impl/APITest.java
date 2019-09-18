@@ -87,7 +87,7 @@ public class APITest {
 
     AtomicInteger result = new AtomicInteger();
 
-    breaker.executeCommandWithFallback(fut -> {
+    breaker.executeWithFallback(fut -> {
       MyAsyncOperations.operation(1, 1, fut);
     }, v -> 0, ar -> result.set(ar.result()));
 
@@ -116,7 +116,7 @@ public class APITest {
 
     AtomicInteger result = new AtomicInteger();
 
-    breaker.<Integer>executeCommandWithFallback(fut -> {
+    breaker.executeWithFallback(fut -> {
       MyAsyncOperations.fail(fut);
     }, v -> -1, ar -> result.set(ar.result()));
 

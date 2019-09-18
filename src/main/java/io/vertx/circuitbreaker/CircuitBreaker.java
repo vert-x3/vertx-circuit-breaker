@@ -114,6 +114,7 @@ public interface CircuitBreaker {
    * @param <T>      the type of result
    * @return a future object completed when the operation or its fallback completes
    */
+  @GenIgnore
   <T> Future<T> executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback);
 
   /**
@@ -126,6 +127,24 @@ public interface CircuitBreaker {
    *                 to the handler.
    * @param <T>      the type of result
    */
+  default <T> void executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
+                                              Handler<AsyncResult<T>> handler) {
+    Future<T> fut = executeWithFallback(command, fallback);
+    fut.setHandler(handler);
+  }
+
+  /**
+   * Same as {@link #executeWithFallback(Handler, Function)} but using a callback.
+   *
+   * @param command  the operation
+   * @param fallback the fallback
+   * @param handler  the completion handler receiving either the operation result or the fallback result. The
+   *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
+   *                 to the handler.
+   * @param <T>      the type of result
+   * @deprecated instead use {@link #executeWithFallback(Handler, Function, Handler)}
+   */
+  @Deprecated
   default <T> void executeCommandWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
                                               Handler<AsyncResult<T>> handler) {
     Future<T> fut = executeWithFallback(command, fallback);
@@ -139,6 +158,7 @@ public interface CircuitBreaker {
    * @param <T>     the type of result
    * @return a future object completed when the operation or its fallback completes
    */
+  @GenIgnore
   <T> Future<T> execute(Handler<Promise<T>> command);
 
   /**
@@ -150,11 +170,27 @@ public interface CircuitBreaker {
    *                 to the handler.
    * @param <T>     the type of result
    */
-  default <T> void executeCommand(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
+  default <T> void execute(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
     Future<T> fut = execute(command);
     fut.setHandler(handler);
   }
 
+  /**
+   * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
+   *
+   * @param command the operation
+   * @param handler  the completion handler receiving either the operation result or the fallback result. The
+   *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
+   *                 to the handler.
+   * @param <T>     the type of result
+   * @deprecated instead use {@link #execute(Handler, Handler)}
+   */
+  @Deprecated
+  default <T> void executeCommand(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
+    Future<T> fut = execute(command);
+    fut.setHandler(handler);
+  }
+  
   /**
    * Same as {@link #executeAndReportWithFallback(Promise, Handler, Function)} but using the circuit breaker default
    * fallback.
