@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>3.8.3-SNAPSHOT</version>
+  <version>3.8.3</version>
 
   <properties>
     <hystrix.version>1.5.2</hystrix.version>
