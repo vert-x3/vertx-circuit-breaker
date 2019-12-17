@@ -16,11 +16,14 @@
 
 package io.vertx.circuitbreaker;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Circuit breaker states.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
+@VertxGen
 public enum CircuitBreakerState {
   /**
    * The {@code OPEN} state. The circuit breaker is executing the fallback, and switches to the {@link #HALF_OPEN}
