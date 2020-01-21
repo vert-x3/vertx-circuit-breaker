@@ -11,6 +11,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -83,7 +84,7 @@ public class UsageTest {
     AtomicReference<JsonObject> json = new AtomicReference<>();
     cb.<JsonObject>executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/resource", ar -> {
+          client.get(8089, "localhost", "/resource", HttpHeaders.set("Accept", "application/json"), ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               response.exceptionHandler(future::fail);
@@ -93,9 +94,7 @@ public class UsageTest {
             } else {
               future.fail(ar.cause());
             }
-          })
-              .putHeader("Accept", "application/json")
-              .end();
+          });
         },
         t -> null
     ).setHandler(ar -> json.set(ar.result()));
@@ -105,7 +104,7 @@ public class UsageTest {
     json.set(null);
     cb.executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/error", ar -> {
+          client.get(8089, "localhost", "/error", HttpHeaders.set("Accept", "application/json"), ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -117,9 +116,7 @@ public class UsageTest {
             } else {
               future.fail(ar.cause());
             }
-          })
-              .putHeader("Accept", "application/json")
-              .end();
+          });
         },
         t -> new JsonObject().put("status", "KO")
     ).setHandler(ar -> json.set(ar.result()));
@@ -129,7 +126,7 @@ public class UsageTest {
     json.set(null);
     cb.executeWithFallback(
         future -> {
-          client.get(8089, "localhost", "/delayed", ar -> {
+          client.get(8089, "localhost", "/delayed", HttpHeaders.set("Accept", "application/json"), ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               response.exceptionHandler(future::fail);
@@ -141,9 +138,7 @@ public class UsageTest {
             } else {
               future.fail(ar.cause());
             }
-          })
-              .putHeader("Accept", "application/json")
-              .end();
+          });
         },
         t -> new JsonObject().put("status", "KO")
     ).setHandler(ar -> json.set(ar.result()));

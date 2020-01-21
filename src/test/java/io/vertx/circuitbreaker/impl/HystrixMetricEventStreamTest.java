@@ -3,7 +3,6 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -110,7 +109,7 @@ public class HystrixMetricEventStreamTest {
       }
     });
 
-    client.getNow(8080, "localhost", "/metrics", ar -> {
+    client.get(8080, "localhost", "/metrics", ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
         response.handler(parser);

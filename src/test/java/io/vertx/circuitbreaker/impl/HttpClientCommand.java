@@ -48,7 +48,7 @@ public class HttpClientCommand extends HystrixCommand<String> {
       latch.countDown();
     };
 
-    client.getNow(path, ar -> {
+    client.get(path, ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
         response.exceptionHandler(errorHandler);

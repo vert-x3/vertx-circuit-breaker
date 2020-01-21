@@ -100,7 +100,7 @@ public class CircuitBreakerWithHTTPTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     Promise<String> result = Promise.promise();
-    breaker.executeAndReport(result, v -> client.getNow(8080, "localhost", "/",
+    breaker.executeAndReport(result, v -> client.get(8080, "localhost", "/",
       ar -> {
         if (ar.succeeded()) {
           HttpClientResponse response = ar.result();
@@ -123,7 +123,7 @@ public class CircuitBreakerWithHTTPTest {
     for (int i = 0; i < options.getMaxFailures(); i++) {
       Promise<String> result = Promise.promise();
       breaker.executeAndReport(result, future ->
-          client.getNow(8080, "localhost", "/error", ar -> {
+          client.get(8080, "localhost", "/error", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -142,7 +142,7 @@ public class CircuitBreakerWithHTTPTest {
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
-        client.getNow(8080, "localhost", "/error", ar -> {
+        client.get(8080, "localhost", "/error", ar -> {
           if (ar.succeeded()) {
             HttpClientResponse response = ar.result();
             if (response.statusCode() != 200) {
@@ -168,7 +168,7 @@ public class CircuitBreakerWithHTTPTest {
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(future ->
-          client.getNow(8080, "localhost", "/long", response -> {
+          client.get(8080, "localhost", "/long", response -> {
             count.incrementAndGet();
             future.complete();
           }));
@@ -179,7 +179,7 @@ public class CircuitBreakerWithHTTPTest {
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
-      client.getNow(8080, "localhost", "/long", response -> {
+      client.get(8080, "localhost", "/long", response -> {
         System.out.println("Got response");
         future.complete();
       }), v -> "fallback");

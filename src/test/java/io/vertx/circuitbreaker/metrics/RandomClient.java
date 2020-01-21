@@ -42,7 +42,7 @@ public class RandomClient extends AbstractVerticle {
             System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Data: " + buffer.toString());
           });
         }
-      }).end();
+      });
     });
   }
 }

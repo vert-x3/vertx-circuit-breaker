@@ -63,7 +63,7 @@ public class CircuitBreakerExamples {
     // ---
 
     breaker.<String>execute(future -> {
-      vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+      vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
         if (ar.succeeded()) {
           HttpClientResponse response = ar.result();
           if (response.statusCode() != 200) {
@@ -95,7 +95,7 @@ public class CircuitBreakerExamples {
 
     breaker.executeWithFallback(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -130,7 +130,7 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -160,7 +160,7 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -189,7 +189,7 @@ public class CircuitBreakerExamples {
     breaker.executeAndReportWithFallback(
         userFuture,
         future -> {
-          vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
@@ -239,7 +239,7 @@ public class CircuitBreakerExamples {
 
     breaker.execute(
       future -> {
-        vertx.createHttpClient().getNow(8080, "localhost", "/", ar -> {
+        vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
           if (ar.succeeded()) {
             HttpClientResponse response = ar.result();
             if (response.statusCode() != 200) {
