@@ -247,19 +247,21 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.future().setHandler(event -> {
-          if (event.failed()) {
-            open();
-            call.failed();
-            if (options.isFallbackOnFailure()) {
-              invokeFallback(event.cause(), userFuture, fallback, call);
+          context.runOnContext(v -> {
+            if (event.failed()) {
+              open();
+              call.failed();
+              if (options.isFallbackOnFailure()) {
+                invokeFallback(event.cause(), userFuture, fallback, call);
+              } else {
+                userFuture.fail(event.cause());
+              }
             } else {
-              userFuture.fail(event.cause());
+              call.complete();
+              reset();
+              userFuture.complete(event.result());
             }
-          } else {
-            call.complete();
-            reset();
-            userFuture.complete(event.result());
-          }
+          });
         });
         // Execute the operation
         executeOperation(context, command, operationResult, call);
