@@ -214,27 +214,27 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
     Promise<T> operationResult = Promise.promise();
-    operationResult.future().setHandler(event -> {
-      context.runOnContext(v -> {
-        if (event.failed()) {
-          incrementFailures();
-          call.failed();
-          if (options.isFallbackOnFailure()) {
-            invokeFallback(event.cause(), userFuture, fallback, call);
-          } else {
-            userFuture.fail(event.cause());
-          }
-        } else {
-          call.complete();
-          reset();
-          userFuture.complete(event.result());
-        }
-        // Else the operation has been canceled because of a time out.
-      });
-
-    });
 
     if (currentState == CircuitBreakerState.CLOSED) {
+      operationResult.future().setHandler(event -> {
+        context.runOnContext(v -> {
+          if (event.failed()) {
+            incrementFailures();
+            call.failed();
+            if (options.isFallbackOnFailure()) {
+              invokeFallback(event.cause(), userFuture, fallback, call);
+            } else {
+              userFuture.fail(event.cause());
+            }
+          } else {
+            call.complete();
+            reset();
+            userFuture.complete(event.result());
+          }
+          // Else the operation has been canceled because of a time out.
+        });
+      });
+
       if (options.getMaxRetries() > 0) {
         executeOperation(context, command, retryFuture(context, 0, command, operationResult, call), call);
       } else {
@@ -247,19 +247,21 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
         operationResult.future().setHandler(event -> {
-          if (event.failed()) {
-            open();
-            call.failed();
-            if (options.isFallbackOnFailure()) {
-              invokeFallback(event.cause(), userFuture, fallback, call);
+          context.runOnContext(v -> {
+            if (event.failed()) {
+              open();
+              call.failed();
+              if (options.isFallbackOnFailure()) {
+                invokeFallback(event.cause(), userFuture, fallback, call);
+              } else {
+                userFuture.fail(event.cause());
+              }
             } else {
-              userFuture.fail(event.cause());
+              call.complete();
+              reset();
+              userFuture.complete(event.result());
             }
-          } else {
-            call.complete();
-            reset();
-            userFuture.complete(event.result());
-          }
+          });
         });
         // Execute the operation
         executeOperation(context, command, operationResult, call);
