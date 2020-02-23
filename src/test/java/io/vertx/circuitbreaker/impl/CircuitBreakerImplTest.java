@@ -17,10 +17,7 @@
 package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.*;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -213,6 +210,43 @@ public class CircuitBreakerImplTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
     assertThat(spyOpen.get()).isEqualTo(1);
     assertThat(spyClosed.get()).isEqualTo(1);
+  }
+
+  @Test
+  @Repeat(5)
+  public void testHalfOpen() {
+    AtomicBoolean thrown = new AtomicBoolean(false);
+    Context ctx = vertx.getOrCreateContext()
+      .exceptionHandler(ex -> // intercept exceptions
+        thrown.set(true));
+
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
+      .setResetTimeout(200)
+      .setMaxFailures(1));
+
+    Handler<Promise<Void>> fail = p -> p.fail("fail");
+    Handler<Promise<Void>> success = p -> p.complete();
+
+    ctx.runOnContext(v -> {
+      breaker.execute(fail);
+      breaker.execute(fail);
+    });
+
+    await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
+
+    ctx.runOnContext(v -> {
+      breaker.execute(fail);
+    });
+
+    await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
+
+    ctx.runOnContext(v -> {
+      breaker.execute(success);
+    });
+
+    await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
+
+    assertThat(thrown.get()).isFalse();
   }
 
   @Test
