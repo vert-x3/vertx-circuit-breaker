@@ -18,7 +18,6 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -77,7 +76,7 @@ public class APITest {
     breaker.<Integer>executeWithFallback(fut -> {
       MyAsyncOperations.operation(1, 1, fut);
     }, v -> 0)
-        .setHandler(ar -> result.set(ar.result()));
+        .onComplete(ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(2));
   }
@@ -105,7 +104,7 @@ public class APITest {
     breaker.<Integer>executeWithFallback(fut -> {
       MyAsyncOperations.fail(fut);
     }, v -> -1)
-        .setHandler(ar -> result.set(ar.result()));
+        .onComplete(ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(-1));
   }
@@ -132,7 +131,7 @@ public class APITest {
 
     AtomicInteger result = new AtomicInteger();
     Promise<Integer> operationResult = Promise.promise();
-    operationResult.future().setHandler(ar -> {
+    operationResult.future().onComplete(ar -> {
       result.set(ar.result());
     });
 
@@ -149,7 +148,7 @@ public class APITest {
     AtomicInteger result = new AtomicInteger();
 
     Promise<Integer> operationResult = Promise.promise();
-    operationResult.future().setHandler(ar -> result.set(ar.result()));
+    operationResult.future().onComplete(ar -> result.set(ar.result()));
 
     breaker.executeAndReportWithFallback(operationResult, MyAsyncOperations::fail, t -> -1);
 

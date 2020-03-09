@@ -72,7 +72,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command3 = breaker.execute(commandThatWorks());
 
     CompositeFuture.all(command1, command2, command3)
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
@@ -103,7 +103,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command4 = breaker.execute(commandThatFails());
 
     CompositeFuture.join(command1, command2, command3, command4)
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
           .contains("state", CircuitBreakerState.CLOSED.name())
@@ -132,7 +132,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command5 = breaker.execute(commandThatCrashes());
 
     CompositeFuture.join(command1, command2, command3, command4, command5)
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
           .contains("state", CircuitBreakerState.CLOSED.name())
@@ -161,7 +161,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command5 = breaker.execute(commandThatTimeout(100));
 
     CompositeFuture.join(command1, command2, command3, command4, command5)
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
           .contains("state", CircuitBreakerState.CLOSED.name())
@@ -195,7 +195,7 @@ public class CircuitBreakerMetricsTest {
     }
 
     fut
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
@@ -230,7 +230,7 @@ public class CircuitBreakerMetricsTest {
     }
 
     CompositeFuture.all(list)
-      .setHandler(ar -> {
+      .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics().getInteger("totalOperationCount")).isEqualTo(1000);
         assertThat(metrics().getInteger("rollingOperationCount")).isLessThanOrEqualTo(1000);

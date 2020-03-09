@@ -216,7 +216,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     Promise<T> operationResult = Promise.promise();
 
     if (currentState == CircuitBreakerState.CLOSED) {
-      operationResult.future().setHandler(event -> {
+      operationResult.future().onComplete(event -> {
         context.runOnContext(v -> {
           if (event.failed()) {
             incrementFailures();
@@ -246,7 +246,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
-        operationResult.future().setHandler(event -> {
+        operationResult.future().onComplete(event -> {
           context.runOnContext(v -> {
             if (event.failed()) {
               open();
@@ -278,7 +278,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     operationResult, CircuitBreakerMetrics.Operation call) {
     Promise<T> retry = Promise.promise();
 
-    retry.future().setHandler(event -> {
+    retry.future().onComplete(event -> {
       if (event.succeeded()) {
         reset();
         context.runOnContext(v -> {
@@ -365,7 +365,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     try {
       // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
       Promise<T> passedFuture = Promise.promise();
-      passedFuture.future().setHandler(ar -> {
+      passedFuture.future().onComplete(ar -> {
         context.runOnContext(v -> {
           if (ar.failed()) {
             if (!operationResult.future().isComplete()) {

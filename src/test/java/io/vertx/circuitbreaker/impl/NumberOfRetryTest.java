@@ -41,7 +41,7 @@ public class NumberOfRetryTest {
     breaker.execute(future -> {
       counter.incrementAndGet();
       future.fail("FAILED");
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
 
     });
 
@@ -57,7 +57,7 @@ public class NumberOfRetryTest {
     breaker.execute(future -> {
       counter.incrementAndGet();
       future.fail("FAILED");
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
 
     });
 
@@ -73,7 +73,7 @@ public class NumberOfRetryTest {
     breaker.execute(future -> {
       counter.incrementAndGet();
       future.fail("FAILED");
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
 
     });
 
@@ -89,7 +89,7 @@ public class NumberOfRetryTest {
     breaker.execute(future -> {
       counter.incrementAndGet();
       future.fail("FAILED");
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
 
     });
 

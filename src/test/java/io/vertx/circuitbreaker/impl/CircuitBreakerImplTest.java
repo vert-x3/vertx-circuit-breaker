@@ -85,7 +85,7 @@ public class CircuitBreakerImplTest {
     breaker.<String>execute(fut -> {
       operationCalled.set(true);
       fut.complete("hello");
-    }).setHandler(ar -> completionCalled.set(ar.result()));
+    }).onComplete(ar -> completionCalled.set(ar.result()));
 
     await().until(operationCalled::get);
     await().until(() -> completionCalled.get().equalsIgnoreCase("hello"));
@@ -101,7 +101,7 @@ public class CircuitBreakerImplTest {
     AtomicReference<String> completionCalled = new AtomicReference<>();
 
     Promise<String> userFuture = Promise.promise();
-    userFuture.future().setHandler(ar ->
+    userFuture.future().onComplete(ar ->
       completionCalled.set(ar.result()));
 
     breaker.executeAndReport(userFuture, fut -> {
@@ -125,7 +125,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         future.complete("hello");
       })
-    ).setHandler(ar -> result.set(ar.result()));
+    ).onComplete(ar -> result.set(ar.result()));
 
     await().until(called::get);
     await().untilAtomic(result, is("hello"));
@@ -140,7 +140,7 @@ public class CircuitBreakerImplTest {
     AtomicReference<String> result = new AtomicReference<>();
 
     Promise<String> userFuture = Promise.promise();
-    userFuture.future().setHandler(ar -> result.set(ar.result()));
+    userFuture.future().onComplete(ar -> result.set(ar.result()));
 
     breaker.executeAndReport(userFuture, future ->
       vertx.setTimer(100, l -> {
@@ -188,7 +188,7 @@ public class CircuitBreakerImplTest {
     breaker.execute(v -> {
       throw new RuntimeException("oh no, but this is expected");
     })
-      .setHandler(ar -> lastException.set(ar.cause()));
+      .onComplete(ar -> lastException.set(ar.cause()));
 
     assertThat(spyOpen.get()).isEqualTo(0);
     assertThat(spyClosed.get()).isEqualTo(0);
@@ -200,7 +200,7 @@ public class CircuitBreakerImplTest {
       breaker.execute(v -> {
         throw new RuntimeException("oh no, but this is expected");
       })
-        .setHandler(ar -> lastException.set(ar.cause()));
+        .onComplete(ar -> lastException.set(ar.cause()));
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
     assertThat(spyOpen.get()).isEqualTo(1);
@@ -294,7 +294,7 @@ public class CircuitBreakerImplTest {
       breaker.executeAndReport(future, v -> {
         throw new RuntimeException("oh no, but this is expected");
       });
-      future.future().setHandler(ar -> result.set(ar.result()));
+      future.future().onComplete(ar -> result.set(ar.result()));
       assertThat(result.get()).isNull();
     }
 
@@ -304,7 +304,7 @@ public class CircuitBreakerImplTest {
     AtomicBoolean spy = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
     Promise<String> fut = Promise.promise();
-    fut.future().setHandler(ar ->
+    fut.future().onComplete(ar ->
       result.set(ar.result())
     );
     breaker.executeAndReport(fut, v -> spy.set(true));
@@ -327,7 +327,7 @@ public class CircuitBreakerImplTest {
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(
         future -> vertx.setTimer(100, l -> future.fail("expected failure"))
-      ).setHandler(ar -> result.set(ar.result()));
+      ).onComplete(ar -> result.set(ar.result()));
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
     assertThat(called.get()).isEqualTo(false);
@@ -338,7 +338,7 @@ public class CircuitBreakerImplTest {
         future.fail("expected failure");
         spy.set(true);
       }))
-      .setHandler(ar -> result.set(ar.result()));
+      .onComplete(ar -> result.set(ar.result()));
     await().untilAtomic(called, is(true));
     assertThat(spy.get()).isEqualTo(false);
     assertThat(result.get()).isEqualTo("fallback");
@@ -406,7 +406,7 @@ public class CircuitBreakerImplTest {
     AtomicReference<String> result = new AtomicReference<>();
     breaker.<String>execute(v -> {
       throw new RuntimeException("oh no, but this is expected");
-    }).setHandler(ar -> result.set(ar.result()));
+    }).onComplete(ar -> result.set(ar.result()));
 
     await().until(called::get);
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
@@ -433,7 +433,7 @@ public class CircuitBreakerImplTest {
           Thread.currentThread().interrupt();
         }
         v.complete("done");
-      }).setHandler(ar -> {
+      }).onComplete(ar -> {
         if (ar.failed()) failureCount.incrementAndGet();
       });
     }
@@ -448,7 +448,7 @@ public class CircuitBreakerImplTest {
       spy.set(true);
       v.complete();
     })
-      .setHandler(ar -> result.set(ar.result()));
+      .onComplete(ar -> result.set(ar.result()));
     assertThat(spy.get()).isEqualTo(false);
     assertThat(called.get()).isEqualTo(true);
     assertThat(result.get()).isEqualTo("fallback");
@@ -477,7 +477,7 @@ public class CircuitBreakerImplTest {
           Thread.currentThread().interrupt();
           v.fail(e);
         }
-      }).setHandler(ar -> {
+      }).onComplete(ar -> {
         if (ar.result().equals("fallback")) {
           count.incrementAndGet();
         }
@@ -646,7 +646,7 @@ public class CircuitBreakerImplTest {
     List<AsyncResult<String>> results = new ArrayList<>();
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(future -> future.fail("expected failure"))
-        .setHandler(results::add);
+        .onComplete(results::add);
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
@@ -658,7 +658,7 @@ public class CircuitBreakerImplTest {
 
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
     breaker.<String>execute(future -> future.fail("expected failure"))
-      .setHandler(results::add);
+      .onComplete(results::add);
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
@@ -679,7 +679,7 @@ public class CircuitBreakerImplTest {
         // Ignored.
       }
     })
-      .setHandler(results::add);
+      .onComplete(results::add);
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
@@ -704,7 +704,7 @@ public class CircuitBreakerImplTest {
         t -> {
           throw new RuntimeException("boom");
         })
-        .setHandler(results::add);
+        .onComplete(results::add);
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
@@ -720,7 +720,7 @@ public class CircuitBreakerImplTest {
       t -> {
         throw new RuntimeException("boom");
       })
-      .setHandler(results::add);
+      .onComplete(results::add);
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();

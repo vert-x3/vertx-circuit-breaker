@@ -48,7 +48,7 @@ public class CircuitBreakerExamples {
       // the code reports failures or success on the given future.
       // if this future is marked as failed, the breaker increased the
       // number of failures
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
       // Get the operation result.
     });
   }
@@ -79,7 +79,7 @@ public class CircuitBreakerExamples {
           future.fail("Request error");
         }
       });
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
       // Do something with the result
     });
   }
@@ -115,7 +115,7 @@ public class CircuitBreakerExamples {
           // Executed when the circuit is opened
           return "Hello";
         })
-        .setHandler(ar -> {
+        .onComplete(ar -> {
           // Do something with the result
         });
   }
@@ -182,7 +182,7 @@ public class CircuitBreakerExamples {
     );
 
     Promise<String> userFuture = Promise.promise();
-    userFuture.future().setHandler(ar -> {
+    userFuture.future().onComplete(ar -> {
       // Do something with the result
     });
 

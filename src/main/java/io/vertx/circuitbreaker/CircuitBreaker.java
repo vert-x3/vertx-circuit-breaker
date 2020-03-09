@@ -128,7 +128,7 @@ public interface CircuitBreaker {
   default <T> void executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
                                               Handler<AsyncResult<T>> handler) {
     Future<T> fut = executeWithFallback(command, fallback);
-    fut.setHandler(handler);
+    fut.onComplete(handler);
   }
 
   /**
@@ -151,7 +151,7 @@ public interface CircuitBreaker {
    */
   default <T> void execute(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
     Future<T> fut = execute(command);
-    fut.setHandler(handler);
+    fut.onComplete(handler);
   }
 
   /**

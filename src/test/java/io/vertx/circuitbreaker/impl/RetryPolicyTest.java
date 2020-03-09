@@ -61,7 +61,7 @@ public class RetryPolicyTest {
     breaker.execute(future -> {
       counter.incrementAndGet();
       future.fail("FAILED");
-    }).setHandler(ar -> {
+    }).onComplete(ar -> {
 
     });
 

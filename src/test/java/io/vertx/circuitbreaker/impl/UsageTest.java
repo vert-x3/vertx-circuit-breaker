@@ -97,7 +97,7 @@ public class UsageTest {
           });
         },
         t -> null
-    ).setHandler(ar -> json.set(ar.result()));
+    ).onComplete(ar -> json.set(ar.result()));
     await().atMost(1, TimeUnit.MINUTES).untilAtomic(json, is(notNullValue()));
     assertThat(json.get().getString("status")).isEqualTo("OK");
 
@@ -119,7 +119,7 @@ public class UsageTest {
           });
         },
         t -> new JsonObject().put("status", "KO")
-    ).setHandler(ar -> json.set(ar.result()));
+    ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
     assertThat(json.get().getString("status")).isEqualTo("KO");
 
@@ -141,7 +141,7 @@ public class UsageTest {
           });
         },
         t -> new JsonObject().put("status", "KO")
-    ).setHandler(ar -> json.set(ar.result()));
+    ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
     assertThat(json.get().getString("status")).isEqualTo("KO");
   }
@@ -269,7 +269,7 @@ public class UsageTest {
     cb.<Message<String>>executeWithFallback(
         future -> vertx.eventBus().request("ok", "", future),
         t -> null
-    ).setHandler(ar -> items.add(ar.result().body()));
+    ).onComplete(ar -> items.add(ar.result().body()));
 
     await().until(() -> {
       synchronized (UsageTest.this) {

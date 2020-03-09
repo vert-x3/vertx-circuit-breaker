@@ -52,12 +52,12 @@ public class DashboardExample {
       cb.executeWithFallback(
         commandThatWorks(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     } else {
       cb.executeWithFallback(
         commandThatFails(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     }
   }
 
@@ -67,17 +67,17 @@ public class DashboardExample {
       cb.executeWithFallback(
         commandThatWorks(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     } else if (choice < 7) {
       cb.executeWithFallback(
         commandThatCrashes(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     } else {
       cb.executeWithFallback(
         commandThatFails(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     }
   }
 
@@ -87,17 +87,17 @@ public class DashboardExample {
       cb.executeWithFallback(
         commandThatWorks(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     } else if (choice < 7) {
       cb.executeWithFallback(
         commandThatTimeout(rc.vertx(), 15000),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     } else {
       cb.executeWithFallback(
         commandThatFails(rc.vertx()),
         (t) -> "OK (fallback)")
-        .setHandler(s -> rc.response().end(s.result()));
+        .onComplete(s -> rc.response().end(s.result()));
     }
   }
 
