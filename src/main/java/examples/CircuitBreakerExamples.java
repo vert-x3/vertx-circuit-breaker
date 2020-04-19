@@ -17,7 +17,6 @@
 package examples;
 
 import io.vertx.circuitbreaker.HystrixMetricHandler;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -43,10 +42,10 @@ public class CircuitBreakerExamples {
     // Store the circuit breaker in a field and access it as follows
     // ---
 
-    breaker.execute(future -> {
+    breaker.execute(promise -> {
       // some code executing with the breaker
-      // the code reports failures or success on the given future.
-      // if this future is marked as failed, the breaker increased the
+      // the code reports failures or success on the given promise.
+      // if this promise is marked as failed, the breaker increased the
       // number of failures
     }).onComplete(ar -> {
       // Get the operation result.
@@ -62,21 +61,21 @@ public class CircuitBreakerExamples {
     // Store the circuit breaker in a field and access it as follows
     // ---
 
-    breaker.<String>execute(future -> {
+    breaker.<String>execute(promise -> {
       vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
         if (ar.succeeded()) {
           HttpClientResponse response = ar.result();
           if (response.statusCode() != 200) {
-            future.fail("HTTP error");
+            promise.fail("HTTP error");
           } else {
             response
-              .exceptionHandler(future::fail)
+              .exceptionHandler(promise::fail)
               .bodyHandler(buffer -> {
-                future.complete(buffer.toString());
+                promise.complete(buffer.toString());
               });
           }
         } else {
-          future.fail("Request error");
+          promise.fail("Request error");
         }
       });
     }).onComplete(ar -> {
@@ -94,21 +93,21 @@ public class CircuitBreakerExamples {
     // ---
 
     breaker.executeWithFallback(
-        future -> {
+        promise -> {
           vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
-                future.fail("HTTP error");
+                promise.fail("HTTP error");
               } else {
                 response
-                  .exceptionHandler(future::fail)
+                  .exceptionHandler(promise::fail)
                   .bodyHandler(buffer -> {
-                    future.complete(buffer.toString());
+                    promise.complete(buffer.toString());
                   });
               }
             } else {
-              future.fail("Connect error");
+              promise.fail("Connect error");
             }
           });
         }, v -> {
@@ -129,21 +128,21 @@ public class CircuitBreakerExamples {
     });
 
     breaker.execute(
-        future -> {
+        promise -> {
           vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
-                future.fail("HTTP error");
+                promise.fail("HTTP error");
               } else {
                 response
-                  .exceptionHandler(future::fail)
+                  .exceptionHandler(promise::fail)
                   .bodyHandler(buffer -> {
-                    future.complete(buffer.toString());
+                    promise.complete(buffer.toString());
                   });
               }
             } else {
-              future.fail("Connect error");
+              promise.fail("Connect error");
             }
           });
         });
@@ -159,18 +158,18 @@ public class CircuitBreakerExamples {
     });
 
     breaker.execute(
-        future -> {
+        promise -> {
           vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
-                future.fail("HTTP error");
+                promise.fail("HTTP error");
               } else {
                 // Do something with the response
-                future.complete();
+                promise.complete();
               }
             } else {
-              future.fail("Connect error");
+              promise.fail("Connect error");
             }
           });
         });
@@ -181,28 +180,28 @@ public class CircuitBreakerExamples {
         new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     );
 
-    Promise<String> userFuture = Promise.promise();
-    userFuture.future().onComplete(ar -> {
+    Promise<String> userPromise = Promise.promise();
+    userPromise.future().onComplete(ar -> {
       // Do something with the result
     });
 
     breaker.executeAndReportWithFallback(
-        userFuture,
-        future -> {
+        userPromise,
+        promise -> {
           vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
             if (ar.succeeded()) {
               HttpClientResponse response = ar.result();
               if (response.statusCode() != 200) {
-                future.fail("HTTP error");
+                promise.fail("HTTP error");
               } else {
                 response
-                  .exceptionHandler(future::fail)
+                  .exceptionHandler(promise::fail)
                   .bodyHandler(buffer -> {
-                    future.complete(buffer.toString());
+                    promise.complete(buffer.toString());
                   });
               }
             } else {
-              future.fail("Connect error");
+              promise.fail("Connect error");
             }
           });
         }, v -> {
@@ -238,18 +237,18 @@ public class CircuitBreakerExamples {
     }).retryPolicy(retryCount -> retryCount * 100L);
 
     breaker.execute(
-      future -> {
+      promise -> {
         vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
           if (ar.succeeded()) {
             HttpClientResponse response = ar.result();
             if (response.statusCode() != 200) {
-              future.fail("HTTP error");
+              promise.fail("HTTP error");
             } else {
               // Do something with the response
-              future.complete();
+              promise.complete();
             }
           } else {
-            future.fail("Connect error");
+            promise.fail("Connect error");
           }
         });
       });
