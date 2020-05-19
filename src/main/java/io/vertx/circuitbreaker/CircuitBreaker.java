@@ -20,7 +20,6 @@ import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -28,7 +27,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -296,22 +294,21 @@ public interface CircuitBreaker {
   String name();
 
   /**
-   * Same as {@link #retryPolicy(BiFunction)}, but cannot be cancelled.
+   * Same as {@link #retryPolicy(RetryPolicy)}, but cannot be cancelled.
    *
    * @param retryPolicy the retry policy function
    * @return the delay (ms) to wait before retrying
-   * @deprecated instead use {@link #retryPolicy(BiFunction)}
+   * @deprecated instead use {@link #retryPolicy(RetryPolicy)}
    */
   @Fluent
   @Deprecated
   CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
 
   /**
-   * Determines how often the circuit breaker should wait before retrying a failed execution,
+   * Determines how long to wait before retrying a failed execution,
    * provided {@link CircuitBreakerOptions#setMaxRetries(int)} is greater than 0.
    *
-   * <p>Retries can be cancelled by returning a value of {@code -1L}.</p>
-   *
+   * <p><bold>Example usage:</bold></p>
    * <pre>{@code
    * Vertx vertx = Vertx.vertx();
    * CircuitBreakerOptions options = new CircuitBreakerOptions().setMaxRetries(5).setMaxFailures(4);
@@ -322,10 +319,8 @@ public interface CircuitBreaker {
    * });
    * }</pre>
    *
-   * @param retryPolicy receives the retryCount and failure (nullable) as parameters, and
-   *                    returns the delay (ms) to wait before retrying, if at all.
-   * @return the delay (ms) to wait before retrying, or {@code -1L} to stop retrying
+   * @param retryPolicy the {@link RetryPolicy}
    */
   @Fluent
-  CircuitBreaker retryPolicy(BiFunction<Integer, @Nullable Throwable, Long> retryPolicy);
+  CircuitBreaker retryPolicy(RetryPolicy retryPolicy);
 }

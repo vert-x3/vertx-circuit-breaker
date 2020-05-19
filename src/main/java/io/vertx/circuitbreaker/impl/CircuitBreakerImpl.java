@@ -20,8 +20,8 @@ import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.circuitbreaker.OpenCircuitException;
+import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.circuitbreaker.TimeoutException;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -62,7 +61,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private final AtomicInteger passed = new AtomicInteger();
 
   private CircuitBreakerMetrics metrics;
-  private BiFunction<Integer, Throwable, Long> retryPolicy = (retry, throwable) -> 0L;
+  private RetryPolicy retryPolicy = (retry, throwable) -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
@@ -469,7 +468,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public CircuitBreaker retryPolicy(BiFunction<Integer, @Nullable Throwable, Long> retryPolicy) {
+  public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }
