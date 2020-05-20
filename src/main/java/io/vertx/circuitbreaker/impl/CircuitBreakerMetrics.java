@@ -26,7 +26,7 @@ public class CircuitBreakerMetrics {
     this.circuitBreaker = circuitBreaker;
     this.circuitBreakerTimeout = circuitBreaker.options().getTimeout();
     this.circuitBreakerResetTimeout = circuitBreaker.options().getResetTimeout();
-    this.node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeID() : "local";
+    this.node = vertx.isClustered() ? ((VertxInternal) vertx).getClusterManager().getNodeId() : "local";
     this.rollingWindow = new RollingWindow(options.getMetricsRollingWindow(), options.getMetricsRollingBuckets());
   }
 
