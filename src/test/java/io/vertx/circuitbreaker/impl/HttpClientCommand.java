@@ -20,7 +20,9 @@ import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,20 +50,27 @@ public class HttpClientCommand extends HystrixCommand<String> {
       latch.countDown();
     };
 
-    client.get(path, ar -> {
-      if (ar.succeeded()) {
-        HttpClientResponse response = ar.result();
-        response.exceptionHandler(errorHandler);
-        if (response.statusCode() != 200) {
-          latch.countDown();
-          return;
-        }
-        response.bodyHandler(content -> {
-          result.set(content.toString());
-          latch.countDown();
+    client.request(HttpMethod.GET, path, ar1 -> {
+      if (ar1.succeeded()) {
+        HttpClientRequest req = ar1.result();
+        req.send(ar2 -> {
+          if (ar2.succeeded()) {
+            HttpClientResponse response = ar2.result();
+            response.exceptionHandler(errorHandler);
+            if (response.statusCode() != 200) {
+              latch.countDown();
+              return;
+            }
+            response.bodyHandler(content -> {
+              result.set(content.toString());
+              latch.countDown();
+            });
+          } else {
+            errorHandler.handle(ar2.cause());
+          }
         });
       } else {
-        errorHandler.handle(ar.cause());
+        errorHandler.handle(ar1.cause());
       }
     });
 

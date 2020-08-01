@@ -7,11 +7,13 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -83,18 +85,14 @@ public class UsageTest {
 
     AtomicReference<JsonObject> json = new AtomicReference<>();
     cb.<JsonObject>executeWithFallback(
-        future -> {
-          client.get(8089, "localhost", "/resource", HttpHeaders.set("Accept", "application/json"), ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              response.exceptionHandler(future::fail);
-              response.bodyHandler(buffer -> {
-                future.complete(buffer.toJsonObject());
-              });
-            } else {
-              future.fail(ar.cause());
-            }
-          });
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/resource")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> resp
+                .body()
+                .map(Buffer::toJsonObject))
+            ).onComplete(promise);
         },
         t -> null
     ).onComplete(ar -> json.set(ar.result()));
@@ -103,20 +101,18 @@ public class UsageTest {
 
     json.set(null);
     cb.executeWithFallback(
-        future -> {
-          client.get(8089, "localhost", "/error", HttpHeaders.set("Accept", "application/json"), ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                future.fail("Invalid response");
-              } else {
-                response.exceptionHandler(future::fail);
-                response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
-              }
-            } else {
-              future.fail(ar.cause());
-            }
-          });
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/error")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("Invalid response");
+                } else {
+                  return resp.body().map(Buffer::toJsonObject);
+                }
+              })
+            ).onComplete(promise);
         },
         t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));
@@ -125,20 +121,18 @@ public class UsageTest {
 
     json.set(null);
     cb.executeWithFallback(
-        future -> {
-          client.get(8089, "localhost", "/delayed", HttpHeaders.set("Accept", "application/json"), ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              response.exceptionHandler(future::fail);
-              if (response.statusCode() != 200) {
-                future.fail("Invalid response");
-              } else {
-                response.bodyHandler(buffer -> future.complete(buffer.toJsonObject()));
-              }
-            } else {
-              future.fail(ar.cause());
-            }
-          });
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/delayed")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("Invalid response");
+                } else {
+                  return resp.body().map(Buffer::toJsonObject);
+                }
+              })
+            ).onComplete(promise);
         },
         t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));

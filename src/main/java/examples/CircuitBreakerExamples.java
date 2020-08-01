@@ -17,11 +17,14 @@
 package examples;
 
 import io.vertx.circuitbreaker.HystrixMetricHandler;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 
 /**
@@ -62,22 +65,16 @@ public class CircuitBreakerExamples {
     // ---
 
     breaker.<String>execute(promise -> {
-      vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          if (response.statusCode() != 200) {
-            promise.fail("HTTP error");
-          } else {
-            response
-              .exceptionHandler(promise::fail)
-              .bodyHandler(buffer -> {
-                promise.complete(buffer.toString());
-              });
-          }
-        } else {
-          promise.fail("Request error");
-        }
-      });
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          })).onComplete(promise);
     }).onComplete(ar -> {
       // Do something with the result
     });
@@ -94,23 +91,17 @@ public class CircuitBreakerExamples {
 
     breaker.executeWithFallback(
         promise -> {
-          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                promise.fail("HTTP error");
-              } else {
-                response
-                  .exceptionHandler(promise::fail)
-                  .bodyHandler(buffer -> {
-                    promise.complete(buffer.toString());
-                  });
-              }
-            } else {
-              promise.fail("Connect error");
-            }
-          });
-        }, v -> {
+          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+            .compose(req -> req
+              .send()
+              .compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("HTTP error");
+                } else {
+                  return resp.body().map(Buffer::toString);
+                }
+              })).onComplete(promise);
+          }, v -> {
           // Executed when the circuit is opened
           return "Hello";
         })
@@ -127,24 +118,18 @@ public class CircuitBreakerExamples {
       return "hello";
     });
 
-    breaker.execute(
+    breaker.<String>execute(
         promise -> {
-          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                promise.fail("HTTP error");
-              } else {
-                response
-                  .exceptionHandler(promise::fail)
-                  .bodyHandler(buffer -> {
-                    promise.complete(buffer.toString());
-                  });
-              }
-            } else {
-              promise.fail("Connect error");
-            }
-          });
+          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+            .compose(req -> req
+              .send()
+              .compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("HTTP error");
+                } else {
+                  return resp.body().map(Buffer::toString);
+                }
+              })).onComplete(promise);
         });
   }
 
@@ -157,21 +142,18 @@ public class CircuitBreakerExamples {
       System.out.println("Circuit closed");
     });
 
-    breaker.execute(
+    breaker.<String>execute(
         promise -> {
-          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                promise.fail("HTTP error");
-              } else {
-                // Do something with the response
-                promise.complete();
-              }
-            } else {
-              promise.fail("Connect error");
-            }
-          });
+          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+            .compose(req -> req
+              .send()
+              .compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("HTTP error");
+                } else {
+                  return resp.body().map(Buffer::toString);
+                }
+              })).onComplete(promise);
         });
   }
 
@@ -188,22 +170,16 @@ public class CircuitBreakerExamples {
     breaker.executeAndReportWithFallback(
         userPromise,
         promise -> {
-          vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                promise.fail("HTTP error");
-              } else {
-                response
-                  .exceptionHandler(promise::fail)
-                  .bodyHandler(buffer -> {
-                    promise.complete(buffer.toString());
-                  });
-              }
-            } else {
-              promise.fail("Connect error");
-            }
-          });
+          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+            .compose(req -> req
+              .send()
+              .compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("HTTP error");
+                } else {
+                  return resp.body().map(Buffer::toString);
+                }
+              })).onComplete(promise);
         }, v -> {
           // Executed when the circuit is opened
           return "Hello";
@@ -236,21 +212,18 @@ public class CircuitBreakerExamples {
       System.out.println("Circuit closed");
     }).retryPolicy(retryCount -> retryCount * 100L);
 
-    breaker.execute(
+    breaker.<String>execute(
       promise -> {
-        vertx.createHttpClient().get(8080, "localhost", "/", ar -> {
-          if (ar.succeeded()) {
-            HttpClientResponse response = ar.result();
-            if (response.statusCode() != 200) {
-              promise.fail("HTTP error");
-            } else {
-              // Do something with the response
-              promise.complete();
-            }
-          } else {
-            promise.fail("Connect error");
-          }
-        });
+        vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+          .compose(req -> req
+            .send()
+            .compose(resp -> {
+              if (resp.statusCode() != 200) {
+                return Future.failedFuture("HTTP error");
+              } else {
+                return resp.body().map(Buffer::toString);
+              }
+            })).onComplete(promise);
       });
   }
 }

@@ -20,7 +20,9 @@ import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -100,13 +102,13 @@ public class CircuitBreakerWithHTTPTest {
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
     Promise<String> result = Promise.promise();
-    breaker.executeAndReport(result, v -> client.get(8080, "localhost", "/",
-      ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          response.bodyHandler(buffer -> v.complete(buffer.toString()));
-        }
-      }));
+    breaker.executeAndReport(result, v -> client.request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> resp
+            .body()
+            .map(Buffer::toString)))
+      .onComplete(v));
 
     await().until(() -> result.future().result() != null);
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -123,16 +125,15 @@ public class CircuitBreakerWithHTTPTest {
     for (int i = 0; i < options.getMaxFailures(); i++) {
       Promise<String> result = Promise.promise();
       breaker.executeAndReport(result, future ->
-          client.get(8080, "localhost", "/error", ar -> {
-            if (ar.succeeded()) {
-              HttpClientResponse response = ar.result();
-              if (response.statusCode() != 200) {
-                future.fail("http error");
-              } else {
-                future.complete();
-              }
-              count.incrementAndGet();
+          client.request(HttpMethod.GET, 8080, "localhost", "/error").compose(req ->
+            req.send().compose(resp -> Future.succeededFuture(resp.statusCode()))
+          ).onSuccess(sc -> {
+            if (sc != 200) {
+              future.fail("http error");
+            } else {
+              future.complete();
             }
+            count.incrementAndGet();
           })
       );
     }
@@ -142,16 +143,15 @@ public class CircuitBreakerWithHTTPTest {
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
-        client.get(8080, "localhost", "/error", ar -> {
-          if (ar.succeeded()) {
-            HttpClientResponse response = ar.result();
-            if (response.statusCode() != 200) {
-              future.fail("http error");
-            } else {
-              future.complete();
-            }
-          }
-        }), v -> "fallback");
+      client.request(HttpMethod.GET, 8080, "localhost", "/error")
+        .compose(req -> req.send().compose(resp -> Future.succeededFuture(resp.statusCode())))
+      .onSuccess(sc -> {
+        if (sc != 200) {
+          future.fail("http error");
+        } else {
+          future.complete();
+        }
+      }), v -> "fallback");
 
     await().until(() -> result.future().result().equals("fallback"));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
@@ -168,10 +168,11 @@ public class CircuitBreakerWithHTTPTest {
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(future ->
-          client.get(8080, "localhost", "/long", response -> {
+          client.request(HttpMethod.GET,8080, "localhost", "/long").compose(req ->
+            req.send().compose(HttpClientResponse::body).onSuccess(body -> {
             count.incrementAndGet();
             future.complete();
-          }));
+          })));
     }
 
     await().untilAtomic(count, is(options.getMaxFailures()));
@@ -179,7 +180,8 @@ public class CircuitBreakerWithHTTPTest {
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
-      client.get(8080, "localhost", "/long", response -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/long")
+        .compose(HttpClientRequest::send).onSuccess(response -> {
         System.out.println("Got response");
         future.complete();
       }), v -> "fallback");

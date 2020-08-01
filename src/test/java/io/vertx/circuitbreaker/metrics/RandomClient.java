@@ -3,7 +3,9 @@ package io.vertx.circuitbreaker.metrics;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,12 +36,17 @@ public class RandomClient extends AbstractVerticle {
     vertx.setPeriodic(500, l -> {
       int index = random.nextInt(paths.size());
       int count = counter.getAndIncrement();
-      vertx.createHttpClient().get(8080, "localhost", paths.get(index), ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Response: " + response.statusMessage());
-          response.bodyHandler(buffer -> {
-            System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Data: " + buffer.toString());
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", paths.get(index), ar1 -> {
+        if (ar1.succeeded()) {
+          HttpClientRequest request = ar1.result();
+          request.send(ar2 -> {
+            if (ar2.succeeded()) {
+              HttpClientResponse response = ar2.result();
+              System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Response: " + response.statusMessage());
+              response.bodyHandler(buffer -> {
+                System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Data: " + buffer.toString());
+              });
+            }
           });
         }
       });
