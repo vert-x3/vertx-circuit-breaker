@@ -1,4 +1,4 @@
-== Vert.x Circuit Breaker
+= Vert.x Circuit Breaker
 
 Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. It keeps track of the
 number of failures and _opens the circuit_ when a threshold is reached. Optionally, a fallback is executed.
