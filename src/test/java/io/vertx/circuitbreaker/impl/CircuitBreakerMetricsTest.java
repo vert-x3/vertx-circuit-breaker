@@ -51,6 +51,7 @@ public class CircuitBreakerMetricsTest {
 
   @After
   public void tearDown() {
+    vertx.exceptionHandler(null);
     if (breaker != null) {
       breaker.close();
     }

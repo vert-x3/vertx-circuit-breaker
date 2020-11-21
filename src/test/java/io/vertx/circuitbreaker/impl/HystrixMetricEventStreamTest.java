@@ -60,6 +60,8 @@ public class HystrixMetricEventStreamTest {
 
   @After
   public void tearDown() {
+    vertx.exceptionHandler(null);
+
     if (breakerA != null) {
       breakerA.close();
     }
