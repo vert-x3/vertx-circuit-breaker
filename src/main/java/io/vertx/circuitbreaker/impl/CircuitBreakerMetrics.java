@@ -125,45 +125,45 @@ public class CircuitBreakerMetrics {
     json.put("failures", circuitBreaker.failureCount());
 
     // Global metrics
-    addSummary(json, rollingWindow.totalSummary(), "total");
+    addSummary(json, rollingWindow.totalSummary(), MetricNames.TOTAL);
 
     // Window metrics
     evictOutdatedOperations();
-    addSummary(json, rollingWindow.windowSummary(), "rolling");
+    addSummary(json, rollingWindow.windowSummary(), MetricNames.ROLLING);
 
     return json;
   }
 
-  private void addSummary(JsonObject json, RollingWindow.Summary summary, String prefix) {
+  private void addSummary(JsonObject json, RollingWindow.Summary summary, MetricNames names) {
     long calls = summary.count();
     int errorCount = summary.failures + summary.exceptions + summary.timeouts;
 
-    json.put(prefix + "OperationCount", calls - summary.shortCircuited);
-    json.put(prefix + "ErrorCount", errorCount);
-    json.put(prefix + "SuccessCount", summary.successes);
-    json.put(prefix + "TimeoutCount", summary.timeouts);
-    json.put(prefix + "ExceptionCount", summary.exceptions);
-    json.put(prefix + "FailureCount", summary.failures);
+    json.put(names.operationCountName, calls - summary.shortCircuited);
+    json.put(names.errorCountName, errorCount);
+    json.put(names.successCountName, summary.successes);
+    json.put(names.timeoutCountName, summary.timeouts);
+    json.put(names.exceptionCountName, summary.exceptions);
+    json.put(names.failureCountName, summary.failures);
 
     if (calls == 0) {
-      json.put(prefix + "SuccessPercentage", 0);
-      json.put(prefix + "ErrorPercentage", 0);
+      json.put(names.successPercentageName, 0);
+      json.put(names.errorPercentageName, 0);
     } else {
-      json.put(prefix + "SuccessPercentage", ((double) summary.successes / calls) * 100);
-      json.put(prefix + "ErrorPercentage", ((double) (errorCount) / calls) * 100);
+      json.put(names.successPercentageName, ((double) summary.successes / calls) * 100);
+      json.put(names.errorPercentageName, ((double) (errorCount) / calls) * 100);
     }
 
-    json.put(prefix + "FallbackSuccessCount", summary.fallbackSuccess);
-    json.put(prefix + "FallbackFailureCount", summary.fallbackFailure);
-    json.put(prefix + "ShortCircuitedCount", summary.shortCircuited);
+    json.put(names.fallbackSuccessCountName, summary.fallbackSuccess);
+    json.put(names.fallbackFailureCountName, summary.fallbackFailure);
+    json.put(names.shortCircuitedCountName, summary.shortCircuited);
 
-    addLatency(json, summary.statistics, prefix);
+    addLatency(json, summary.statistics, names);
   }
 
 
-  private void addLatency(JsonObject json, Histogram histogram, String prefix) {
-    json.put(prefix + "LatencyMean", histogram.getMean());
-    json.put(prefix + "Latency", new JsonObject()
+  private void addLatency(JsonObject json, Histogram histogram, MetricNames names) {
+    json.put(names.latencyMeanName, histogram.getMean());
+    json.put(names.latencyName, new JsonObject()
       .put("0", histogram.getValueAtPercentile(0))
       .put("25", histogram.getValueAtPercentile(25))
       .put("50", histogram.getValueAtPercentile(50))
@@ -173,6 +173,42 @@ public class CircuitBreakerMetrics {
       .put("99", histogram.getValueAtPercentile(99))
       .put("99.5", histogram.getValueAtPercentile(99.5))
       .put("100", histogram.getValueAtPercentile(100)));
+  }
+
+  private enum MetricNames {
+    ROLLING("rolling"), TOTAL("total");
+
+    private final String operationCountName;
+    private final String errorCountName;
+    private final String successCountName;
+    private final String timeoutCountName;
+    private final String exceptionCountName;
+    private final String failureCountName;
+    private final String successPercentageName;
+    private final String errorPercentageName;
+    private final String fallbackSuccessCountName;
+    private final String fallbackFailureCountName;
+    private final String shortCircuitedCountName;
+
+    private final String latencyMeanName;
+    private final String latencyName;
+
+    MetricNames(String prefix){
+      operationCountName = prefix + "OperationCount";
+      errorCountName = prefix + "ErrorCount";
+      successCountName = prefix + "SuccessCount";
+      timeoutCountName = prefix + "TimeoutCount";
+      exceptionCountName = prefix + "ExceptionCount";
+      failureCountName = prefix + "FailureCount";
+      successPercentageName = prefix + "SuccessPercentage";
+      errorPercentageName = prefix + "ErrorPercentage";
+      fallbackSuccessCountName = prefix + "FallbackSuccessCount";
+      fallbackFailureCountName = prefix + "FallbackFailureCount";
+      shortCircuitedCountName = prefix + "ShortCircuitedCount";
+
+      latencyName = prefix + "Latency";
+      latencyMeanName = prefix + "LatencyMean";
+    }
   }
 
   private static class RollingWindow {
