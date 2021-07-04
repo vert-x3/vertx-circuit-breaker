@@ -918,6 +918,224 @@ public class CircuitBreakerImplTest {
 
   }
 
+  /**
+   * Similar to {@link #testRetries()} but we <bold>don't</bold> want retries to happen in certain cases.
+   */
+  @Test
+  @Repeat(5)
+  public void testCancelRetries() {
+    // Configure the breaker to retry on failure.
+    CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setMaxRetries(5)
+      .setMaxFailures(4)
+      .setTimeout(100)
+      .setFallbackOnFailure(true);
+    List<Throwable> failures = new ArrayList<>();
+
+    AtomicInteger calls = new AtomicInteger();
+    breaker = CircuitBreaker.create("test", vertx, options);
+    // Define the policy to stop retrying when a specific exception is thrown.
+    // (ArithmeticException is arbitrary and only for example purposes.)
+    AtomicInteger retries = new AtomicInteger();
+    breaker.retryPolicy((retryCount, failure) -> {
+      if (failure instanceof ArithmeticException) return -1L;
+
+      retries.incrementAndGet();
+      return 0L;
+    });
+
+    // Retries as expected for normal failures.
+    final AtomicReference<Future> result = new AtomicReference<>();
+    vertx.runOnContext(v -> {
+      result.set(breaker.execute(future -> {
+        calls.incrementAndGet();
+        future.fail("boom");
+      }));
+    });
+
+    await().untilAtomic(calls, is(6));
+    assertThat(retries.get()).isEqualTo(5);
+    assertThat(result.get().failed()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    calls.set(0);
+    retries.set(0);
+    result.set(null);
+
+    // Doesn't retry if the failure is ArithmeticExceptions.
+    vertx.runOnContext(v -> {
+      result.set(breaker.execute(future -> {
+        calls.incrementAndGet();
+        future.fail(new ArithmeticException());
+      }));
+    });
+
+    await().untilAtomic(calls, is(1));
+    assertThat(retries.get()).isEqualTo(0);
+    assertThat(result.get().failed()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    calls.set(0);
+    retries.set(0);
+    result.set(null);
+
+    // Initially retry, but stops when ArithmeticException is thrown.
+    vertx.runOnContext(v -> {
+      result.set(breaker.execute(future -> {
+        if (calls.incrementAndGet() >= 3) {
+          future.fail(new ArithmeticException());
+        } else {
+          future.fail("boom");
+        }
+      }));
+    });
+
+    await().untilAtomic(calls, is(3));
+    assertThat(retries.get()).isEqualTo(2);
+    assertThat(result.get().failed()).isTrue();
+    assertThat(breaker.failureCount()).isEqualTo(1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    calls.set(0);
+    retries.set(0);
+
+    // Verify that calls happen normally and are only reported on the final retry.
+    vertx.runOnContext(v -> {
+      for (int i = 0; i < options.getMaxFailures() + 1; i++) {
+        breaker.execute(future -> {
+          try {
+            calls.incrementAndGet();
+            Thread.sleep(150);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        });
+      }
+    });
+
+    await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
+    // TODO: Validate these numbers — they seem counterintuitive but (I think) make sense.
+    // "Notice that if you set maxRetries to 2 for instance, your operation may be called 3 times: the initial attempt and 2 retries."
+    // https://vertx.io/docs/vertx-circuit-breaker/java/#_retries
+    // Given that maxFailures=4 and maxRetries=5,
+    // this will be called maxFailures+1 times and each call will be retried maxRetries+1 times.
+    assertThat(calls.get()).isEqualTo(30);
+    assertThat(retries.get()).isEqualTo(25);
+    assertThat(result.get().succeeded()).isFalse();
+    assertThat(breaker.failureCount()).isEqualTo(5);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    calls.set(0);
+    retries.set(0);
+
+    // Verify calls are not retried if -1L is returned.
+    vertx.runOnContext(v -> {
+      for (int i = 0; i < options.getMaxFailures() +1; i++) {
+        breaker.execute(future -> {
+          calls.incrementAndGet();
+          future.fail(new ArithmeticException());
+        });
+      }
+    });
+
+    await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
+    assertThat(calls.get()).isEqualTo(5);
+    assertThat(retries.get()).isEqualTo(0);
+    assertThat(result.get().succeeded()).isFalse();
+    assertThat(breaker.failureCount()).isEqualTo(5);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    calls.set(0);
+    retries.set(0);
+
+    // Verify that calls will fail if the breaker is tripper in the meantime.
+    // Also, that they aren't retried.
+    // TODO: Confirm understanding of this test.
+    AtomicReference<Future> result2 = new AtomicReference<>();
+    vertx.runOnContext(v -> {
+      // Execution #1, which completes successfully after 4 tries.
+      result2.set(breaker.execute(future -> {
+        if (calls.incrementAndGet() == 4) {
+          future.complete();
+        } else {
+          try {
+            Thread.sleep(150);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }));
+      // Execution #2, which always fails but doesn't retry the first call.
+      for (int i = 0; i < options.getMaxFailures(); i++) {
+        int finalI = i;
+        breaker.execute(future -> {
+          if (finalI == 0) {
+            future.fail(new ArithmeticException());
+          } else {
+            future.fail("boom");
+          }
+        });
+      }
+    });
+
+    await().until(() -> result2.get() != null  && result2.get().failed());
+    // Execution #1 is only called once.
+    assertThat(calls.get()).isEqualTo(1);
+    // Execution #2 is called 4 times, but the first execution isn't retried (3x5).
+    assertThat(retries.get()).isEqualTo(15);
+    assertThat(breaker.failureCount()).isGreaterThanOrEqualTo(options.getMaxFailures() + 1);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    breaker.fallback(failures::add);
+    calls.set(0);
+    retries.set(0);
+    result.set(null);
+
+    // Verify that retry is cancelled and only the final exception is thrown.
+    vertx.runOnContext(v -> {
+      result.set(breaker.execute(future -> {
+        try {
+          if (calls.incrementAndGet() == 3) {
+            future.fail(new ArithmeticException("math error"));
+            return;
+          }
+          Thread.sleep(150);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }));
+    });
+
+    await().until(() -> failures.size() == 1);
+    failures.forEach(ar -> assertThat(ar).isNotNull()
+      .isInstanceOf(ArithmeticException.class)
+      .hasMessage("math error"));
+    // Execution #1 is only called once.
+    assertThat(calls.get()).isEqualTo(3);
+    // Execution #2 is called 4 times, but the first execution isn't retried (3x5).
+    assertThat(retries.get()).isEqualTo(2);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    // Reset the test.
+    ((CircuitBreakerImpl) breaker).reset(true);
+    breaker.fallback(failures::add);
+    calls.set(0);
+    retries.set(0);
+    result.set(null);
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidBucketSize() {
     CircuitBreakerOptions options = new CircuitBreakerOptions()

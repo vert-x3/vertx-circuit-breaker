@@ -20,6 +20,7 @@ import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.circuitbreaker.OpenCircuitException;
+import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.circuitbreaker.TimeoutException;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -60,7 +61,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private final AtomicInteger passed = new AtomicInteger();
 
   private CircuitBreakerMetrics metrics;
-  private Function<Integer, Long> retryPolicy = retry -> 0L;
+  private RetryPolicy retryPolicy = (retry, throwable) -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
@@ -279,6 +280,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     Promise<T> retry = Promise.promise();
 
     retry.future().setHandler(event -> {
+      // If the operation succeeded, we don't need to retry.
       if (event.succeeded()) {
         reset();
         context.runOnContext(v -> {
@@ -287,43 +289,60 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         return;
       }
 
+      // Otherwise, we should retry provided the breaker is closed.
       CircuitBreakerState currentState;
       synchronized (this) {
         currentState = state;
       }
-
-      if (currentState == CircuitBreakerState.CLOSED) {
-        if (retryCount < options.getMaxRetries() - 1) {
-          executeRetryWithTimeout(retryCount, l -> {
-            context.runOnContext(v -> {
-              // Don't report timeout or error in the retry attempt, only the last one.
-              executeOperation(context, command, retryFuture(context, retryCount + 1, command, operationResult, null),
-                call);
-            });
-          });
-        } else {
-          executeRetryWithTimeout(retryCount, (l) -> {
-            context.runOnContext(v -> {
-              executeOperation(context, command, operationResult, call);
-            });
-          });
-        }
-      } else {
+      if (currentState != CircuitBreakerState.CLOSED) {
         context.runOnContext(v -> operationResult.fail(OpenCircuitException.INSTANCE));
+        return;
       }
+
+      executeRetryWithDelay(retryCount, event.cause(), (instruction) -> {
+        context.runOnContext(v -> {
+          // If the instruction is "STOP", fail immediately instead of retrying.
+          if (instruction == RetryInstruction.STOP) {
+            // TODO: Verify that this failure is reported correctly.
+            operationResult.fail(event.cause());
+            return;
+          }
+
+          // Otherwise, continue retrying.
+          if (retryCount < options.getMaxRetries() - 1) {
+            // Don't report timeout or error in the retry attempt, only the last one.
+            Promise<T> retryPromise = retryFuture(context, retryCount + 1, command, operationResult, null);
+            executeOperation(context, command, retryPromise, call);
+          } else {
+            // Final attempt: report timeouts and errors.
+            executeOperation(context, command, operationResult, call);
+          }
+        });
+      });
     });
     return retry;
   }
 
-  private void executeRetryWithTimeout(int retryCount, Handler<Void> action) {
-    long retryTimeout = retryPolicy.apply(retryCount + 1);
+  /**
+   * Calculates whether to retry the execution, and — if so — how long to wait before retrying.
+   *
+   * <p>If the {@link #retryPolicy} returns -1L, the execution will not be retried.</p>
+   *
+   * @param action the action to execute. Receives a {@link RetryInstruction} as a parameter,
+   *               which indicates whether the action should be retried.
+   */
+  private void executeRetryWithDelay(int retryCount, Throwable failure, Handler<RetryInstruction> action) {
+    long retryDelay = retryPolicy.apply(retryCount + 1, failure);
 
-    if (retryTimeout > 0) {
-      vertx.setTimer(retryTimeout, (l) -> {
-        action.handle(null);
+    if (retryDelay > 0) {
+      // Retry after the given timeout.
+      vertx.setTimer(retryDelay, (l) -> {
+        action.handle(RetryInstruction.CONTINUE);
       });
     } else {
-      action.handle(null);
+      // If the policy returns -1L, stop retrying; otherwise, retry immediately.
+      RetryInstruction instruction = RetryInstruction.of(retryDelay);
+      action.handle(instruction);
     }
   }
 
@@ -444,6 +463,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy) {
+    this.retryPolicy = (retryCount, throwable) -> retryPolicy.apply(retryCount);
+    return this;
+  }
+
+  @Override
+  public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }

@@ -293,6 +293,34 @@ public interface CircuitBreaker {
   @CacheReturn
   String name();
 
+  /**
+   * Same as {@link #retryPolicy(RetryPolicy)}, but cannot be cancelled.
+   *
+   * @param retryPolicy the retry policy function
+   * @return the delay (ms) to wait before retrying
+   * @deprecated instead use {@link #retryPolicy(RetryPolicy)}
+   */
   @Fluent
+  @Deprecated
   CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
+
+  /**
+   * Determines how long to wait before retrying a failed execution,
+   * provided {@link CircuitBreakerOptions#setMaxRetries(int)} is greater than 0.
+   *
+   * <p><bold>Example usage:</bold></p>
+   * <pre>{@code
+   * Vertx vertx = Vertx.vertx();
+   * CircuitBreakerOptions options = new CircuitBreakerOptions().setMaxRetries(5).setMaxFailures(4);
+   * CircuitBreaker breaker = CircuitBreaker.create("retry-example", vertx, options);
+   * breaker.retryPolicy((retryCount, failure) -> {
+   *   if (failure instanceof IllegalArgumentException) return -1L;
+   *   else return Math.pow(retryCount, 2);
+   * });
+   * }</pre>
+   *
+   * @param retryPolicy the {@link RetryPolicy}
+   */
+  @Fluent
+  CircuitBreaker retryPolicy(RetryPolicy retryPolicy);
 }
