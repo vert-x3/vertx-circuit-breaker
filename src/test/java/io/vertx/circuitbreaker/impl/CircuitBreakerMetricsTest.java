@@ -3,11 +3,7 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -23,9 +19,12 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static io.vertx.circuitbreaker.asserts.Assertions.assertThat;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -188,14 +187,9 @@ public class CircuitBreakerMetricsTest {
 
     int count = 1000;
 
-    // Future chain
-    Future<Void> fut = breaker.execute(commandThatWorks());
-    for (int i = 1; i < count; i++) {
-      Future<Void> newFut = breaker.execute(commandThatWorks());
-      fut = fut.compose(v -> newFut); // Chain futures
-    }
-
-    fut
+    IntStream.range(0, count)
+      .<Future>mapToObj(i -> breaker.execute(commandThatWorks()))
+      .collect(collectingAndThen(toList(), CompositeFuture::all))
       .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
