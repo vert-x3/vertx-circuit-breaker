@@ -29,7 +29,7 @@
       
     <artifactId>vertx-circuit-breaker</artifactId>
       
-    <version>3.9.10</version>
+    <version>3.9.11-SNAPSHOT</version>
       
     <properties>
             
