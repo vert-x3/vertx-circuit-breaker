@@ -55,6 +55,11 @@ public class CircuitBreakerOptionsConverter {
             obj.setNotificationAddress((String)member.getValue());
           }
           break;
+        case "notificationLocalOnly":
+          if (member.getValue() instanceof Boolean) {
+            obj.setNotificationLocalOnly((Boolean)member.getValue());
+          }
+          break;
         case "notificationPeriod":
           if (member.getValue() instanceof Number) {
             obj.setNotificationPeriod(((Number)member.getValue()).longValue());
@@ -88,6 +93,7 @@ public class CircuitBreakerOptionsConverter {
     if (obj.getNotificationAddress() != null) {
       json.put("notificationAddress", obj.getNotificationAddress());
     }
+    json.put("notificationLocalOnly", obj.isNotificationLocalOnly());
     json.put("notificationPeriod", obj.getNotificationPeriod());
     json.put("resetTimeout", obj.getResetTimeout());
     json.put("timeout", obj.getTimeout());
