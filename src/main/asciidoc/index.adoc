@@ -122,10 +122,17 @@ such a callback with {@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandl
 
 == Event bus notification
 
-Every time the circuit state changes, an event is published on the event bus. The address on which the events are
-sent is configurable with
-{@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationAddress(java.lang.String)}. If `null` is
-passed to this method, the notifications are disabled. By default, the used address is `vertx.circuit-breaker`.
+Every time the circuit state changes, an event can be published on the event bus.
+
+To enable this feature, set the {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationAddress(java.lang.String) notification address} to a value that is not `null`:
+
+[source,$lang]
+----
+{@link examples.CircuitBreakerExamples#enableNotifications}
+----
+
+NOTE: When enabled, notifications are, by default, delivered only to local consumers.
+If the notification must be sent to all consumers in a cluster, you can change this behavior with {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationLocalOnly}.
 
 Each event contains a Json Object with:
 
@@ -167,8 +174,8 @@ a SSE stream sending the metrics. This stream is provided by the
 In the Hystrix Dashboard, configure the stream url like: `http://localhost:8080/metrics`. The dashboard now consumes
 the metrics from the Vert.x circuit breakers.
 
-Notice that the metrics are collected by the Vert.x Web handler using the event bus notifications. If you don't use
-the default notification address, you need to pass it when creating the metrics handler.
+IMPORTANT: The metrics are collected by the Vert.x Web handler using <<Event bus notification>>.
+The feature must be enabled and, if you don't use the default notification address, you need to pass it when creating the metrics handler.
 
 [language, java]
 ----

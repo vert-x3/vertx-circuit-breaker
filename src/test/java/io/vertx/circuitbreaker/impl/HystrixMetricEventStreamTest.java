@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jayway.awaitility.Awaitility.await;
+import static io.vertx.circuitbreaker.CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -81,9 +82,12 @@ public class HystrixMetricEventStreamTest {
   @Test
   @Repeat(10)
   public void test() {
-    breakerA = CircuitBreaker.create("A", vertx, new CircuitBreakerOptions().setTimeout(1000));
-    breakerB = CircuitBreaker.create("B", vertx, new CircuitBreakerOptions().setTimeout(1000));
-    breakerC = CircuitBreaker.create("C", vertx, new CircuitBreakerOptions().setTimeout(1000));
+    CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setNotificationAddress(DEFAULT_NOTIFICATION_ADDRESS)
+      .setTimeout(1000);
+    breakerA = CircuitBreaker.create("A", vertx, new CircuitBreakerOptions(options));
+    breakerB = CircuitBreaker.create("B", vertx, new CircuitBreakerOptions(options));
+    breakerC = CircuitBreaker.create("C", vertx, new CircuitBreakerOptions(options));
 
     Router router = Router.router(vertx);
     router.get("/metrics").handler(HystrixMetricHandler.create(vertx));

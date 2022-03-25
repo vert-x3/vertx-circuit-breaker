@@ -3,6 +3,8 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -26,11 +28,13 @@ public class HystrixMetricEventStream implements HystrixMetricHandler {
   private final List<HttpServerResponse> connections = Collections.synchronizedList(new LinkedList<>());
   private AtomicInteger counter = new AtomicInteger();
 
-  public HystrixMetricEventStream(Vertx vertx, String address) {
+  public HystrixMetricEventStream(Vertx vertx, String address, boolean localOnly) {
     Objects.requireNonNull(vertx);
     Objects.requireNonNull(address);
 
-    vertx.eventBus().<JsonObject>consumer(address)
+    EventBus eventBus = vertx.eventBus();
+    MessageConsumer<JsonObject> consumer = localOnly ? eventBus.localConsumer(address) : eventBus.consumer(address);
+    consumer
       .handler(message -> {
         JsonObject json = build(message.body());
         int id = counter.incrementAndGet();

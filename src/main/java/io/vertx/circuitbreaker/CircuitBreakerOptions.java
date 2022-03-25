@@ -48,7 +48,12 @@ public class CircuitBreakerOptions {
   public static final long DEFAULT_RESET_TIMEOUT = 30000;
 
   /**
-   * Default address on which the circuit breakers are sending their update.
+   * Whether circuit breaker state should be delivered only to local consumers by default = {@code true}.
+   */
+  public static final boolean DEFAULT_NOTIFICATION_LOCAL_ONLY = true;
+
+  /**
+   * A default address on which the circuit breakers can send their updates.
    */
   public static final String DEFAULT_NOTIFICATION_ADDRESS = "vertx.circuit-breaker";
 
@@ -76,7 +81,7 @@ public class CircuitBreakerOptions {
    * The default rolling window span in milliseconds.
    */
   private static final int DEFAULT_FAILURES_ROLLING_WINDOW = 10000;
-  
+
   /**
    * The operation timeout.
    */
@@ -98,9 +103,14 @@ public class CircuitBreakerOptions {
   private long resetTimeout = DEFAULT_RESET_TIMEOUT;
 
   /**
+   * Whether circuit breaker state should be delivered only to local consumers.
+   */
+  private boolean notificationLocalOnly = DEFAULT_NOTIFICATION_LOCAL_ONLY;
+
+  /**
    * The event bus address on which the circuit breaker state is published.
    */
-  private String notificationAddress = DEFAULT_NOTIFICATION_ADDRESS;
+  private String notificationAddress = null;
 
   /**
    * The state publication period in ms.
@@ -121,7 +131,7 @@ public class CircuitBreakerOptions {
    * The number of buckets used for the metric rolling window.
    */
   private int metricsRollingBuckets = DEFAULT_METRICS_ROLLING_BUCKETS;
-  
+
   /**
    * The failure rolling window in ms.
    */
@@ -143,6 +153,7 @@ public class CircuitBreakerOptions {
     this.timeout = other.timeout;
     this.maxFailures = other.maxFailures;
     this.fallbackOnFailure = other.fallbackOnFailure;
+    this.notificationLocalOnly = other.notificationLocalOnly;
     this.notificationAddress = other.notificationAddress;
     this.notificationPeriod = other.notificationPeriod;
     this.resetTimeout = other.resetTimeout;
@@ -246,6 +257,24 @@ public class CircuitBreakerOptions {
   }
 
   /**
+   * @return {@code true} if circuit breaker state should be delivered only to local consumers, otherwise {@code false}
+   */
+  public boolean isNotificationLocalOnly() {
+    return notificationLocalOnly;
+  }
+
+  /**
+   * Whether circuit breaker state should be delivered only to local consumers.
+   *
+   * @param notificationLocalOnly {@code true} if circuit breaker state should be delivered only to local consumers, otherwise {@code false}
+   * @return the current {@link CircuitBreakerOptions} instance
+   */
+  public CircuitBreakerOptions setNotificationLocalOnly(boolean notificationLocalOnly) {
+    this.notificationLocalOnly = notificationLocalOnly;
+    return this;
+  }
+
+  /**
    * @return the eventbus address on which the circuit breaker events are published. {@code null} if this feature has
    * been disabled.
    */
@@ -307,7 +336,7 @@ public class CircuitBreakerOptions {
   public long getFailuresRollingWindow() {
     return failuresRollingWindow;
   }
-  
+
   /**
    * Sets the rolling window used for metrics.
    *
@@ -318,7 +347,7 @@ public class CircuitBreakerOptions {
     this.failuresRollingWindow = failureRollingWindow;
     return this;
   }
-  
+
   /**
    * @return the configured number of buckets the rolling window is divided into.
    */

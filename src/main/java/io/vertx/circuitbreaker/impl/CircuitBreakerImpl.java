@@ -26,6 +26,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -157,7 +158,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private synchronized void sendUpdateOnEventBus() {
     String address = options.getNotificationAddress();
     if (address != null) {
-      vertx.eventBus().publish(address, metrics.toJson());
+      DeliveryOptions deliveryOptions = new DeliveryOptions()
+        .setLocalOnly(options.isNotificationLocalOnly());
+      vertx.eventBus().publish(address, metrics.toJson(), deliveryOptions);
     }
   }
 

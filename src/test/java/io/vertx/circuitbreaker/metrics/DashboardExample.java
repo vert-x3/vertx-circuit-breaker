@@ -3,7 +3,6 @@ package io.vertx.circuitbreaker.metrics;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -11,6 +10,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.util.Random;
+
+import static io.vertx.circuitbreaker.CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -22,15 +23,16 @@ public class DashboardExample {
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();
     CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setNotificationAddress(DEFAULT_NOTIFICATION_ADDRESS)
       .setFallbackOnFailure(true)
       .setMaxFailures(10)
       .setResetTimeout(5000)
       .setTimeout(1000)
       .setMetricsRollingWindow(10000);
 
-    CircuitBreaker cba = CircuitBreaker.create("A", vertx, options);
-    CircuitBreaker cbb = CircuitBreaker.create("B", vertx, options);
-    CircuitBreaker cbc = CircuitBreaker.create("C", vertx, options);
+    CircuitBreaker cba = CircuitBreaker.create("A", vertx, new CircuitBreakerOptions(options));
+    CircuitBreaker cbb = CircuitBreaker.create("B", vertx, new CircuitBreakerOptions(options));
+    CircuitBreaker cbc = CircuitBreaker.create("C", vertx, new CircuitBreakerOptions(options));
 
     Router router = Router.router(vertx);
     router.get("/metrics").handler(HystrixMetricHandler.create(vertx));

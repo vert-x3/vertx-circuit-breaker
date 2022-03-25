@@ -16,14 +16,13 @@
 
 package examples;
 
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 
@@ -187,9 +186,11 @@ public class CircuitBreakerExamples {
   }
 
   public void example7(Vertx vertx) {
-    // Create the circuit breaker as usual.
-    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx);
-    CircuitBreaker breaker2 = CircuitBreaker.create("my-second-circuit-breaker", vertx);
+    // Enable notifications
+    CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS);
+    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx, new CircuitBreakerOptions(options));
+    CircuitBreaker breaker2 = CircuitBreaker.create("my-second-circuit-breaker", vertx, new CircuitBreakerOptions(options));
 
     // Create a Vert.x Web router
     Router router = Router.router(vertx);
@@ -225,5 +226,9 @@ public class CircuitBreakerExamples {
               }
             })).onComplete(promise);
       });
+  }
+
+  public void enableNotifications(CircuitBreakerOptions options) {
+    options.setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS);
   }
 }
