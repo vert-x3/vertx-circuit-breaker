@@ -921,6 +921,7 @@ public class CircuitBreakerImplTest {
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidBucketSize() {
     CircuitBreakerOptions options = new CircuitBreakerOptions()
+      .setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS)
       .setMetricsRollingBuckets(7);
     CircuitBreaker.create("test", vertx, options);
   }
