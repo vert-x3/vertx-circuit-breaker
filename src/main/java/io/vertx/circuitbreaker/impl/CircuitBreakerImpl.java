@@ -16,16 +16,8 @@
 
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.circuitbreaker.OpenCircuitException;
-import io.vertx.circuitbreaker.TimeoutException;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.circuitbreaker.*;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 
 import java.util.Iterator;
@@ -350,9 +342,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   private <T> void executeOperation(Context context, Handler<Promise<T>> operation, Promise<T> operationResult,
                                     CircuitBreakerMetrics.Operation call) {
+    // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
+    Promise<T> passedFuture = Promise.promise();
+
     // Execute the operation
     if (options.getTimeout() != -1) {
-      vertx.setTimer(options.getTimeout(), (l) -> {
+      long timerId = vertx.setTimer(options.getTimeout(), (l) -> {
         context.runOnContext(v -> {
           // Check if the operation has not already been completed
           if (!operationResult.future().isComplete()) {
@@ -364,10 +359,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           // Else  Operation has completed
         });
       });
+      passedFuture.future().onComplete(v -> vertx.cancelTimer(timerId));
     }
     try {
-      // We use an intermediate future to avoid the passed future to complete or fail after a timeout.
-      Promise<T> passedFuture = Promise.promise();
       passedFuture.future().onComplete(ar -> {
         context.runOnContext(v -> {
           if (ar.failed()) {
