@@ -18,6 +18,8 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -925,4 +927,14 @@ public class CircuitBreakerImplTest {
     CircuitBreaker.create("test", vertx, options);
   }
 
+  @Test
+  public void operationTimersShouldBeRemovedToAvoidOOM(TestContext ctx) {
+    breaker = CircuitBreaker.create("cb", vertx, new CircuitBreakerOptions().setTimeout(600_000));
+    Async async = ctx.async(3000);
+    long id = vertx.setPeriodic(1, l -> {
+      breaker.execute(prom -> prom.complete(new byte[10 * 1024 * 1024])).onSuccess(v -> async.countDown()).onFailure(ctx::fail);
+    });
+    async.await();
+    // Test will throw OOM if operation timers are not removed
+  }
 }
