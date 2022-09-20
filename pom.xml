@@ -59,6 +59,7 @@
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
       <version>2.1.12</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -83,6 +84,12 @@
       <version>${hystrix.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
+      <exclusions>
+        <exclusion>
+          <groupId>org.hdrhistogram</groupId>
+          <artifactId>HdrHistogram</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

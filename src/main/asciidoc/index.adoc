@@ -131,15 +131,39 @@ To enable this feature, set the {@link io.vertx.circuitbreaker.CircuitBreakerOpt
 {@link examples.CircuitBreakerExamples#enableNotifications}
 ----
 
-NOTE: When enabled, notifications are, by default, delivered only to local consumers.
+The event contains circuit breaker metrics which computation requires the following dependency to be added the _dependencies_ section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+  <groupId>org.hdrhistogram</groupId>
+  <artifactId>HdrHistogram</artifactId>
+  <version>2.1.12</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile 'org.hdrhistogram:HdrHistogram:2.1.12'
+----
+
+[NOTE]
+====
+When enabled, notifications are, by default, delivered only to local consumers.
 If the notification must be sent to all consumers in a cluster, you can change this behavior with {@link io.vertx.circuitbreaker.CircuitBreakerOptions#setNotificationLocalOnly}.
+====
 
 Each event contains a Json Object with:
 
-* `state` : the new circuit breaker state (`OPEN`, `CLOSED`, `HALF_OPEN`)
-* `name` : the name of the circuit breaker
-* `failures` : the number of failures
-* `node` : the identifier of the node (`local` if Vert.x is not running in cluster mode)
+* `state`: the new circuit breaker state (`OPEN`, `CLOSED`, `HALF_OPEN`)
+* `name`: the name of the circuit breaker
+* `failures`: the number of failures
+* `node`: the identifier of the node (`local` if Vert.x is not running in cluster mode)
+* metrics
 
 == The half-open state
 

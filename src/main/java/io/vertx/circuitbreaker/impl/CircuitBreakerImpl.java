@@ -19,6 +19,7 @@ package io.vertx.circuitbreaker.impl;
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -52,7 +53,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   private final AtomicInteger passed = new AtomicInteger();
 
-  private CircuitBreakerMetrics metrics;
+  private final CircuitBreakerMetrics metrics;
   private Function<Integer, Long> retryPolicy = retry -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
@@ -67,24 +68,30 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       this.options = new CircuitBreakerOptions(options);
     }
 
-    this.metrics = new CircuitBreakerMetrics(vertx, this, options);
-    this.rollingFailures = new RollingCounter(options.getFailuresRollingWindow() / 1000, TimeUnit.SECONDS);
+    this.rollingFailures = new RollingCounter(this.options.getFailuresRollingWindow() / 1000, TimeUnit.SECONDS);
 
-    sendUpdateOnEventBus();
-
-    if (this.options.getNotificationPeriod() > 0) {
-      this.periodicUpdateTask = vertx.setPeriodic(this.options.getNotificationPeriod(), l -> sendUpdateOnEventBus());
+    if (this.options.getNotificationAddress() != null) {
+      this.metrics = new CircuitBreakerMetrics(vertx, this, this.options);
+      sendUpdateOnEventBus();
+      if (this.options.getNotificationPeriod() > 0) {
+        this.periodicUpdateTask = vertx.setPeriodic(this.options.getNotificationPeriod(), l -> sendUpdateOnEventBus());
+      } else {
+        this.periodicUpdateTask = -1;
+      }
     } else {
+      this.metrics = null;
       this.periodicUpdateTask = -1;
     }
   }
 
   @Override
   public CircuitBreaker close() {
-    if (this.periodicUpdateTask != -1) {
-      vertx.cancelTimer(this.periodicUpdateTask);
+    if (metrics != null) {
+      if (periodicUpdateTask != -1) {
+        vertx.cancelTimer(periodicUpdateTask);
+      }
+      metrics.close();
     }
-    metrics.close();
     return this;
   }
 
@@ -148,11 +155,10 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   private synchronized void sendUpdateOnEventBus() {
-    String address = options.getNotificationAddress();
-    if (address != null) {
+    if (metrics != null) {
       DeliveryOptions deliveryOptions = new DeliveryOptions()
         .setLocalOnly(options.isNotificationLocalOnly());
-      vertx.eventBus().publish(address, metrics.toJson(), deliveryOptions);
+      vertx.eventBus().publish(options.getNotificationAddress(), metrics.toJson(), deliveryOptions);
     }
   }
 
@@ -204,7 +210,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       currentState = state;
     }
 
-    CircuitBreakerMetrics.Operation call = metrics.enqueue();
+    CircuitBreakerMetrics.Operation call = metrics != null ? metrics.enqueue() : null;
 
     // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
@@ -215,14 +221,18 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         context.runOnContext(v -> {
           if (event.failed()) {
             incrementFailures();
-            call.failed();
+            if (call != null) {
+              call.failed();
+            }
             if (options.isFallbackOnFailure()) {
               invokeFallback(event.cause(), userFuture, fallback, call);
             } else {
               userFuture.fail(event.cause());
             }
           } else {
-            call.complete();
+            if (call != null) {
+              call.complete();
+            }
             reset();
             userFuture.complete(event.result());
           }
@@ -237,7 +247,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       }
     } else if (currentState == CircuitBreakerState.OPEN) {
       // Fallback immediately
-      call.shortCircuited();
+      if (call != null) {
+        call.shortCircuited();
+      }
       invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
@@ -245,14 +257,18 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           context.runOnContext(v -> {
             if (event.failed()) {
               open();
-              call.failed();
+              if (call != null) {
+                call.failed();
+              }
               if (options.isFallbackOnFailure()) {
                 invokeFallback(event.cause(), userFuture, fallback, call);
               } else {
                 userFuture.fail(event.cause());
               }
             } else {
-              call.complete();
+              if (call != null) {
+                call.complete();
+              }
               reset();
               userFuture.complete(event.result());
             }
@@ -262,7 +278,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         executeOperation(context, command, operationResult, call);
       } else {
         // Not selected, fallback.
-        call.shortCircuited();
+        if (call != null) {
+          call.shortCircuited();
+        }
         invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
       }
     }
@@ -332,11 +350,15 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     try {
       T apply = fallback.apply(reason);
-      operation.fallbackSucceed();
+      if (operation != null) {
+        operation.fallbackSucceed();
+      }
       userFuture.complete(apply);
     } catch (Exception e) {
       userFuture.fail(e);
-      operation.fallbackFailed();
+      if (operation != null) {
+        operation.fallbackFailed();
+      }
     }
   }
 
@@ -431,8 +453,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    *
    * @return retrieve the metrics.
    */
-  public CircuitBreakerMetrics getMetrics() {
-    return metrics;
+  public JsonObject getMetrics() {
+    return metrics.toJson();
   }
 
   public CircuitBreakerOptions options() {

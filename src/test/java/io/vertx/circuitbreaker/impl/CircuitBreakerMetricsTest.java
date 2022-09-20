@@ -63,7 +63,7 @@ public class CircuitBreakerMetricsTest {
   @Test
   @Repeat(10)
   public void testWithSuccessfulCommands(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx);
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions());
     Async async = tc.async();
 
 
@@ -91,10 +91,15 @@ public class CircuitBreakerMetricsTest {
       });
   }
 
+  private CircuitBreakerOptions getOptions() {
+    return new CircuitBreakerOptions()
+      .setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS);
+  }
+
   @Test
   @Repeat(10)
   public void testWithFailedCommands(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx);
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions());
     Async async = tc.async();
 
     Future<Void> command1 = breaker.execute(commandThatFails());
@@ -122,7 +127,7 @@ public class CircuitBreakerMetricsTest {
   @Test
   @Repeat(10)
   public void testWithCrashingCommands(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx);
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions());
     Async async = tc.async();
 
     Future<Void> command1 = breaker.execute(commandThatFails());
@@ -151,7 +156,7 @@ public class CircuitBreakerMetricsTest {
   @Test
   @Repeat(10)
   public void testWithTimeoutCommands(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, new CircuitBreakerOptions().setTimeout(100));
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions().setTimeout(100));
     Async async = tc.async();
 
     Future<Void> command1 = breaker.execute(commandThatFails());
@@ -181,7 +186,7 @@ public class CircuitBreakerMetricsTest {
   @Test
   @Repeat(10)
   public void testLatencyComputation(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx);
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions());
     Async async = tc.async();
 
 
@@ -212,8 +217,7 @@ public class CircuitBreakerMetricsTest {
   @Test
   @Repeat(100)
   public void testEviction(TestContext tc) {
-    breaker = CircuitBreaker.create("some-circuit-breaker", vertx,
-      new CircuitBreakerOptions().setMetricsRollingWindow(10));
+    breaker = CircuitBreaker.create("some-circuit-breaker", vertx, getOptions().setMetricsRollingWindow(10));
     Async async = tc.async();
 
 
@@ -253,7 +257,7 @@ public class CircuitBreakerMetricsTest {
   }
 
   private JsonObject metrics() {
-    return ((CircuitBreakerImpl) breaker).getMetrics().toJson();
+    return ((CircuitBreakerImpl) breaker).getMetrics();
   }
 
 }
