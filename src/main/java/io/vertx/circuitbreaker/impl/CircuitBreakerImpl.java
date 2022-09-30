@@ -16,8 +16,17 @@
 
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.*;
-import io.vertx.core.*;
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
+import io.vertx.circuitbreaker.OpenCircuitException;
+import io.vertx.circuitbreaker.RetryPolicy;
+import io.vertx.circuitbreaker.TimeoutException;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
 
@@ -54,7 +63,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private final AtomicInteger passed = new AtomicInteger();
 
   private final CircuitBreakerMetrics metrics;
-  private Function<Integer, Long> retryPolicy = retry -> 0L;
+  private RetryPolicy retryPolicy = (failure, retryCount) -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
     Objects.requireNonNull(name);
@@ -307,7 +316,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
       if (currentState == CircuitBreakerState.CLOSED) {
         if (retryCount < options.getMaxRetries() - 1) {
-          executeRetryWithTimeout(retryCount, l -> {
+          executeRetryWithTimeout(event.cause(), retryCount, l -> {
             context.runOnContext(v -> {
               // Don't report timeout or error in the retry attempt, only the last one.
               executeOperation(context, command, retryFuture(context, retryCount + 1, command, operationResult, null),
@@ -315,7 +324,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             });
           });
         } else {
-          executeRetryWithTimeout(retryCount, (l) -> {
+          executeRetryWithTimeout(event.cause(), retryCount, (l) -> {
             context.runOnContext(v -> {
               executeOperation(context, command, operationResult, call);
             });
@@ -328,8 +337,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return retry;
   }
 
-  private void executeRetryWithTimeout(int retryCount, Handler<Void> action) {
-    long retryTimeout = retryPolicy.apply(retryCount + 1);
+  private void executeRetryWithTimeout(Throwable failure, int retryCount, Handler<Void> action) {
+    long retryTimeout = retryPolicy.delay(failure, retryCount + 1);
 
     if (retryTimeout > 0) {
       vertx.setTimer(retryTimeout, (l) -> {
@@ -463,6 +472,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy) {
+    this.retryPolicy = (failure, retryCount) -> retryPolicy.apply(retryCount);
+    return this;
+  }
+
+  @Override
+  public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }
