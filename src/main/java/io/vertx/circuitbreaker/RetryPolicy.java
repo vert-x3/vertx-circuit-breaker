@@ -44,7 +44,7 @@ public interface RetryPolicy {
   }
 
   /**
-   * Create an expoential delay with jitter retry policy.
+   * Create an exponential delay with jitter retry policy.
    * <p>
    * Based on <em>Full Jitter</em> in <a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/">Exponential Backoff And Jitter</a>.
    *
