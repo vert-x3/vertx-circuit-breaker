@@ -12,6 +12,7 @@
 package io.vertx.circuitbreaker;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.impl.Arguments;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -30,6 +31,7 @@ public interface RetryPolicy {
    * @param delay the constant delay in milliseconds
    */
   static RetryPolicy constantDelay(long delay) {
+    Arguments.require(delay > 0, "delay must be strictly positive");
     return (failure, retryCount) -> delay;
   }
 
@@ -40,6 +42,8 @@ public interface RetryPolicy {
    * @param maxDelay     maximum delay in milliseconds
    */
   static RetryPolicy linearDelay(long initialDelay, long maxDelay) {
+    Arguments.require(initialDelay > 0, "initialDelay must be strictly positive");
+    Arguments.require(maxDelay >= initialDelay, "maxDelay must be greater than initialDelay");
     return (failure, retryCount) -> min(maxDelay, initialDelay * retryCount);
   }
 
@@ -52,6 +56,8 @@ public interface RetryPolicy {
    * @param maxDelay     maximum delay in milliseconds
    */
   static RetryPolicy exponentialDelayWithJitter(long initialDelay, long maxDelay) {
+    Arguments.require(initialDelay > 0, "initialDelay must be strictly positive");
+    Arguments.require(maxDelay >= initialDelay, "maxDelay must be greater than initialDelay");
     return (failure, retryCount) -> {
       ThreadLocalRandom random = ThreadLocalRandom.current();
       return random.nextLong(0, min(maxDelay, initialDelay * (1L << retryCount)));
