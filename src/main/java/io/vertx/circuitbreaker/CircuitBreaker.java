@@ -242,6 +242,9 @@ public interface CircuitBreaker {
   @Deprecated
   CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
 
+  /**
+   * Set a {@link RetryPolicy} which computes a delay before retry execution.
+   */
   @Fluent
   CircuitBreaker retryPolicy(RetryPolicy retryPolicy);
 }
