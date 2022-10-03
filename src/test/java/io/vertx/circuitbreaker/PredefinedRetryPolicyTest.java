@@ -17,12 +17,27 @@ import static org.junit.Assert.*;
 
 public class PredefinedRetryPolicyTest {
 
+  @Test(expected = IllegalArgumentException.class)
+  public void testConstantDelayNegative() {
+    RetryPolicy.constantDelay(-1);
+  }
+
   @Test
   public void testConstantDelay() {
     RetryPolicy retryPolicy = RetryPolicy.constantDelay(10);
     for (int i = 1; i <= 50; i++) {
       assertEquals(10, retryPolicy.delay(null, i));
     }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testLinearDelayNegative() {
+    RetryPolicy.linearDelay(-1, 30000);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testLinearDelayGreatherThanMax() {
+    RetryPolicy.linearDelay(50000, 30000);
   }
 
   @Test
@@ -36,6 +51,16 @@ public class PredefinedRetryPolicyTest {
         assertEquals(250, delay);
       }
     }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testExponentialDelayNegative() {
+    RetryPolicy.exponentialDelayWithJitter(-1, 30000);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testExponentialDelayGreatherThanMax() {
+    RetryPolicy.exponentialDelayWithJitter(50000, 30000);
   }
 
   @Test
