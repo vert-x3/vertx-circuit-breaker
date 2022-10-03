@@ -60,7 +60,8 @@ public interface RetryPolicy {
     Arguments.require(maxDelay >= initialDelay, "maxDelay must be greater than initialDelay");
     return (failure, retryCount) -> {
       ThreadLocalRandom random = ThreadLocalRandom.current();
-      return random.nextLong(0, min(maxDelay, initialDelay * (1L << retryCount)));
+      long delay = initialDelay * (1L << retryCount);
+      return random.nextLong(0, delay < 0 ? maxDelay : min(maxDelay, delay));
     };
   }
 
