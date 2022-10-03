@@ -30,7 +30,6 @@ public class PredefinedRetryPolicyTest {
     RetryPolicy retryPolicy = RetryPolicy.linearDelay(10, 250);
     for (int i = 1; i <= 50; i++) {
       long delay = retryPolicy.delay(null, i);
-      System.out.println("delay = " + delay);
       if (i <= 25) {
         assertEquals(10 * i, delay);
       } else {
@@ -45,7 +44,6 @@ public class PredefinedRetryPolicyTest {
     RetryPolicy retryPolicy = RetryPolicy.exponentialDelayWithJitter(3, maxDelay);
     for (int i = 1; i <= 50; i++) {
       long delay = retryPolicy.delay(null, i);
-      System.out.println("delay = " + delay);
       assertTrue(0 <= delay && delay <= maxDelay);
     }
   }
