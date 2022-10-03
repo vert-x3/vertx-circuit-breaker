@@ -16,29 +16,38 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.ext.web.Router;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.jayway.awaitility.Awaitility.await;
+import static com.jayway.awaitility.Awaitility.*;
+import static io.vertx.core.http.HttpHeaders.*;
+import static java.util.concurrent.TimeUnit.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.Is.*;
+import static org.junit.Assert.*;
 
 /**
  * Test the circuit breaker when doing HTTP calls.
@@ -59,7 +68,7 @@ public class CircuitBreakerWithHTTPTest {
         ctxt.response().setStatusCode(200).end("hello")
     );
     router.route(HttpMethod.GET, "/error").handler(ctxt ->
-        ctxt.response().setStatusCode(500).end("failed !")
+      ctxt.response().setStatusCode(500).end("failed !")
     );
     router.route(HttpMethod.GET, "/long").handler(ctxt -> {
       try {
@@ -68,6 +77,14 @@ public class CircuitBreakerWithHTTPTest {
         // Ignored.
       }
       ctxt.response().setStatusCode(200).end("hello");
+    });
+    AtomicBoolean invoked = new AtomicBoolean();
+    router.route(HttpMethod.GET, "/flaky").handler(ctxt -> {
+      if (invoked.compareAndSet(false, true)) {
+        ctxt.response().setStatusCode(503).putHeader(RETRY_AFTER, "2").end();
+      } else {
+        ctxt.response().setStatusCode(200).end();
+      }
     });
 
     AtomicBoolean done = new AtomicBoolean();
@@ -182,13 +199,59 @@ public class CircuitBreakerWithHTTPTest {
     breaker.executeAndReportWithFallback(result, future ->
       client.request(HttpMethod.GET, 8080, "localhost", "/long")
         .compose(HttpClientRequest::send).onSuccess(response -> {
-        System.out.println("Got response");
-        future.complete();
-      }), v -> "fallback");
+          System.out.println("Got response");
+          future.complete();
+        }), v -> "fallback");
 
     await().until(() -> result.future().result().equals("fallback"));
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
   }
 
+  private static class ServiceUnavailableException extends VertxException {
+    final int delay;
+
+    ServiceUnavailableException(int delay) {
+      super("unavailable", true);
+      this.delay = delay;
+    }
+  }
+
+  @Test
+  public void testUseRetryAfterHeaderValue() {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setMaxRetries(1))
+      .retryPolicy((failure, retryCount) -> {
+        if (failure instanceof ServiceUnavailableException) {
+          ServiceUnavailableException sue = (ServiceUnavailableException) failure;
+          return MILLISECONDS.convert(sue.delay, SECONDS);
+        }
+        return 0;
+      });
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    List<LocalDateTime> requestLocalDateTimes = Collections.synchronizedList(new ArrayList<>());
+    Promise<String> result = Promise.promise();
+    breaker.executeAndReport(result, v -> {
+      requestLocalDateTimes.add(LocalDateTime.now());
+      client.request(HttpMethod.GET, 8080, "localhost", "/flaky")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() == 503) {
+              ServiceUnavailableException sue = new ServiceUnavailableException(Integer.parseInt(resp.getHeader(RETRY_AFTER)));
+              return Future.failedFuture(sue);
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          })
+        )
+        .onComplete(v);
+    });
+
+    await().until(() -> result.future().result() != null);
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    assertEquals(2, requestLocalDateTimes.size());
+    assertTrue(Duration.between(requestLocalDateTimes.get(0), requestLocalDateTimes.get(1)).toMillis() >= 2000);
+  }
 
 }
