@@ -19,6 +19,7 @@ package examples;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.HystrixMetricHandler;
+import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -211,7 +212,7 @@ public class CircuitBreakerExamples {
       System.out.println("Circuit opened");
     }).closeHandler(v -> {
       System.out.println("Circuit closed");
-    }).retryPolicy(retryCount -> retryCount * 100L);
+    }).retryPolicy(RetryPolicy.exponentialDelayWithJitter(50, 500));
 
     breaker.<String>execute(
       promise -> {

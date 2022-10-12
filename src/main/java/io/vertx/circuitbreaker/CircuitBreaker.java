@@ -235,6 +235,16 @@ public interface CircuitBreaker {
   @CacheReturn
   String name();
 
+  /**
+   * @deprecated use {@link #retryPolicy(RetryPolicy)} instead
+   */
   @Fluent
+  @Deprecated
   CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy);
+
+  /**
+   * Set a {@link RetryPolicy} which computes a delay before retry execution.
+   */
+  @Fluent
+  CircuitBreaker retryPolicy(RetryPolicy retryPolicy);
 }
