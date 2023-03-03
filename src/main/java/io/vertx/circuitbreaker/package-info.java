@@ -13,7 +13,7 @@
  *
  * You may elect to redistribute this code under either of these licenses.
  */
-@ModuleGen(name = "vertx-circuit-breaker", groupPackage = "io.vertx")
+@ModuleGen(name = "vertx-circuit-breaker", groupPackage = "io.vertx", checkCallbackDeprecation = true)
 package io.vertx.circuitbreaker;
 
 import io.vertx.codegen.annotations.ModuleGen;
