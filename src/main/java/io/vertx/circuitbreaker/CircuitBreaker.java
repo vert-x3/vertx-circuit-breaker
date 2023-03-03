@@ -124,7 +124,9 @@ public interface CircuitBreaker {
    *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
    *                 to the handler.
    * @param <T>      the type of result
+   * @deprecated use {@link #executeWithFallback(Handler, Function)} instead
    */
+  @Deprecated
   default <T> void executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
                                               Handler<AsyncResult<T>> handler) {
     Future<T> fut = executeWithFallback(command, fallback);
@@ -148,7 +150,9 @@ public interface CircuitBreaker {
    *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
    *                 to the handler.
    * @param <T>     the type of result
+   * @deprecated use {@link #execute(Handler)} instead
    */
+  @Deprecated
   default <T> void execute(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
     Future<T> fut = execute(command);
     fut.onComplete(handler);
