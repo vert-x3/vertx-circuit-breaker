@@ -1,6 +1,7 @@
 = Vert.x Circuit Breaker
 
-image:https://github.com/vert-x3/vertx-circuit-breaker/workflows/CI/badge.svg?branch=master["Build Status", link="https://github.com/vert-x3/vertx-circuit-breaker/actions?query=workflow%3ACI"]
+image:https://github.com/vert-x3/vertx-circuit-breaker/actions/workflows/ci-5.x.yml/badge.svg["Build Status (5.x)",link="https://github.com/vert-x3/vertx-circuit-breaker/actions/workflows/ci-5.x.yml"]
+image:https://github.com/vert-x3/vertx-circuit-breaker/actions/workflows/ci-4.x.yml/badge.svg["Build Status (4.x)",link="https://github.com/vert-x3/vertx-circuit-breaker/actions/workflows/ci-4.x.yml"]
 
 Vert.x Circuit Breaker is an implementation of the Circuit Breaker _pattern_ for Vert.x. More details on this pattern on https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern
 
