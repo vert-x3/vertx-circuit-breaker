@@ -51,7 +51,7 @@ public class APITest {
       breaker.close();
     }
     AtomicBoolean completed = new AtomicBoolean();
-    vertx.close(ar -> completed.set(ar.succeeded()));
+    vertx.close().onComplete(ar -> completed.set(ar.succeeded()));
     await().untilAtomic(completed, is(true));
   }
 
@@ -89,7 +89,7 @@ public class APITest {
 
     breaker.executeWithFallback(fut -> {
       MyAsyncOperations.operation(1, 1, fut);
-    }, v -> 0, ar -> result.set(ar.result()));
+    }, v -> 0).onComplete(ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(2));
   }
@@ -118,7 +118,7 @@ public class APITest {
 
     breaker.executeWithFallback(fut -> {
       MyAsyncOperations.fail(fut);
-    }, v -> -1, ar -> result.set(ar.result()));
+    }, v -> -1).onComplete(ar -> result.set(ar.result()));
 
     await().untilAtomic(result, is(-1));
   }
