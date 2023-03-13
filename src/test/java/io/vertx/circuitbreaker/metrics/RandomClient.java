@@ -36,10 +36,10 @@ public class RandomClient extends AbstractVerticle {
     vertx.setPeriodic(500, l -> {
       int index = random.nextInt(paths.size());
       int count = counter.getAndIncrement();
-      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", paths.get(index), ar1 -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", paths.get(index)).onComplete(ar1 -> {
         if (ar1.succeeded()) {
           HttpClientRequest request = ar1.result();
-          request.send(ar2 -> {
+          request.send().onComplete(ar2 -> {
             if (ar2.succeeded()) {
               HttpClientResponse response = ar2.result();
               System.out.println(this + "[" + count + "] (" + paths.get(index) + ") Response: " + response.statusMessage());

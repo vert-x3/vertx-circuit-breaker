@@ -74,7 +74,7 @@ public class HystrixMetricEventStreamTest {
     }
 
     AtomicBoolean completed = new AtomicBoolean();
-    vertx.close(ar -> completed.set(ar.succeeded()));
+    vertx.close().onComplete(ar -> completed.set(ar.succeeded()));
     await().untilAtomic(completed, is(true));
   }
 
@@ -95,7 +95,7 @@ public class HystrixMetricEventStreamTest {
     AtomicBoolean ready = new AtomicBoolean();
     vertx.createHttpServer()
       .requestHandler(router)
-      .listen(8080, ar -> ready.set(ar.succeeded()));
+      .listen(8080).onComplete(ar -> ready.set(ar.succeeded()));
 
     await().untilAtomic(ready, is(true));
 
@@ -117,10 +117,10 @@ public class HystrixMetricEventStreamTest {
       }
     });
 
-    client.request(HttpMethod.GET, 8080, "localhost", "/metrics", ar1 -> {
+    client.request(HttpMethod.GET, 8080, "localhost", "/metrics").onComplete(ar1 -> {
       if (ar1.succeeded()) {
         HttpClientRequest req = ar1.result();
-        req.send(ar2 -> {
+        req.send().onComplete(ar2 -> {
           if (ar2.succeeded()) {
             HttpClientResponse resp = ar2.result();
             resp.handler(parser);

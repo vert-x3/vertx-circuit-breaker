@@ -65,7 +65,7 @@ public class CircuitBreakerImplTest {
       breaker.close();
     }
     AtomicBoolean completed = new AtomicBoolean();
-    vertx.close(ar -> completed.set(ar.succeeded()));
+    vertx.close().onComplete(ar -> completed.set(ar.succeeded()));
     await().untilAtomic(completed, is(true));
   }
 

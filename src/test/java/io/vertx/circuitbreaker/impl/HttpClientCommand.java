@@ -50,10 +50,10 @@ public class HttpClientCommand extends HystrixCommand<String> {
       latch.countDown();
     };
 
-    client.request(HttpMethod.GET, path, ar1 -> {
+    client.request(HttpMethod.GET, path).onComplete(ar1 -> {
       if (ar1.succeeded()) {
         HttpClientRequest req = ar1.result();
-        req.send(ar2 -> {
+        req.send().onComplete(ar2 -> {
           if (ar2.succeeded()) {
             HttpClientResponse response = ar2.result();
             response.exceptionHandler(errorHandler);

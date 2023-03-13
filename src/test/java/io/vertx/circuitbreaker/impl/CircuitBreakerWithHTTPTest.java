@@ -88,8 +88,9 @@ public class CircuitBreakerWithHTTPTest {
     });
 
     AtomicBoolean done = new AtomicBoolean();
-    http = vertx.createHttpServer().requestHandler(router).listen(8080, ar -> {
+    vertx.createHttpServer().requestHandler(router).listen(8080).onComplete(ar -> {
       done.set(ar.succeeded());
+      http = ar.result();
     });
 
     await().untilAtomic(done, is(true));
@@ -103,11 +104,11 @@ public class CircuitBreakerWithHTTPTest {
       breaker.close();
     }
     AtomicBoolean completed = new AtomicBoolean();
-    http.close(ar -> completed.set(true));
+    http.close().onComplete(ar -> completed.set(true));
     await().untilAtomic(completed, is(true));
 
     completed.set(false);
-    vertx.close((v) -> completed.set(true));
+    vertx.close().onComplete(v -> completed.set(true));
     await().untilAtomic(completed, is(true));
 
     client.close();
