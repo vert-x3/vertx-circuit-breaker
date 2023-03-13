@@ -35,8 +35,7 @@ public class HystrixExamples {
   public void exampleHystrix2(Vertx vertx) {
     HystrixCommand<String> someCommand = getSomeCommandInstance();
     vertx.<String>executeBlocking(
-        future -> future.complete(someCommand.execute()),
-        ar -> {
+        future -> future.complete(someCommand.execute())).onComplete(ar -> {
           // back on the event loop
           String result = ar.result();
         }
