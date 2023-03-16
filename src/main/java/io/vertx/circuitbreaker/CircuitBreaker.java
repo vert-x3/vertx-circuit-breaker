@@ -20,7 +20,6 @@ import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -116,24 +115,6 @@ public interface CircuitBreaker {
   <T> Future<T> executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback);
 
   /**
-   * Same as {@link #executeWithFallback(Handler, Function)} but using a callback.
-   *
-   * @param command  the operation
-   * @param fallback the fallback
-   * @param handler  the completion handler receiving either the operation result or the fallback result. The
-   *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
-   *                 to the handler.
-   * @param <T>      the type of result
-   * @deprecated use {@link #executeWithFallback(Handler, Function)} instead
-   */
-  @Deprecated
-  default <T> void executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback,
-                                              Handler<AsyncResult<T>> handler) {
-    Future<T> fut = executeWithFallback(command, fallback);
-    fut.onComplete(handler);
-  }
-
-  /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
    *
    * @param command the operation
@@ -141,22 +122,6 @@ public interface CircuitBreaker {
    * @return a future object completed when the operation or its fallback completes
    */
   <T> Future<T> execute(Handler<Promise<T>> command);
-
-  /**
-   * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker default fallback.
-   *
-   * @param command the operation
-   * @param handler  the completion handler receiving either the operation result or the fallback result. The
-   *                 parameter is an {@link AsyncResult} because if the fallback is not called, the error is passed
-   *                 to the handler.
-   * @param <T>     the type of result
-   * @deprecated use {@link #execute(Handler)} instead
-   */
-  @Deprecated
-  default <T> void execute(Handler<Promise<T>> command, Handler<AsyncResult<T>> handler) {
-    Future<T> fut = execute(command);
-    fut.onComplete(handler);
-  }
 
   /**
    * Same as {@link #executeAndReportWithFallback(Promise, Handler, Function)} but using the circuit breaker default
