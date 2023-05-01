@@ -193,7 +193,7 @@ public class CircuitBreakerMetricsTest {
     int count = 1000;
 
     IntStream.range(0, count)
-      .<Future>mapToObj(i -> breaker.execute(commandThatWorks()))
+      .mapToObj(i -> breaker.execute(commandThatWorks()))
       .collect(collectingAndThen(toList(), CompositeFuture::all))
       .onComplete(ar -> {
         assertThat(ar).succeeded();
@@ -223,7 +223,7 @@ public class CircuitBreakerMetricsTest {
 
     int count = 1000;
 
-    List<Future> list = new ArrayList<>();
+    List<Future<Void>> list = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       list.add(breaker.execute(commandThatWorks()));
     }
