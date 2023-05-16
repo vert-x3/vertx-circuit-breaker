@@ -71,7 +71,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command2 = breaker.execute(commandThatWorks());
     Future<Void> command3 = breaker.execute(commandThatWorks());
 
-    CompositeFuture.all(command1, command2, command3)
+    Future.all(command1, command2, command3)
       .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
@@ -107,7 +107,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command3 = breaker.execute(commandThatWorks());
     Future<Void> command4 = breaker.execute(commandThatFails());
 
-    CompositeFuture.join(command1, command2, command3, command4)
+    Future.join(command1, command2, command3, command4)
       .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
@@ -136,7 +136,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command4 = breaker.execute(commandThatFails());
     Future<Void> command5 = breaker.execute(commandThatCrashes());
 
-    CompositeFuture.join(command1, command2, command3, command4, command5)
+    Future.join(command1, command2, command3, command4, command5)
       .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
@@ -165,7 +165,7 @@ public class CircuitBreakerMetricsTest {
     Future<Void> command4 = breaker.execute(commandThatFails());
     Future<Void> command5 = breaker.execute(commandThatTimeout(100));
 
-    CompositeFuture.join(command1, command2, command3, command4, command5)
+    Future.join(command1, command2, command3, command4, command5)
       .onComplete(ar -> {
         assertThat(metrics())
           .contains("name", "some-circuit-breaker")
@@ -194,7 +194,7 @@ public class CircuitBreakerMetricsTest {
 
     IntStream.range(0, count)
       .mapToObj(i -> breaker.execute(commandThatWorks()))
-      .collect(collectingAndThen(toList(), CompositeFuture::all))
+      .collect(collectingAndThen(toList(), Future::all))
       .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics())
@@ -228,7 +228,7 @@ public class CircuitBreakerMetricsTest {
       list.add(breaker.execute(commandThatWorks()));
     }
 
-    CompositeFuture.all(list)
+    Future.all(list)
       .onComplete(ar -> {
         assertThat(ar).succeeded();
         assertThat(metrics().getInteger("totalOperationCount")).isEqualTo(1000);
