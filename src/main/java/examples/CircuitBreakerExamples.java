@@ -18,14 +18,12 @@ package examples;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.HystrixMetricHandler;
 import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.ext.web.Router;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -184,25 +182,6 @@ public class CircuitBreakerExamples {
           // Executed when the circuit is opened
           return "Hello";
         });
-  }
-
-  public void example7(Vertx vertx) {
-    // Enable notifications
-    CircuitBreakerOptions options = new CircuitBreakerOptions()
-      .setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS);
-    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx, new CircuitBreakerOptions(options));
-    CircuitBreaker breaker2 = CircuitBreaker.create("my-second-circuit-breaker", vertx, new CircuitBreakerOptions(options));
-
-    // Create a Vert.x Web router
-    Router router = Router.router(vertx);
-    // Register the metric handler
-    router.get("/hystrix-metrics").handler(HystrixMetricHandler.create(vertx));
-
-    // Create the HTTP server using the router to dispatch the requests
-    vertx.createHttpServer()
-      .requestHandler(router)
-      .listen(8080);
-
   }
 
   public void example8(Vertx vertx) {
