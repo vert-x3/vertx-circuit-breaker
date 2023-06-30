@@ -133,11 +133,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   /**
-   * A version of reset that can force the the state to `close` even if the circuit breaker is open. This is an
-   * internal API.
+   * A version of {@link #reset()} that can forcefully change the state to closed even if the circuit breaker is open.
+   * <p>
+   * This is an internal API.
    *
-   * @param force whether or not we force the state and allow an illegal transition
-   * @return the current circuit breaker.
+   * @param force whether we force the state change and allow an illegal transition
+   * @return this circuit breaker
    */
   public synchronized CircuitBreaker reset(boolean force) {
     rollingFailures.reset();

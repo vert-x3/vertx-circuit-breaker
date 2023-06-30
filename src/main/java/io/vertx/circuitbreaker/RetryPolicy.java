@@ -50,7 +50,8 @@ public interface RetryPolicy {
   /**
    * Create an exponential delay with jitter retry policy.
    * <p>
-   * Based on <em>Full Jitter</em> in <a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/">Exponential Backoff And Jitter</a>.
+   * Based on the <em>Full Jitter</em> approach described in
+   * <a href="https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/">Exponential Backoff And Jitter</a>.
    *
    * @param initialDelay the initial delay in milliseconds
    * @param maxDelay     maximum delay in milliseconds
@@ -68,7 +69,7 @@ public interface RetryPolicy {
   /**
    * Compute a delay in milliseconds before retry is executed.
    *
-   * @param failure    the failure passed to the operation {@link io.vertx.core.Promise}
+   * @param failure    the failure of the previous execution attempt
    * @param retryCount the number of times operation has been retried already
    * @return a delay in milliseconds before retry is executed
    */

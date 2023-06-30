@@ -20,7 +20,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Circuit breaker configuration options. All time are given in milliseconds.
+ * Circuit breaker configuration options. All time values are in milliseconds.
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
@@ -30,25 +30,25 @@ public class CircuitBreakerOptions {
   /**
    * Default timeout in milliseconds.
    */
-  public static final long DEFAULT_TIMEOUT = 10000L;
+  public static final long DEFAULT_TIMEOUT = 10_000L;
 
   /**
-   * Default number of failures.
+   * Default number of failures after which a closed circuit breaker moves to open.
    */
   public static final int DEFAULT_MAX_FAILURES = 5;
 
   /**
-   * Default value of the fallback on failure property.
+   * Default value of the {@linkplain #isFallbackOnFailure() fallback on failure} property.
    */
   public static final boolean DEFAULT_FALLBACK_ON_FAILURE = false;
 
   /**
-   * Default time before it attempts to re-close the circuit (half-open state) in milliseconds.
+   * Default time after which an open circuit breaker moves to half-open (in an attempt to re-close) in milliseconds.
    */
-  public static final long DEFAULT_RESET_TIMEOUT = 30000;
+  public static final long DEFAULT_RESET_TIMEOUT = 30_000;
 
   /**
-   * Whether circuit breaker state should be delivered only to local consumers by default = {@code true}.
+   * Default value of whether circuit breaker state events should be delivered only to local consumers.
    */
   public static final boolean DEFAULT_NOTIFICATION_LOCAL_ONLY = true;
 
@@ -60,15 +60,15 @@ public class CircuitBreakerOptions {
   /**
    * Default notification period  in milliseconds.
    */
-  public static final long DEFAULT_NOTIFICATION_PERIOD = 2000;
+  public static final long DEFAULT_NOTIFICATION_PERIOD = 2_000;
 
   /**
-   * Default rolling window for metrics in milliseconds.
+   * Default length of rolling window for metrics in milliseconds.
    */
-  public static final long DEFAULT_METRICS_ROLLING_WINDOW = 10000;
+  public static final long DEFAULT_METRICS_ROLLING_WINDOW = 10_000;
 
   /**
-   * Default number of buckets used for the rolling window.
+   * Default number of buckets used for the metrics rolling window.
    */
   public static final int DEFAULT_METRICS_ROLLING_BUCKETS = 10;
 
@@ -78,9 +78,9 @@ public class CircuitBreakerOptions {
   private static final int DEFAULT_MAX_RETRIES = 0;
 
   /**
-   * The default rolling window span in milliseconds.
+   * Default length of rolling window for failures in milliseconds.
    */
-  private static final int DEFAULT_FAILURES_ROLLING_WINDOW = 10000;
+  private static final int DEFAULT_FAILURES_ROLLING_WINDOW = 10_000;
 
   /**
    * The operation timeout.
@@ -93,7 +93,7 @@ public class CircuitBreakerOptions {
   private int maxFailures = DEFAULT_MAX_FAILURES;
 
   /**
-   * Whether or not the fallback should be called upon failures.
+   * Whether the fallback should be called upon failures.
    */
   private boolean fallbackOnFailure = DEFAULT_FALLBACK_ON_FAILURE;
 
@@ -164,9 +164,9 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * Creates a new instance of {@link CircuitBreakerOptions} from the given json object.
+   * Creates a new instance of {@link CircuitBreakerOptions} from the given JSON object.
    *
-   * @param json the json object
+   * @param json the JSON object
    */
   public CircuitBreakerOptions(JsonObject json) {
     this();
@@ -174,7 +174,7 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return a json object representing the current configuration.
+   * @return a JSON object representing this configuration
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
@@ -183,17 +183,17 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the maximum number of failures before opening the circuit.
+   * @return the maximum number of failures before opening the circuit breaker
    */
   public int getMaxFailures() {
     return maxFailures;
   }
 
   /**
-   * Sets the maximum number of failures before opening the circuit.
+   * Sets the maximum number of failures before opening the circuit breaker.
    *
    * @param maxFailures the number of failures.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setMaxFailures(int maxFailures) {
     this.maxFailures = maxFailures;
@@ -201,18 +201,18 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the configured timeout in milliseconds.
+   * @return the configured timeout in milliseconds
    */
   public long getTimeout() {
     return timeout;
   }
 
   /**
-   * Sets the timeout in milliseconds. If an action is not completed before this timeout, the action is considered as
+   * Sets the timeout in milliseconds. If an action does not complete before this timeout, the action is considered as
    * a failure.
    *
    * @param timeoutInMs the timeout, -1 to disable the timeout
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setTimeout(long timeoutInMs) {
     this.timeout = timeoutInMs;
@@ -220,17 +220,17 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return whether or not the fallback is executed on failures, even when the circuit is closed.
+   * @return whether the fallback is executed on failures, even when the circuit breaker is closed
    */
   public boolean isFallbackOnFailure() {
     return fallbackOnFailure;
   }
 
   /**
-   * Sets whether or not the fallback is executed on failure, even when the circuit is closed.
+   * Sets whether the fallback is executed on failure, even when the circuit breaker is closed.
    *
    * @param fallbackOnFailure {@code true} to enable it.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setFallbackOnFailure(boolean fallbackOnFailure) {
     this.fallbackOnFailure = fallbackOnFailure;
@@ -238,18 +238,18 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the time in milliseconds before it attempts to re-close the circuit (by going to the half-open state).
+   * @return the time in milliseconds before an open circuit breaker moves to half-open (in an attempt to re-close)
    */
   public long getResetTimeout() {
     return resetTimeout;
   }
 
   /**
-   * Sets the time in ms before it attempts to re-close the circuit (by going to the half-open state). If the circuit
-   * is closed when the timeout is reached, nothing happens. {@code -1} disables this feature.
+   * Sets the time in milliseconds before an open circuit breaker moves to half-open (in an attempt to re-close).
+   * If the circuit breaker is closed when the timeout is reached, nothing happens. {@code -1} disables this feature.
    *
    * @param resetTimeout the time in ms
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setResetTimeout(long resetTimeout) {
     this.resetTimeout = resetTimeout;
@@ -257,17 +257,18 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return {@code true} if circuit breaker state should be delivered only to local consumers, otherwise {@code false}
+   * @return {@code true} if circuit breaker state events should be delivered only to local consumers,
+   * {@code false} otherwise
    */
   public boolean isNotificationLocalOnly() {
     return notificationLocalOnly;
   }
 
   /**
-   * Whether circuit breaker state should be delivered only to local consumers.
+   * Sets whether circuit breaker state events should be delivered only to local consumers.
    *
-   * @param notificationLocalOnly {@code true} if circuit breaker state should be delivered only to local consumers, otherwise {@code false}
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param notificationLocalOnly {@code true} if circuit breaker state events should be delivered only to local consumers, {@code false} otherwise
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setNotificationLocalOnly(boolean notificationLocalOnly) {
     this.notificationLocalOnly = notificationLocalOnly;
@@ -275,18 +276,18 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the eventbus address on which the circuit breaker events are published. {@code null} if this feature has
-   * been disabled.
+   * @return the eventbus address on which the circuit breaker events are published, or {@code null} if this feature has
+   * been disabled
    */
   public String getNotificationAddress() {
     return notificationAddress;
   }
 
   /**
-   * Sets the event bus address on which the circuit breaker publish its state change.
+   * Sets the event bus address on which the circuit breaker publishes its state changes.
    *
-   * @param notificationAddress the address, {@code null} to disable this feature.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param notificationAddress the address, {@code null} to disable this feature
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setNotificationAddress(String notificationAddress) {
     this.notificationAddress = notificationAddress;
@@ -294,18 +295,18 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the the period in milliseconds where the circuit breaker send a notification about its state.
+   * @return the period in milliseconds in which the circuit breaker sends notifications about its state
    */
   public long getNotificationPeriod() {
     return notificationPeriod;
   }
 
   /**
-   * Configures the period in milliseconds where the circuit breaker send a notification on the event bus with its
+   * Sets the period in milliseconds in which the circuit breaker sends notifications on the event bus with its
    * current state.
    *
    * @param notificationPeriod the period, 0 to disable this feature.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setNotificationPeriod(long notificationPeriod) {
     this.notificationPeriod = notificationPeriod;
@@ -313,17 +314,17 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the configured rolling window for metrics.
+   * @return the configured length of rolling window for metrics
    */
   public long getMetricsRollingWindow() {
     return metricsRollingWindow;
   }
 
   /**
-   * Sets the rolling window used for metrics.
+   * Sets the rolling window length used for metrics.
    *
-   * @param metricsRollingWindow the period in milliseconds.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param metricsRollingWindow the period in milliseconds
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setMetricsRollingWindow(long metricsRollingWindow) {
     this.metricsRollingWindow = metricsRollingWindow;
@@ -331,17 +332,17 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the configured rolling window for failures.
+   * @return the configured length of rolling window for failures
    */
   public long getFailuresRollingWindow() {
     return failuresRollingWindow;
   }
 
   /**
-   * Sets the rolling window used for metrics.
+   * Sets the rolling window length used for failures.
    *
-   * @param metricsRollingWindow the period in milliseconds.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param failureRollingWindow the period in milliseconds
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setFailuresRollingWindow(long failureRollingWindow) {
     this.failuresRollingWindow = failureRollingWindow;
@@ -349,21 +350,21 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the configured number of buckets the rolling window is divided into.
+   * @return the configured number of buckets the metrics rolling window is divided into
    */
   public int getMetricsRollingBuckets() {
     return metricsRollingBuckets;
   }
 
   /**
-   * Sets the configured number of buckets the rolling window is divided into.
+   * Sets the number of buckets the metrics rolling window is divided into.
+   * <p>
+   * The following must be true: {@code metricsRollingWindow % metricsRollingBuckets == 0},
+   * otherwise an exception will be thrown.
+   * For example, 10000/10 is okay, so is 10000/20, but 10000/7 is not.
    *
-   * The following must be true - metrics.rollingStats.timeInMilliseconds % metrics.rollingStats.numBuckets == 0 - otherwise it will throw an exception.
-   *
-   * In other words, 10000/10 is okay, so is 10000/20 but 10000/7 is not.
-   *
-   * @param metricsRollingBuckets the number of rolling buckets.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param metricsRollingBuckets the number of buckets
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setMetricsRollingBuckets(int metricsRollingBuckets) {
     this.metricsRollingBuckets = metricsRollingBuckets;
@@ -371,17 +372,17 @@ public class CircuitBreakerOptions {
   }
 
   /**
-   * @return the number of times the circuit breaker tries to redo the operation before failing
+   * @return the number of times the circuit breaker retries an operation before failing
    */
   public int getMaxRetries() {
     return maxRetries;
   }
 
   /**
-   * Configures the number of times the circuit breaker tries to redo the operation before failing.
+   * Sets the number of times the circuit breaker retries an operation before failing.
    *
-   * @param maxRetries the number of retries, 0 to disable this feature.
-   * @return the current {@link CircuitBreakerOptions} instance
+   * @param maxRetries the number of retries, 0 to disable retrying
+   * @return this {@link CircuitBreakerOptions}
    */
   public CircuitBreakerOptions setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;

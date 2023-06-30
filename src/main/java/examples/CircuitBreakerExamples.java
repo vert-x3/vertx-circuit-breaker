@@ -32,11 +32,11 @@ public class CircuitBreakerExamples {
 
   public void example1(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions()
-            .setMaxFailures(5) // number of failure before opening the circuit
-            .setTimeout(2000) // consider a failure if the operation does not succeed in time
-            .setFallbackOnFailure(true) // do we call the fallback on failure
-            .setResetTimeout(10000) // time spent in open state before attempting to re-try
+      new CircuitBreakerOptions()
+        .setMaxFailures(5) // number of failures before opening the circuit breaker
+        .setTimeout(2000) // considered a failure if the operation does not succeed in time
+        .setFallbackOnFailure(true) // call the fallback on failure
+        .setResetTimeout(10000) // time spent in open state before attempting to retry
     );
 
     // ---
@@ -44,10 +44,10 @@ public class CircuitBreakerExamples {
     // ---
 
     breaker.execute(promise -> {
-      // some code executing with the breaker
-      // the code reports failures or success on the given promise.
-      // if this promise is marked as failed, the breaker increased the
-      // number of failures
+      // some code executing with the circuit breaker
+      // the code reports failures or success on the given promise
+      // if this promise is marked as failed, the circuit breaker
+      // increases the number of failures
     }).onComplete(ar -> {
       // Get the operation result.
     });
@@ -55,7 +55,7 @@ public class CircuitBreakerExamples {
 
   public void example2(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
+      new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     );
 
     // ---
@@ -72,7 +72,8 @@ public class CircuitBreakerExamples {
             } else {
               return resp.body().map(Buffer::toString);
             }
-          })).onComplete(promise);
+          }))
+        .onComplete(promise);
     }).onComplete(ar -> {
       // Do something with the result
     });
@@ -80,132 +81,98 @@ public class CircuitBreakerExamples {
 
   public void example3(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
+      new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     );
 
     // ---
     // Store the circuit breaker in a field and access it as follows
     // ---
 
-    breaker.executeWithFallback(
-        promise -> {
-          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
-            .compose(req -> req
-              .send()
-              .compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("HTTP error");
-                } else {
-                  return resp.body().map(Buffer::toString);
-                }
-              })).onComplete(promise);
-          }, v -> {
-          // Executed when the circuit is opened
-          return "Hello";
-        })
-        .onComplete(ar -> {
-          // Do something with the result
-        });
+    breaker.executeWithFallback(promise -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          }))
+        .onComplete(promise);
+    }, v -> {
+      // Executed when the circuit breaker is open
+      return "Hello";
+    }).onComplete(ar -> {
+      // Do something with the result
+    });
   }
 
   public void example4(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
+      new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     ).fallback(v -> {
-      // Executed when the circuit is opened.
+      // Executed when the circuit breaker is open.
       return "hello";
     });
 
-    breaker.<String>execute(
-        promise -> {
-          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
-            .compose(req -> req
-              .send()
-              .compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("HTTP error");
-                } else {
-                  return resp.body().map(Buffer::toString);
-                }
-              })).onComplete(promise);
-        });
+    breaker.<String>execute(promise -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          }))
+        .onComplete(promise);
+    });
   }
 
   public void example5(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
+      new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
     ).openHandler(v -> {
-      System.out.println("Circuit opened");
+      System.out.println("Circuit breaker opened");
     }).closeHandler(v -> {
-      System.out.println("Circuit closed");
+      System.out.println("Circuit breaker closed");
     });
 
-    breaker.<String>execute(
-        promise -> {
-          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
-            .compose(req -> req
-              .send()
-              .compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("HTTP error");
-                } else {
-                  return resp.body().map(Buffer::toString);
-                }
-              })).onComplete(promise);
-        });
-  }
-
-  public void example6(Vertx vertx) {
-    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-        new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000)
-    );
-
-    Promise<String> userPromise = Promise.promise();
-    userPromise.future().onComplete(ar -> {
-      // Do something with the result
+    breaker.<String>execute(promise -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          }))
+        .onComplete(promise);
     });
-
-    breaker.executeAndReportWithFallback(
-        userPromise,
-        promise -> {
-          vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
-            .compose(req -> req
-              .send()
-              .compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("HTTP error");
-                } else {
-                  return resp.body().map(Buffer::toString);
-                }
-              })).onComplete(promise);
-        }, v -> {
-          // Executed when the circuit is opened
-          return "Hello";
-        });
   }
 
   public void example8(Vertx vertx) {
     CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
       new CircuitBreakerOptions().setMaxFailures(5).setMaxRetries(5).setTimeout(2000)
-    ).openHandler(v -> {
-      System.out.println("Circuit opened");
-    }).closeHandler(v -> {
-      System.out.println("Circuit closed");
-    }).retryPolicy(RetryPolicy.exponentialDelayWithJitter(50, 500));
+    ).retryPolicy(RetryPolicy.exponentialDelayWithJitter(50, 500));
 
-    breaker.<String>execute(
-      promise -> {
-        vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
-          .compose(req -> req
-            .send()
-            .compose(resp -> {
-              if (resp.statusCode() != 200) {
-                return Future.failedFuture("HTTP error");
-              } else {
-                return resp.body().map(Buffer::toString);
-              }
-            })).onComplete(promise);
-      });
+    breaker.<String>execute(promise -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          }))
+        .onComplete(promise);
+    });
   }
 
   public void enableNotifications(CircuitBreakerOptions options) {
