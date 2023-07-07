@@ -30,7 +30,6 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.json.JsonObject;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -466,14 +465,22 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return this;
   }
 
-  public static class RollingCounter {
+  static class RollingCounter {
+    // all `RollingCounter` methods are called in a `synchronized (CircuitBreakerImpl.this)` block,
+    // which therefore guards access to these fields
+
     private Map<Long, Long> window;
     private long timeUnitsInWindow;
     private TimeUnit windowTimeUnit;
 
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
       this.windowTimeUnit = windowTimeUnit;
-      this.window = new LinkedHashMap<>((int) timeUnitsInWindow + 1);
+      this.window = new LinkedHashMap<Long, Long>((int) timeUnitsInWindow + 1) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Long, Long> eldest) {
+          return size() > timeUnitsInWindow;
+        }
+      };
       this.timeUnitsInWindow = timeUnitsInWindow;
     }
 
@@ -481,18 +488,18 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       long timeSlot = windowTimeUnit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
       Long current = window.getOrDefault(timeSlot, 0L);
       window.put(timeSlot, ++current);
-
-      if (window.size() > timeUnitsInWindow) {
-        Iterator<Long> iterator = window.keySet().iterator();
-        if (iterator.hasNext()) {
-          window.remove(iterator.next());
-        }
-      }
     }
 
     public long count() {
       long windowStartTime = windowTimeUnit.convert(System.currentTimeMillis() - windowTimeUnit.toMillis(timeUnitsInWindow), TimeUnit.MILLISECONDS);
-      return window.entrySet().stream().filter(entry -> entry.getKey() >= windowStartTime).mapToLong(entry -> entry.getValue()).sum();
+
+      long result = 0;
+      for (Map.Entry<Long, Long> entry : window.entrySet()) {
+        if (entry.getKey() >= windowStartTime) {
+          result += entry.getValue();
+        }
+      }
+      return result;
     }
 
     public void reset() {
