@@ -318,9 +318,9 @@ public class CircuitBreakerMetrics {
         failures += other.failures;
         exceptions += other.exceptions;
         timeouts += other.timeouts;
-        fallbackSuccess += other.fallbackSuccess ;
-        fallbackFailure += other.fallbackFailure ;
-        shortCircuited += other.shortCircuited ;
+        fallbackSuccess += other.fallbackSuccess;
+        fallbackFailure += other.fallbackFailure;
+        shortCircuited += other.shortCircuited;
       }
 
       public void add(Operation operation) {
