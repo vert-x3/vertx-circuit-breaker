@@ -185,3 +185,19 @@ operation has a chance of succeeding, so it goes into the `half-open` state. In 
 circuit breaker is allowed to execute the guarded operation. Should the call succeed, the circuit breaker resets
 and returns to the `closed` state, ready for more routine operation. If this trial call fails, however, the circuit
 breaker returns to the `open` state until another timeout elapses.
+
+== Using Resilience4j
+
+link:https://resilience4j.readme.io/[Resilience4j] is a popular library that implements common fault tolerance strategies:
+
+* bulkhead (concurrency limiter)
+* circuit breaker
+* rate limiter
+* retry
+* time limiter (timeout)
+
+A link:https://how-to.vertx.io/resilience4j-howto/[how-to] has been published that demonstrates the usage of Resilience4j with Vert.x.
+The link:https://github.com/vertx-howtos/resilience4j-howto[repository] of that how-to contains Vert.x adapters for all the fault tolerance strategies listed above.
+These adapters glue together the Resilience4j API and Vert.x ``Future``s.
+
+WARNING: Resilience4j 2.0 requires Java 17.
