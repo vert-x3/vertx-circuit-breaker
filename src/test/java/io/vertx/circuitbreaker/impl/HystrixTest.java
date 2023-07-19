@@ -97,11 +97,11 @@ public class HystrixTest {
     vertx.runOnContext(v -> {
 
       // Blocking call..., need to run in an executeBlocking
-      vertx.<String>executeBlocking(
-          future -> {
-            HttpClientCommand command = new HttpClientCommand(client, "/");
-            future.complete(command.execute());
-          }).onComplete(ar -> result.set(ar.result())
+      vertx.executeBlocking(
+        () -> {
+          HttpClientCommand command = new HttpClientCommand(client, "/");
+          return command.execute();
+        }).onComplete(ar -> result.set(ar.result())
       );
     });
 
@@ -112,15 +112,11 @@ public class HystrixTest {
     vertx.runOnContext(v -> {
 
       // Blocking call..., need to run in an executeBlocking
-      vertx.<String>executeBlocking(
-          future -> {
-            HttpClientCommand command = new HttpClientCommand(client, "/");
-            try {
-              future.complete(command.queue().get());
-            } catch (Exception e) {
-              future.fail(e);
-            }
-          }).onComplete(ar -> result.set(ar.result())
+      vertx.executeBlocking(
+        () -> {
+          HttpClientCommand command = new HttpClientCommand(client, "/");
+          return command.queue().get();
+        }).onComplete(ar -> result.set(ar.result())
       );
     });
 
@@ -136,11 +132,11 @@ public class HystrixTest {
 
       // Blocking call..., need to run in an executeBlocking
 
-      vertx.<String>executeBlocking(
-          future -> {
-            HttpClientCommand command = new HttpClientCommand(client, "/error");
-            future.complete(command.execute());
-          }).onComplete(ar -> result.set(ar.result())
+      vertx.executeBlocking(
+        () -> {
+          HttpClientCommand command = new HttpClientCommand(client, "/error");
+          return command.execute();
+        }).onComplete(ar -> result.set(ar.result())
       );
     });
 
@@ -151,15 +147,11 @@ public class HystrixTest {
     vertx.runOnContext(v -> {
 
       // Blocking call..., need to run in an executeBlocking
-      vertx.<String>executeBlocking(
-          future -> {
-            HttpClientCommand command = new HttpClientCommand(client, "/error");
-            try {
-              future.complete(command.queue().get());
-            } catch (Exception e) {
-              future.fail(e);
-            }
-          }).onComplete(ar -> result.set(ar.result())
+      vertx.executeBlocking(
+        () -> {
+          HttpClientCommand command = new HttpClientCommand(client, "/error");
+          return command.queue().get();
+        }).onComplete(ar -> result.set(ar.result())
       );
     });
 
