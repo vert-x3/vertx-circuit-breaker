@@ -10,7 +10,7 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static com.jayway.awaitility.Awaitility.*;
+import static org.awaitility.Awaitility.*;
 import static org.hamcrest.Matchers.*;
 
 /**

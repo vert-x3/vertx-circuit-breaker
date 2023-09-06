@@ -31,13 +31,13 @@ public enum CircuitBreakerState {
    */
   OPEN,
   /**
-   * The {@code CLOSED} state. The circuit breaker lets invocations pass and collects the failures. IF the number of
-   * failures reach the specified threshold, the cricuit breaker switches to the {@link #OPEN} state.
+   * The {@code CLOSED} state. The circuit breaker lets invocations pass and collects the failures. If the number of
+   * failures reach the specified threshold, the circuit breaker switches to the {@link #OPEN} state.
    */
   CLOSED,
   /**
    * The {@code HALF_OPEN} state. The circuit breaker has been opened, and is now checking the current situation. It
-   * lets pass the next invocation and determines from the result (failure or success) if the circuit breaker can
+   * lets the next invocation pass and determines from the result (failure or success) if the circuit breaker can
    * be switched to the {@link #CLOSED} state again.
    */
   HALF_OPEN
