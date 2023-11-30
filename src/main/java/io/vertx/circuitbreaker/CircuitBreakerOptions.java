@@ -17,6 +17,7 @@
 package io.vertx.circuitbreaker;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -24,7 +25,8 @@ import io.vertx.core.json.JsonObject;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-@DataObject(generateConverter = true)
+@DataObject
+@JsonGen(publicConverter = false)
 public class CircuitBreakerOptions {
 
   /**
