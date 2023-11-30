@@ -17,57 +17,12 @@ public class CircuitBreakerOptionsConverter {
   private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
   private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
-  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CircuitBreakerOptions obj) {
+   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CircuitBreakerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "failuresRollingWindow":
-          if (member.getValue() instanceof Number) {
-            obj.setFailuresRollingWindow(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "fallbackOnFailure":
-          if (member.getValue() instanceof Boolean) {
-            obj.setFallbackOnFailure((Boolean)member.getValue());
-          }
-          break;
         case "maxFailures":
           if (member.getValue() instanceof Number) {
             obj.setMaxFailures(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxRetries":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxRetries(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "metricsRollingBuckets":
-          if (member.getValue() instanceof Number) {
-            obj.setMetricsRollingBuckets(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "metricsRollingWindow":
-          if (member.getValue() instanceof Number) {
-            obj.setMetricsRollingWindow(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "notificationAddress":
-          if (member.getValue() instanceof String) {
-            obj.setNotificationAddress((String)member.getValue());
-          }
-          break;
-        case "notificationLocalOnly":
-          if (member.getValue() instanceof Boolean) {
-            obj.setNotificationLocalOnly((Boolean)member.getValue());
-          }
-          break;
-        case "notificationPeriod":
-          if (member.getValue() instanceof Number) {
-            obj.setNotificationPeriod(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "resetTimeout":
-          if (member.getValue() instanceof Number) {
-            obj.setResetTimeout(((Number)member.getValue()).longValue());
           }
           break;
         case "timeout":
@@ -75,27 +30,72 @@ public class CircuitBreakerOptionsConverter {
             obj.setTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "fallbackOnFailure":
+          if (member.getValue() instanceof Boolean) {
+            obj.setFallbackOnFailure((Boolean)member.getValue());
+          }
+          break;
+        case "resetTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setResetTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "notificationLocalOnly":
+          if (member.getValue() instanceof Boolean) {
+            obj.setNotificationLocalOnly((Boolean)member.getValue());
+          }
+          break;
+        case "notificationAddress":
+          if (member.getValue() instanceof String) {
+            obj.setNotificationAddress((String)member.getValue());
+          }
+          break;
+        case "notificationPeriod":
+          if (member.getValue() instanceof Number) {
+            obj.setNotificationPeriod(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "metricsRollingWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setMetricsRollingWindow(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "failuresRollingWindow":
+          if (member.getValue() instanceof Number) {
+            obj.setFailuresRollingWindow(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "metricsRollingBuckets":
+          if (member.getValue() instanceof Number) {
+            obj.setMetricsRollingBuckets(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxRetries":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxRetries(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }
 
-  public static void toJson(CircuitBreakerOptions obj, JsonObject json) {
+   static void toJson(CircuitBreakerOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-  public static void toJson(CircuitBreakerOptions obj, java.util.Map<String, Object> json) {
-    json.put("failuresRollingWindow", obj.getFailuresRollingWindow());
-    json.put("fallbackOnFailure", obj.isFallbackOnFailure());
+   static void toJson(CircuitBreakerOptions obj, java.util.Map<String, Object> json) {
     json.put("maxFailures", obj.getMaxFailures());
-    json.put("maxRetries", obj.getMaxRetries());
-    json.put("metricsRollingBuckets", obj.getMetricsRollingBuckets());
-    json.put("metricsRollingWindow", obj.getMetricsRollingWindow());
+    json.put("timeout", obj.getTimeout());
+    json.put("fallbackOnFailure", obj.isFallbackOnFailure());
+    json.put("resetTimeout", obj.getResetTimeout());
+    json.put("notificationLocalOnly", obj.isNotificationLocalOnly());
     if (obj.getNotificationAddress() != null) {
       json.put("notificationAddress", obj.getNotificationAddress());
     }
-    json.put("notificationLocalOnly", obj.isNotificationLocalOnly());
     json.put("notificationPeriod", obj.getNotificationPeriod());
-    json.put("resetTimeout", obj.getResetTimeout());
-    json.put("timeout", obj.getTimeout());
+    json.put("metricsRollingWindow", obj.getMetricsRollingWindow());
+    json.put("failuresRollingWindow", obj.getFailuresRollingWindow());
+    json.put("metricsRollingBuckets", obj.getMetricsRollingBuckets());
+    json.put("maxRetries", obj.getMaxRetries());
   }
 }
