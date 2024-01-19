@@ -90,7 +90,7 @@ public class CircuitBreakerOptions {
   /**
    * The default failure test, which is just true if the result is failed.
    */
-  public static final Predicate<AsyncResult> DEFAULT_ASYNC_RESULT_FAILURE_TEST = AsyncResult::failed;
+  public static final Predicate<AsyncResult> DEFAULT_ASYNC_FAILURE_POLICY = AsyncResult::failed;
 
   /**
    * The operation timeout.
@@ -149,9 +149,9 @@ public class CircuitBreakerOptions {
 
 
   /**
-   * The way we determine if a future is indeed a failure.
+   *  The way we determine if an asynchronous result is indeed a failure.
    */
-  private Predicate<AsyncResult> asyncResultTest = DEFAULT_ASYNC_RESULT_FAILURE_TEST;
+  private Predicate<AsyncResult> asyncFailurePolicy = DEFAULT_ASYNC_FAILURE_POLICY;
 
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
@@ -177,7 +177,7 @@ public class CircuitBreakerOptions {
     this.metricsRollingBuckets = other.metricsRollingBuckets;
     this.metricsRollingWindow = other.metricsRollingWindow;
     this.failuresRollingWindow = other.failuresRollingWindow;
-    this.asyncResultTest = other.asyncResultTest;
+    this.asyncFailurePolicy = other.asyncFailurePolicy;
   }
 
   /**
@@ -405,12 +405,18 @@ public class CircuitBreakerOptions {
     return this;
   }
 
-  public Predicate<AsyncResult> getAsyncFailureResultTest() {
-    return asyncResultTest;
+  public Predicate<AsyncResult> getAsyncFailurePolicy() {
+    return asyncFailurePolicy;
   }
 
-  public CircuitBreakerOptions setAsyncFailureResultTest(Predicate<AsyncResult> asyncResultTest) {
-    this.asyncResultTest = asyncResultTest;
+  /**
+   * Configures the failure policy of an AsyncResult. This will allow you to control if an event failed or passed.
+   *
+   * @param asyncFailurePolicy The failure policy of the async result event.
+   * @return the current {@link CircuitBreakerOptions} instance
+   */
+  public CircuitBreakerOptions setAsyncFailurePolicy(Predicate<AsyncResult> asyncFailurePolicy) {
+    this.asyncFailurePolicy = asyncFailurePolicy;
     return this;
   }
 }

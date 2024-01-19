@@ -228,7 +228,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     if (currentState == CircuitBreakerState.CLOSED) {
       operationResult.future().onComplete(event -> {
         context.runOnContext(v -> {
-          if (options.getAsyncFailureResultTest().test(event)) {
+          if (options.getAsyncFailurePolicy().test(event)) {
             incrementFailures();
             if (call != null) {
               call.failed();
@@ -245,11 +245,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             reset();
             //The event may pass due to a user given predicate. We still want to push up the failure for the user
             //to do any work
-            if(event.failed()) {
-              userFuture.fail(event.cause());
-            } else {
-              userFuture.complete(event.result());
-            }
+            userFuture.handle(event);
           }
           // Else the operation has been canceled because of a time out.
         });
@@ -270,7 +266,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       if (passed.incrementAndGet() == 1) {
         operationResult.future().onComplete(event -> {
           context.runOnContext(v -> {
-            if (options.getAsyncFailureResultTest().test(event)) {
+            if (options.getAsyncFailurePolicy().test(event)) {
               open();
               if (call != null) {
                 call.failed();
@@ -287,11 +283,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
               reset();
               //The event may pass due to a user given predicate. We still want to push up the failure for the user
               //to do any work
-              if(event.failed()) {
-                userFuture.fail(event.cause());
-              } else {
-                userFuture.complete(event.result());
-              }
+              userFuture.handle(event);
             }
           });
         });
