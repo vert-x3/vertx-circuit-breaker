@@ -97,7 +97,7 @@ public class CircuitBreakerImplTest {
   @Test
   @Repeat(5)
   public void testWithCustomPredicateOk() {
-    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncFailurePolicy(ar -> {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncResultFailurePolicy(ar -> {
       if(ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable)) {
         return true;
       }
@@ -146,7 +146,7 @@ public class CircuitBreakerImplTest {
   @Test
   @Repeat(5)
   public void testWithUserFutureWithCustomPredicateOk() {
-    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncFailurePolicy(ar -> {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncResultFailurePolicy(ar -> {
       if(ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable)) {
         return true;
       }
@@ -193,7 +193,7 @@ public class CircuitBreakerImplTest {
 
   @Test
   public void testAsynchronousWithCustomPredicateOk() {
-    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncFailurePolicy(ar -> {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncResultFailurePolicy(ar -> {
       if(ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable)) {
         return true;
       }
@@ -242,7 +242,7 @@ public class CircuitBreakerImplTest {
 
   @Test
   public void testAsynchronousWithUserFutureAndWithCustomPredicateOk() {
-    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncFailurePolicy(ar -> {
+    breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions().setAsyncResultFailurePolicy(ar -> {
       if(ar.failed() && ar.cause() instanceof ClassNotFoundException) {
         return true;
       }
@@ -466,7 +466,7 @@ public class CircuitBreakerImplTest {
   public void testFailureOnAsynchronousCodeWithCustomPredicate() {
     AtomicBoolean called = new AtomicBoolean(false);
     AtomicReference<String> result = new AtomicReference<>();
-    CircuitBreakerOptions options = new CircuitBreakerOptions().setResetTimeout(-1).setAsyncFailurePolicy(ar -> {
+    CircuitBreakerOptions options = new CircuitBreakerOptions().setResetTimeout(-1).setAsyncResultFailurePolicy(ar -> {
       if(ar.failed() && ar.cause() instanceof NoStackTraceThrowable) {
         return true;
       }

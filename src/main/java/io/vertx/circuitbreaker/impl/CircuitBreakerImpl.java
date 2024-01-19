@@ -228,7 +228,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     if (currentState == CircuitBreakerState.CLOSED) {
       operationResult.future().onComplete(event -> {
         context.runOnContext(v -> {
-          if (options.getAsyncFailurePolicy().test(event)) {
+          if (options.getAsyncResultFailurePolicy().test(event)) {
             incrementFailures();
             if (call != null) {
               call.failed();
@@ -266,7 +266,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       if (passed.incrementAndGet() == 1) {
         operationResult.future().onComplete(event -> {
           context.runOnContext(v -> {
-            if (options.getAsyncFailurePolicy().test(event)) {
+            if (options.getAsyncResultFailurePolicy().test(event)) {
               open();
               if (call != null) {
                 call.failed();

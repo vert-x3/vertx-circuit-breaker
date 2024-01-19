@@ -90,7 +90,7 @@ public class CircuitBreakerOptions {
   /**
    * The default failure test, which is just true if the result is failed.
    */
-  public static final Predicate<AsyncResult> DEFAULT_ASYNC_FAILURE_POLICY = AsyncResult::failed;
+  public static final Predicate<AsyncResult> DEFAULT_ASYNC_RESULT_FAILURE_POLICY = AsyncResult::failed;
 
   /**
    * The operation timeout.
@@ -151,7 +151,7 @@ public class CircuitBreakerOptions {
   /**
    *  The way we determine if an asynchronous result is indeed a failure.
    */
-  private Predicate<AsyncResult> asyncFailurePolicy = DEFAULT_ASYNC_FAILURE_POLICY;
+  private Predicate<AsyncResult> asyncResultFailurePolicy = DEFAULT_ASYNC_RESULT_FAILURE_POLICY;
 
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
@@ -177,7 +177,7 @@ public class CircuitBreakerOptions {
     this.metricsRollingBuckets = other.metricsRollingBuckets;
     this.metricsRollingWindow = other.metricsRollingWindow;
     this.failuresRollingWindow = other.failuresRollingWindow;
-    this.asyncFailurePolicy = other.asyncFailurePolicy;
+    this.asyncResultFailurePolicy = other.asyncResultFailurePolicy;
   }
 
   /**
@@ -405,18 +405,18 @@ public class CircuitBreakerOptions {
     return this;
   }
 
-  public Predicate<AsyncResult> getAsyncFailurePolicy() {
-    return asyncFailurePolicy;
+  public Predicate<AsyncResult> getAsyncResultFailurePolicy() {
+    return asyncResultFailurePolicy;
   }
 
   /**
    * Configures the failure policy of an AsyncResult. This will allow you to control if an event failed or passed.
    *
-   * @param asyncFailurePolicy The failure policy of the async result event.
+   * @param asyncResultFailurePolicy The failure policy of the async result event.
    * @return the current {@link CircuitBreakerOptions} instance
    */
-  public CircuitBreakerOptions setAsyncFailurePolicy(Predicate<AsyncResult> asyncFailurePolicy) {
-    this.asyncFailurePolicy = asyncFailurePolicy;
+  public CircuitBreakerOptions setAsyncResultFailurePolicy(Predicate<AsyncResult> asyncResultFailurePolicy) {
+    this.asyncResultFailurePolicy = asyncResultFailurePolicy;
     return this;
   }
 }
