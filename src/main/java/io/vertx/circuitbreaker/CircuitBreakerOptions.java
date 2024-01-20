@@ -149,7 +149,7 @@ public class CircuitBreakerOptions {
 
 
   /**
-   *  The way we determine if an asynchronous result is indeed a failure.
+   *  The way we determine if an {@link AsyncResult} is a failure.
    */
   private Predicate<AsyncResult> asyncResultFailurePolicy = DEFAULT_ASYNC_RESULT_FAILURE_POLICY;
 
@@ -405,12 +405,16 @@ public class CircuitBreakerOptions {
     return this;
   }
 
+  /**
+   * @return the failure policy used for determining if an {@link AsyncResult} is a failure.
+   */
   public Predicate<AsyncResult> getAsyncResultFailurePolicy() {
     return asyncResultFailurePolicy;
   }
 
   /**
-   * Configures the failure policy of an AsyncResult. This will allow you to control if an event failed or passed.
+   * Configures the failure policy of an {@link AsyncResult}.
+   * This will allow you to control if an event failed or passed.
    *
    * @param asyncResultFailurePolicy The failure policy of the async result event.
    * @return the current {@link CircuitBreakerOptions} instance
