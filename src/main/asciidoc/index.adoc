@@ -114,7 +114,7 @@ Below is an example of exponential delay with jitter:
 == Failure Policy
 
 By default, the failure policy for {@link io.vertx.core.AsyncResult} is if the result is failed or not.
-You may also need to specify the failure policy of the circuit breaker with {@link  io.vertx.circuitbreaker.CircuitBreakerOptions#setAsyncResultFailurePolicy(Predicate<io.vertx.core.AsyncResult>) }.
+You may also need to specify the failure policy of the circuit breaker with {@link  io.vertx.circuitbreaker.CircuitBreakerOptions#setAsyncResultFailurePolicy }.
 This will let you specify the criteria in which an {@link io.vertx.core.AsyncResult} is treated as a failure by the circuit breaker.
 If you decide to override the failure policy, just be aware that it could allow failed results in the future provided in functions like `executeAndReport`.
 
