@@ -111,6 +111,20 @@ Below is an example of exponential delay with jitter:
 {@link examples.CircuitBreakerExamples#example8(io.vertx.core.Vertx)}
 ----
 
+== Failure Policy
+
+By default, the failure policy of a circuit breaker is to report a failure if the command doesn't complete successfully.
+Alternatively, you may configure the failure policy of the circuit breaker with {@link  io.vertx.circuitbreaker.CircuitBreakerOptions#setAsyncResultFailurePolicy }.
+This will let you specify the criteria in which an {@link io.vertx.core.AsyncResult} is treated as a failure by the circuit breaker.
+If you decide to override the failure policy, just be aware that it could allow failed results in the future provided in functions like `executeAndReport`.
+
+Below is an example of using a custom defined failure policy.
+
+[source,$lang]
+----
+{@link examples.CircuitBreakerExamples#example9(io.vertx.core.Vertx)}
+----
+
 == Callbacks
 
 You can also configures callbacks invoked when the circuit is opened or closed:

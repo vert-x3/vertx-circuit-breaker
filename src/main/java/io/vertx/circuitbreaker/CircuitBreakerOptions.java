@@ -18,7 +18,10 @@ package io.vertx.circuitbreaker;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.json.JsonObject;
+
+import java.util.function.Predicate;
 
 /**
  * Circuit breaker configuration options. All time are given in milliseconds.
@@ -85,6 +88,11 @@ public class CircuitBreakerOptions {
   private static final int DEFAULT_FAILURES_ROLLING_WINDOW = 10000;
 
   /**
+   * The default failure test, which is just true if the result is failed.
+   */
+  public static final Predicate<AsyncResult> DEFAULT_ASYNC_RESULT_FAILURE_POLICY = AsyncResult::failed;
+
+  /**
    * The operation timeout.
    */
   private long timeout = DEFAULT_TIMEOUT;
@@ -139,6 +147,12 @@ public class CircuitBreakerOptions {
    */
   private long failuresRollingWindow = DEFAULT_FAILURES_ROLLING_WINDOW;
 
+
+  /**
+   *  The way we determine if an {@link AsyncResult} is a failure.
+   */
+  private Predicate<AsyncResult> asyncResultFailurePolicy = DEFAULT_ASYNC_RESULT_FAILURE_POLICY;
+
   /**
    * Creates a new instance of {@link CircuitBreakerOptions} using the default values.
    */
@@ -163,6 +177,7 @@ public class CircuitBreakerOptions {
     this.metricsRollingBuckets = other.metricsRollingBuckets;
     this.metricsRollingWindow = other.metricsRollingWindow;
     this.failuresRollingWindow = other.failuresRollingWindow;
+    this.asyncResultFailurePolicy = other.asyncResultFailurePolicy;
   }
 
   /**
@@ -387,6 +402,25 @@ public class CircuitBreakerOptions {
    */
   public CircuitBreakerOptions setMaxRetries(int maxRetries) {
     this.maxRetries = maxRetries;
+    return this;
+  }
+
+  /**
+   * @return the failure policy used for determining if an {@link AsyncResult} is a failure.
+   */
+  public Predicate<AsyncResult> getAsyncResultFailurePolicy() {
+    return asyncResultFailurePolicy;
+  }
+
+  /**
+   * Configures the failure policy of an {@link AsyncResult}.
+   * This will allow you to control if an event failed or passed.
+   *
+   * @param asyncResultFailurePolicy The failure policy of the async result event.
+   * @return the current {@link CircuitBreakerOptions} instance
+   */
+  public CircuitBreakerOptions setAsyncResultFailurePolicy(Predicate<AsyncResult> asyncResultFailurePolicy) {
+    this.asyncResultFailurePolicy = asyncResultFailurePolicy;
     return this;
   }
 }
