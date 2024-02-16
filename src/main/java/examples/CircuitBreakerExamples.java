@@ -16,14 +16,14 @@
 
 package examples;
 
-import io.vertx.circuitbreaker.*;
-import io.vertx.core.AsyncResult;
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.HystrixMetricHandler;
+import io.vertx.circuitbreaker.RetryPolicy;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 
@@ -227,32 +227,6 @@ public class CircuitBreakerExamples {
               }
             })).onComplete(promise);
       });
-  }
-
-  public void example9(Vertx vertx) {
-    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
-      new CircuitBreakerOptions().setAsyncResultFailurePolicy(asyncResult -> {
-        if(asyncResult.failed()) {
-          return true;
-        }
-
-        if(!(asyncResult.result() instanceof HttpClientResponse)) {
-          return true;
-        }
-
-        HttpClientResponse resp = (HttpClientResponse) asyncResult.result();
-        return resp.statusCode() != 200;
-      })
-    );
-
-    breaker.<AsyncResult<HttpClientResponse>>execute(
-      promise -> {
-        vertx.createHttpClient()
-          .request(HttpMethod.GET, 8080, "localhost", "/")
-          .compose(HttpClientRequest::send)
-          .onComplete(promise::complete);
-      });
-
   }
 
   public void enableNotifications(CircuitBreakerOptions options) {
