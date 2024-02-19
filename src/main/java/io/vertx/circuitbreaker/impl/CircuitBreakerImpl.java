@@ -16,17 +16,8 @@
 
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.circuitbreaker.CircuitBreaker;
-import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.circuitbreaker.CircuitBreakerState;
-import io.vertx.circuitbreaker.OpenCircuitException;
-import io.vertx.circuitbreaker.RetryPolicy;
-import io.vertx.circuitbreaker.TimeoutException;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.circuitbreaker.*;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
 
@@ -56,6 +47,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private Handler<Void> halfOpenHandler = NOOP;
   private Handler<Void> closeHandler = NOOP;
   private Function fallback = null;
+  private FailurePolicy failurePolicy = FailurePolicy.defaultPolicy();
 
   private CircuitBreakerState state = CircuitBreakerState.CLOSED;
   private RollingCounter rollingFailures;
@@ -129,6 +121,13 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public <T> CircuitBreaker fallback(Function<Throwable, T> handler) {
     Objects.requireNonNull(handler);
     fallback = handler;
+    return this;
+  }
+
+  @Override
+  public <T> CircuitBreaker failurePolicy(FailurePolicy<T> failurePolicy) {
+    Objects.requireNonNull(failurePolicy);
+    this.failurePolicy = failurePolicy;
     return this;
   }
 
@@ -226,29 +225,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     Promise<T> operationResult = Promise.promise();
 
     if (currentState == CircuitBreakerState.CLOSED) {
-      operationResult.future().onComplete(event -> {
-        context.runOnContext(v -> {
-          if (event.failed()) {
-            incrementFailures();
-            if (call != null) {
-              call.failed();
-            }
-            if (options.isFallbackOnFailure()) {
-              invokeFallback(event.cause(), userFuture, fallback, call);
-            } else {
-              userFuture.fail(event.cause());
-            }
-          } else {
-            if (call != null) {
-              call.complete();
-            }
-            reset();
-            userFuture.complete(event.result());
-          }
-          // Else the operation has been canceled because of a time out.
-        });
-      });
-
+      Future<T> opFuture = operationResult.future();
+      opFuture.onComplete(new ClosedCircuitCompletion<>(context, userFuture, fallback, call));
       if (options.getMaxRetries() > 0) {
         executeOperation(context, command, retryFuture(context, 0, command, operationResult, call), call);
       } else {
@@ -262,27 +240,8 @@ public class CircuitBreakerImpl implements CircuitBreaker {
       invokeFallback(OpenCircuitException.INSTANCE, userFuture, fallback, call);
     } else if (currentState == CircuitBreakerState.HALF_OPEN) {
       if (passed.incrementAndGet() == 1) {
-        operationResult.future().onComplete(event -> {
-          context.runOnContext(v -> {
-            if (event.failed()) {
-              open();
-              if (call != null) {
-                call.failed();
-              }
-              if (options.isFallbackOnFailure()) {
-                invokeFallback(event.cause(), userFuture, fallback, call);
-              } else {
-                userFuture.fail(event.cause());
-              }
-            } else {
-              if (call != null) {
-                call.complete();
-              }
-              reset();
-              userFuture.complete(event.result());
-            }
-          });
-        });
+        Future<T> opFuture = operationResult.future();
+        opFuture.onComplete(new HalfOpenedCircuitCompletion<>(context, userFuture, fallback, call));
         // Execute the operation
         executeOperation(context, command, operationResult, call);
       } else {
@@ -513,6 +472,85 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     public void reset() {
       window.clear();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private abstract class Completion<T> implements Handler<AsyncResult<T>> {
+
+    final Context context;
+    final Promise<T> userFuture;
+    final Function<Throwable, T> fallback;
+    final CircuitBreakerMetrics.Operation call;
+
+    protected Completion(Context context, Promise<T> userFuture, Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation call) {
+      this.context = context;
+      this.userFuture = userFuture;
+      this.fallback = fallback;
+      this.call = call;
+    }
+
+    @Override
+    public void handle(AsyncResult<T> ar) {
+      context.runOnContext(v -> {
+        if (failurePolicy.test(asFuture(ar))) {
+          failureAction();
+          if (call != null) {
+            call.failed();
+          }
+          if (options.isFallbackOnFailure()) {
+            invokeFallback(ar.cause(), userFuture, fallback, call);
+          } else {
+            userFuture.fail(ar.cause());
+          }
+        } else {
+          if (call != null) {
+            call.complete();
+          }
+          reset();
+          //The event may pass due to a user given predicate. We still want to push up the failure for the user
+          //to do any work
+          userFuture.handle(ar);
+        }
+      });
+    }
+
+    private Future<T> asFuture(AsyncResult<T> ar) {
+      Future<T> result;
+      if (ar instanceof Future) {
+        result = (Future<T>) ar;
+      } else if (ar.succeeded()) {
+        result = Future.succeededFuture(ar.result());
+      } else {
+        result = Future.failedFuture(ar.cause());
+      }
+      return result;
+    }
+
+    protected abstract void failureAction();
+  }
+
+  private class ClosedCircuitCompletion<T> extends Completion<T> {
+
+    ClosedCircuitCompletion(Context context, Promise<T> userFuture, Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation call) {
+      super(context, userFuture, fallback, call);
+    }
+
+    @Override
+    protected void failureAction() {
+      incrementFailures();
+    }
+  }
+
+  private class HalfOpenedCircuitCompletion<T> extends Completion<T> {
+
+    HalfOpenedCircuitCompletion(Context context, Promise<T> userFuture, Function<Throwable, T> fallback, CircuitBreakerMetrics.Operation call) {
+      super(context, userFuture, fallback, call);
+    }
+
+    @Override
+    protected void failureAction() {
+      open();
     }
   }
 }
