@@ -20,11 +20,7 @@ import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 
 import java.util.function.Function;
 
@@ -202,6 +198,17 @@ public interface CircuitBreaker {
    */
   @Fluent
   <T> CircuitBreaker fallback(Function<Throwable, T> handler);
+
+  /**
+   * Configures the failure policy for this circuit-breaker.
+   *
+   * @return the current {@link CircuitBreaker}
+   * @see FailurePolicy
+   */
+  @Fluent
+  default <T> CircuitBreaker failurePolicy(FailurePolicy<T> failurePolicy) {
+    return this;
+  }
 
   /**
    * Resets the circuit breaker state (number of failure set to 0 and state set to closed).

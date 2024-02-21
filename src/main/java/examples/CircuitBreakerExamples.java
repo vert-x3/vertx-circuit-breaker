@@ -24,6 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.Router;
 
@@ -227,6 +228,27 @@ public class CircuitBreakerExamples {
               }
             })).onComplete(promise);
       });
+  }
+
+  public void example9(Vertx vertx) {
+    CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx);
+    breaker.<HttpClientResponse>failurePolicy(ar -> {
+      // A failure will be either a failed operation or a response with a status code other than 200
+      if (ar.failed()) {
+        return true;
+      }
+      HttpClientResponse resp = ar.result();
+      return resp.statusCode() != 200;
+    });
+
+    Future<HttpClientResponse> future = breaker.execute(promise -> {
+      vertx.createHttpClient()
+        .request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(request -> request.send()
+          // Complete when the body is fully received
+          .compose(response -> response.body().map(response)))
+        .onComplete(promise);
+    });
   }
 
   public void enableNotifications(CircuitBreakerOptions options) {
