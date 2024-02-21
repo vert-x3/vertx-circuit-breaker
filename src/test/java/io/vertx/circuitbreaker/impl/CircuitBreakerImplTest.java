@@ -18,6 +18,7 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
@@ -37,8 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
-import static org.awaitility.Awaitility.await;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.core.Is.is;
 
 /**
@@ -95,6 +96,29 @@ public class CircuitBreakerImplTest {
 
   @Test
   @Repeat(5)
+  public void testWithCustomPredicateOk() {
+    breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
+      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+    });
+
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    AtomicBoolean operationCalled = new AtomicBoolean();
+    AtomicReference<String> completionCalled = new AtomicReference<>();
+    breaker.<String>execute(fut -> {
+      operationCalled.set(true);
+      fut.fail("some fake exception");
+    }).onComplete(ar -> {
+      completionCalled.set(ar.cause().getMessage());
+      assertThat(ar.failed()).isTrue();
+    });
+
+    await().until(operationCalled::get);
+    await().until(() -> completionCalled.get().equalsIgnoreCase("some fake exception"));
+  }
+
+  @Test
+  @Repeat(5)
   public void testWithUserFutureOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -116,6 +140,32 @@ public class CircuitBreakerImplTest {
   }
 
   @Test
+  @Repeat(5)
+  public void testWithUserFutureWithCustomPredicateOk() {
+    breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
+      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+    });
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    AtomicBoolean operationCalled = new AtomicBoolean();
+    AtomicReference<String> completionCalled = new AtomicReference<>();
+
+    Promise<String> userFuture = Promise.promise();
+    userFuture.future().onComplete(ar -> {
+      completionCalled.set(ar.cause().getMessage());
+      assertThat(ar.failed()).isTrue();
+    });
+
+    breaker.executeAndReport(userFuture, fut -> {
+      operationCalled.set(true);
+      fut.fail("some custom exception");
+    });
+
+    await().until(operationCalled::get);
+    await().until(() -> completionCalled.get().equalsIgnoreCase("some custom exception"));
+  }
+
+  @Test
   public void testAsynchronousOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -131,6 +181,30 @@ public class CircuitBreakerImplTest {
 
     await().until(called::get);
     await().untilAtomic(result, is("hello"));
+  }
+
+  @Test
+  public void testAsynchronousWithCustomPredicateOk() {
+    breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
+      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+    });
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    AtomicBoolean called = new AtomicBoolean();
+    AtomicReference<String> result = new AtomicReference<>();
+    breaker.<String>execute(future ->
+      vertx.setTimer(100, l -> {
+        called.set(true);
+        future.fail("some custom exception");
+      })
+    ).onComplete(ar -> {
+      result.set(ar.cause().getMessage());
+      assertThat(ar.failed()).isTrue();
+    });
+    ;
+
+    await().until(called::get);
+    await().untilAtomic(result, is("some custom exception"));
   }
 
   @Test
@@ -153,6 +227,34 @@ public class CircuitBreakerImplTest {
 
     await().until(called::get);
     await().untilAtomic(result, is("hello"));
+  }
+
+  @Test
+  public void testAsynchronousWithUserFutureAndWithCustomPredicateOk() {
+    breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
+      return ar.failed() && ar.cause() instanceof ClassNotFoundException;
+    });
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    AtomicBoolean called = new AtomicBoolean();
+    AtomicReference<String> result = new AtomicReference<>();
+
+    Promise<String> userFuture = Promise.promise();
+    userFuture.future().onComplete(ar -> {
+      result.set(ar.cause().getMessage());
+      assertThat(ar.failed()).isTrue();
+    });
+    ;
+
+    breaker.executeAndReport(userFuture, future ->
+      vertx.setTimer(100, l -> {
+        called.set(true);
+        future.fail(new NullPointerException("some custom exception"));
+      })
+    );
+
+    await().until(called::get);
+    await().untilAtomic(result, is("some custom exception"));
   }
 
   @Test
@@ -227,7 +329,7 @@ public class CircuitBreakerImplTest {
       .setMaxFailures(1));
 
     Handler<Promise<Void>> fail = p -> p.fail("fail");
-    Handler<Promise<Void>> success = p -> p.complete();
+    Handler<Promise<Void>> success = Promise::complete;
 
     ctx.runOnContext(v -> {
       breaker.execute(fail);
@@ -341,6 +443,44 @@ public class CircuitBreakerImplTest {
         spy.set(true);
       }))
       .onComplete(ar -> result.set(ar.result()));
+    await().untilAtomic(called, is(true));
+    assertThat(spy.get()).isEqualTo(false);
+    assertThat(result.get()).isEqualTo("fallback");
+  }
+
+  @Test
+  public void testFailureOnAsynchronousCodeWithCustomPredicate() {
+    AtomicBoolean called = new AtomicBoolean(false);
+    AtomicReference<String> result = new AtomicReference<>();
+    CircuitBreakerOptions options = new CircuitBreakerOptions().setResetTimeout(-1);
+    breaker = CircuitBreaker.create("test", vertx, options)
+      .fallback(v -> {
+        called.set(true);
+        return "fallback";
+      })
+      .failurePolicy(ar -> {
+        return ar.failed() && ar.cause() instanceof NoStackTraceThrowable;
+      });
+    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+
+    for (int i = 0; i < options.getMaxFailures(); i++) {
+      breaker.<String>execute(
+        future -> vertx.setTimer(100, l -> future.fail("expected failure"))
+      ).onComplete(ar -> result.set(ar.result()));
+    }
+    await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
+    assertThat(called.get()).isFalse();
+
+    AtomicBoolean spy = new AtomicBoolean();
+    breaker.<String>execute(
+        future -> vertx.setTimer(100, l -> {
+          future.fail("expected failure");
+          spy.set(true);
+        }))
+      .onComplete(ar -> {
+        result.set(ar.result());
+      });
+    ;
     await().untilAtomic(called, is(true));
     assertThat(spy.get()).isEqualTo(false);
     assertThat(result.get()).isEqualTo("fallback");

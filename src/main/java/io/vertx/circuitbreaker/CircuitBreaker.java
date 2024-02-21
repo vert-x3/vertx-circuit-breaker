@@ -175,6 +175,17 @@ public interface CircuitBreaker {
   <T> CircuitBreaker fallback(Function<Throwable, T> handler);
 
   /**
+   * Configures the failure policy for this circuit-breaker.
+   *
+   * @return the current {@link CircuitBreaker}
+   * @see FailurePolicy
+   */
+  @Fluent
+  default <T> CircuitBreaker failurePolicy(FailurePolicy<T> failurePolicy) {
+    return this;
+  }
+
+  /**
    * Resets the circuit breaker state. The number of recent failures is set to 0 and if the state is half-open,
    * it is set to closed.
    *
