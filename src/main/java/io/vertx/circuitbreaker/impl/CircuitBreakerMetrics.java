@@ -2,7 +2,7 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import org.HdrHistogram.Histogram;
 

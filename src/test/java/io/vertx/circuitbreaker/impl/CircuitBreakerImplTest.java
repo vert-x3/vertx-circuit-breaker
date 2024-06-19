@@ -18,7 +18,6 @@ package io.vertx.circuitbreaker.impl;
 
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
@@ -98,7 +97,7 @@ public class CircuitBreakerImplTest {
   @Repeat(5)
   public void testWithCustomPredicateOk() {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
-      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+      return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
 
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
@@ -143,7 +142,7 @@ public class CircuitBreakerImplTest {
   @Repeat(5)
   public void testWithUserFutureWithCustomPredicateOk() {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
-      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+      return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
@@ -186,7 +185,7 @@ public class CircuitBreakerImplTest {
   @Test
   public void testAsynchronousWithCustomPredicateOk() {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
-      return ar.failed() && !(ar.cause() instanceof NoStackTraceThrowable);
+      return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
@@ -459,7 +458,7 @@ public class CircuitBreakerImplTest {
         return "fallback";
       })
       .failurePolicy(ar -> {
-        return ar.failed() && ar.cause() instanceof NoStackTraceThrowable;
+        return ar.failed() && ar.cause().getStackTrace().length == 0;
       });
     assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
 
