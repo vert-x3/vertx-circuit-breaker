@@ -31,7 +31,7 @@ public interface RetryPolicy {
    */
   static RetryPolicy constantDelay(long delay) {
     if (delay <= 0) {
-      throw new IllegalStateException("delay must be strictly positive");
+      throw new IllegalArgumentException("delay must be strictly positive");
     }
     return (failure, retryCount) -> delay;
   }
@@ -44,10 +44,10 @@ public interface RetryPolicy {
    */
   static RetryPolicy linearDelay(long initialDelay, long maxDelay) {
     if (initialDelay <= 0) {
-      throw new IllegalStateException("initialDelay must be strictly positive");
+      throw new IllegalArgumentException("initialDelay must be strictly positive");
     }
     if (maxDelay < initialDelay) {
-      throw new IllegalStateException("maxDelay must be greater than initialDelay");
+      throw new IllegalArgumentException("maxDelay must be greater than initialDelay");
     }
     return (failure, retryCount) -> min(maxDelay, initialDelay * retryCount);
   }
@@ -63,10 +63,10 @@ public interface RetryPolicy {
    */
   static RetryPolicy exponentialDelayWithJitter(long initialDelay, long maxDelay) {
     if (initialDelay <= 0) {
-      throw new IllegalStateException("initialDelay must be strictly positive");
+      throw new IllegalArgumentException("initialDelay must be strictly positive");
     }
     if (maxDelay < initialDelay) {
-      throw new IllegalStateException("maxDelay must be greater than initialDelay");
+      throw new IllegalArgumentException("maxDelay must be greater than initialDelay");
     }
     return (failure, retryCount) -> {
       ThreadLocalRandom random = ThreadLocalRandom.current();
