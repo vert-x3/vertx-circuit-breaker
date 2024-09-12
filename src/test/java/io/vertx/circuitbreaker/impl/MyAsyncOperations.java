@@ -16,10 +16,7 @@
 
 package io.vertx.circuitbreaker.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 
 /**
  * Some methods using asynchronous patterns.
@@ -27,8 +24,8 @@ import io.vertx.core.Promise;
  */
 public class MyAsyncOperations {
 
-  public static void operation(int a, int b, Handler<AsyncResult<Integer>> handler) {
-    handler.handle(Future.succeededFuture(a + b));
+  public static void operation(int a, int b, Completable<Integer> handler) {
+    handler.succeed(a + b);
   }
 
   public static void fail(Handler<AsyncResult<Integer>> handler) {

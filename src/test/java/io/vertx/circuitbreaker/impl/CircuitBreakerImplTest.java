@@ -787,7 +787,7 @@ public class CircuitBreakerImplTest {
     List<AsyncResult<String>> results = new ArrayList<>();
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(future -> future.fail("expected failure"))
-        .onComplete(results::add);
+        .onComplete(ar -> results.add(ar));
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
@@ -799,7 +799,7 @@ public class CircuitBreakerImplTest {
 
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
     breaker.<String>execute(future -> future.fail("expected failure"))
-      .onComplete(results::add);
+      .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
@@ -820,7 +820,7 @@ public class CircuitBreakerImplTest {
         // Ignored.
       }
     })
-      .onComplete(results::add);
+      .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();
@@ -845,7 +845,7 @@ public class CircuitBreakerImplTest {
         t -> {
           throw new RuntimeException("boom");
         })
-        .onComplete(results::add);
+        .onComplete(ar -> results.add(ar));
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
@@ -861,7 +861,7 @@ public class CircuitBreakerImplTest {
       t -> {
         throw new RuntimeException("boom");
       })
-      .onComplete(results::add);
+      .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
       assertThat(ar.failed()).isTrue();

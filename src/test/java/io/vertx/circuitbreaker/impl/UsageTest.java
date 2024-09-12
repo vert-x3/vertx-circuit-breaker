@@ -3,10 +3,7 @@ package io.vertx.circuitbreaker.impl;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -161,7 +158,7 @@ public class UsageTest {
 
   private List<String> items = new ArrayList<>();
 
-  public void asyncWrite(String content, Scenario scenario, Handler<AsyncResult<Void>> resultHandler) {
+  public void asyncWrite(String content, Scenario scenario, Completable<Void> resultHandler) {
     long random = (long) (Math.random() * 1000);
     switch (scenario) {
       case TIMEOUT:
@@ -177,12 +174,12 @@ public class UsageTest {
         synchronized (UsageTest.this) {
           items.add("Error");
         }
-        resultHandler.handle(Future.failedFuture("Bad Bad Bad"));
+        resultHandler.fail("Bad Bad Bad");
       } else {
         synchronized (UsageTest.this) {
           items.add(content);
         }
-        resultHandler.handle(Future.succeededFuture());
+        resultHandler.succeed();
       }
     });
   }
