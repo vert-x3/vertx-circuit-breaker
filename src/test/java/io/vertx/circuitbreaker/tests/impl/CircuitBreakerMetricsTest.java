@@ -1,8 +1,9 @@
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
+import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -22,11 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 import static org.awaitility.Awaitility.await;
-import static io.vertx.circuitbreaker.asserts.Assertions.assertThat;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -73,20 +74,17 @@ public class CircuitBreakerMetricsTest {
 
     Future.all(command1, command2, command3)
       .onComplete(ar -> {
-        assertThat(ar).succeeded();
-        assertThat(metrics())
-          .contains("name", "some-circuit-breaker")
-          .contains("state", CircuitBreakerState.CLOSED.name())
-          .contains("failures", 0)
-          .contains("totalErrorCount", 0)
-          .contains("totalSuccessCount", 3)
-          .contains("totalTimeoutCount", 0)
-          .contains("totalExceptionCount", 0)
-          .contains("totalFailureCount", 0)
-          .contains("totalOperationCount", 3)
-          .contains("totalSuccessPercentage", 100)
-          .contains("totalErrorPercentage", 0);
-
+        assertTrue(ar.succeeded());
+        assertEquals("some-circuit-breaker", metrics().getString("name"));
+        assertEquals(CircuitBreakerState.CLOSED.name(), metrics().getString("state"));
+        assertEquals(0, (int)metrics().getInteger("failures"));
+        assertEquals(0, (int)metrics().getInteger("totalErrorCount"));
+        assertEquals(3, (int)metrics().getInteger("totalSuccessCount"));
+        assertEquals(0, (int)metrics().getInteger("totalTimeoutCount"));
+        assertEquals(0, (int)metrics().getInteger("totalExceptionCount"));
+        assertEquals(0, (int)metrics().getInteger("totalFailureCount"));
+        assertEquals(100, (int)metrics().getInteger("totalSuccessPercentage"));
+        assertEquals(0, (int)metrics().getInteger("totalErrorPercentage"));
         async.complete();
       });
   }
@@ -109,17 +107,16 @@ public class CircuitBreakerMetricsTest {
 
     Future.join(command1, command2, command3, command4)
       .onComplete(ar -> {
-        assertThat(metrics())
-          .contains("name", "some-circuit-breaker")
-          .contains("state", CircuitBreakerState.CLOSED.name())
-          .contains("totalErrorCount", 2) // Failure + Timeout + Exception
-          .contains("totalSuccessCount", 2)
-          .contains("totalTimeoutCount", 0)
-          .contains("totalExceptionCount", 0)
-          .contains("totalFailureCount", 2)
-          .contains("totalOperationCount", 4)
-          .contains("totalSuccessPercentage", 50)
-          .contains("totalErrorPercentage", 50);
+        assertEquals("some-circuit-breaker", metrics().getString("name"));
+        assertEquals(CircuitBreakerState.CLOSED.name(), metrics().getString("state"));
+        assertEquals(2, (int)metrics().getInteger("totalErrorCount"));
+        assertEquals(2, (int)metrics().getInteger("totalSuccessCount"));
+        assertEquals(0, (int)metrics().getInteger("totalTimeoutCount"));
+        assertEquals(0, (int)metrics().getInteger("totalExceptionCount"));
+        assertEquals(2, (int)metrics().getInteger("totalFailureCount"));
+        assertEquals(4, (int)metrics().getInteger("totalOperationCount"));
+        assertEquals(50, (int)metrics().getInteger("totalSuccessPercentage"));
+        assertEquals(50, (int)metrics().getInteger("totalErrorPercentage"));
         async.complete();
       });
   }
@@ -138,17 +135,16 @@ public class CircuitBreakerMetricsTest {
 
     Future.join(command1, command2, command3, command4, command5)
       .onComplete(ar -> {
-        assertThat(metrics())
-          .contains("name", "some-circuit-breaker")
-          .contains("state", CircuitBreakerState.CLOSED.name())
-          .contains("totalErrorCount", 3) // Failure + Timeout + Exception
-          .contains("totalSuccessCount", 2)
-          .contains("totalTimeoutCount", 0)
-          .contains("totalExceptionCount", 1)
-          .contains("totalFailureCount", 2)
-          .contains("totalOperationCount", 5)
-          .contains("totalSuccessPercentage", (2.0 / 5 * 100))
-          .contains("totalErrorPercentage", (3.0 / 5 * 100));
+        assertEquals("some-circuit-breaker", metrics().getString("name"));
+        assertEquals(CircuitBreakerState.CLOSED.name(), metrics().getString("state"));
+        assertEquals(3, (int)metrics().getInteger("totalErrorCount"));
+        assertEquals(2, (int)metrics().getInteger("totalSuccessCount"));
+        assertEquals(0, (int)metrics().getInteger("totalTimeoutCount"));
+        assertEquals(1, (int)metrics().getInteger("totalExceptionCount"));
+        assertEquals(2, (int)metrics().getInteger("totalFailureCount"));
+        assertEquals(5, (int)metrics().getInteger("totalOperationCount"));
+        assertEquals((2.0 / 5 * 100), (float)metrics().getFloat("totalSuccessPercentage"), 0.1);
+        assertEquals((3.0 / 5 * 100), (float)metrics().getFloat("totalErrorPercentage"), 0.1);
         async.complete();
       });
   }
@@ -167,17 +163,16 @@ public class CircuitBreakerMetricsTest {
 
     Future.join(command1, command2, command3, command4, command5)
       .onComplete(ar -> {
-        assertThat(metrics())
-          .contains("name", "some-circuit-breaker")
-          .contains("state", CircuitBreakerState.CLOSED.name())
-          .contains("totalErrorCount", 3) // Failure + Timeout + Exception
-          .contains("totalSuccessCount", 2)
-          .contains("totalTimeoutCount", 1)
-          .contains("totalExceptionCount", 0)
-          .contains("totalFailureCount", 2)
-          .contains("totalOperationCount", 5)
-          .contains("totalSuccessPercentage", (2.0 / 5 * 100))
-          .contains("totalErrorPercentage", (3.0 / 5 * 100));
+        assertEquals("some-circuit-breaker", metrics().getString("name"));
+        assertEquals(CircuitBreakerState.CLOSED.name(), metrics().getString("state"));
+        assertEquals(3, (int)metrics().getInteger("totalErrorCount"));
+        assertEquals(2, (int)metrics().getInteger("totalSuccessCount"));
+        assertEquals(1, (int)metrics().getInteger("totalTimeoutCount"));
+        assertEquals(0, (int)metrics().getInteger("totalExceptionCount"));
+        assertEquals(2, (int)metrics().getInteger("totalFailureCount"));
+        assertEquals(5, (int)metrics().getInteger("totalOperationCount"));
+        assertEquals((2.0 / 5 * 100), (float)metrics().getFloat("totalSuccessPercentage"), 0.1);
+        assertEquals((3.0 / 5 * 100), (float)metrics().getFloat("totalErrorPercentage"), 0.1);
         async.complete();
       });
   }
@@ -196,20 +191,18 @@ public class CircuitBreakerMetricsTest {
       .mapToObj(i -> breaker.execute(commandThatWorks()))
       .collect(collectingAndThen(toList(), Future::all))
       .onComplete(ar -> {
-        assertThat(ar).succeeded();
-        assertThat(metrics())
-          .contains("name", "some-circuit-breaker")
-          .contains("state", CircuitBreakerState.CLOSED.name())
-          .contains("failures", 0)
-          .contains("totalErrorCount", 0)
-          .contains("totalSuccessCount", count)
-          .contains("totalTimeoutCount", 0)
-          .contains("totalExceptionCount", 0)
-          .contains("totalFailureCount", 0)
-          .contains("totalOperationCount", count)
-          .contains("totalSuccessPercentage", 100)
-          .contains("totalErrorPercentage", 0);
-        assertThat(metrics().getInteger("totalLatencyMean")).isNotZero();
+        assertTrue(ar.succeeded());
+        assertEquals("some-circuit-breaker", metrics().getString("name"));
+        assertEquals(CircuitBreakerState.CLOSED.name(), metrics().getString("state"));
+        assertEquals(0, (int)metrics().getInteger("failures"));
+        assertEquals(0, (int)metrics().getInteger("totalErrorCount"));
+        assertEquals(count, (int)metrics().getInteger("totalSuccessCount"));
+        assertEquals(0, (int)metrics().getInteger("totalTimeoutCount"));
+        assertEquals(0, (int)metrics().getInteger("totalExceptionCount"));
+        assertEquals(0, (int)metrics().getInteger("totalFailureCount"));
+        assertEquals(count, (int)metrics().getInteger("totalOperationCount"));
+        assertEquals(100, metrics().getFloat("totalSuccessPercentage"), 0.1);
+        assertEquals(0, metrics().getFloat("totalErrorPercentage"), 0.1);
         async.complete();
       });
   }
@@ -230,9 +223,9 @@ public class CircuitBreakerMetricsTest {
 
     Future.all(list)
       .onComplete(ar -> {
-        assertThat(ar).succeeded();
-        assertThat(metrics().getInteger("totalOperationCount")).isEqualTo(1000);
-        assertThat(metrics().getInteger("rollingOperationCount")).isLessThanOrEqualTo(1000);
+        assertTrue(ar.succeeded());
+        assertEquals(1000, (int)metrics().getInteger("totalOperationCount"));
+        assertTrue(metrics().getInteger("rollingOperationCount") <= 1000);
         async.complete();
       });
   }

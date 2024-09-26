@@ -1,8 +1,10 @@
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -10,8 +12,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Reproducer for https://github.com/vert-x3/issues/issues/294 (copied to
@@ -63,7 +63,7 @@ public class AsyncBreakerTest {
       });
 
     }, fallback -> {
-      LOG.info("OPEN {}", id);
+      LOG.info("OPEN " + id);
       async.complete();
       return "OPEN";
     });

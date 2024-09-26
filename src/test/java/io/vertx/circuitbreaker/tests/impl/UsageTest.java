@@ -1,14 +1,11 @@
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -22,16 +19,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.awaitility.Awaitility.await;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -42,13 +40,13 @@ public class UsageTest {
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
 
-  @Rule
-  public WireMockRule wireMockRule = new WireMockRule(8089);
+//  @Rule
+//  public WireMockRule wireMockRule = new WireMockRule(8089);
   private Vertx vertx;
   private CircuitBreaker cb;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     vertx = Vertx.vertx();
     items.clear();
     cb = CircuitBreaker.create("circuit-breaker", vertx, new CircuitBreakerOptions()
@@ -75,8 +73,28 @@ public class UsageTest {
 
   @Test
   @Repeat(10)
-  public void testCBWithReadOperation() {
-    prepareHttpServer();
+  public void testCBWithReadOperation() throws Exception {
+    vertx.createHttpServer().requestHandler(req -> {
+        switch (req.path()) {
+          case "/resource":
+            req.response()
+              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+              .end(new JsonObject().put("status", "OK").encode());
+            break;
+          case "/delayed":
+            vertx.setTimer(2000, id -> {
+              req.response().end();
+            });
+            break;
+          case "/error":
+            req.response()
+              .setStatusCode(500)
+              .end("This is an error");
+            break;
+        }
+      }).listen(8089)
+      .await(20, TimeUnit.SECONDS);
+
 
     HttpClient client = vertx.createHttpClient();
 
@@ -94,7 +112,7 @@ public class UsageTest {
         t -> null
     ).onComplete(ar -> json.set(ar.result()));
     await().atMost(1, TimeUnit.MINUTES).untilAtomic(json, is(notNullValue()));
-    assertThat(json.get().getString("status")).isEqualTo("OK");
+    assertEquals("OK", json.get().getString("status"));
 
     json.set(null);
     cb.executeWithFallback(
@@ -114,7 +132,7 @@ public class UsageTest {
         t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
-    assertThat(json.get().getString("status")).isEqualTo("KO");
+    assertEquals("KO", json.get().getString("status"));
 
     json.set(null);
     cb.executeWithFallback(
@@ -134,26 +152,7 @@ public class UsageTest {
         t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
-    assertThat(json.get().getString("status")).isEqualTo("KO");
-  }
-
-  private void prepareHttpServer() {
-    stubFor(get(urlEqualTo("/resource"))
-        .withHeader("Accept", equalTo("application/json"))
-        .willReturn(aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody("{\"status\":\"OK\"}")));
-
-    stubFor(get(urlEqualTo("/delayed")).willReturn(
-        aResponse()
-            .withStatus(200)
-            .withFixedDelay(2000)));
-
-    stubFor(get(urlEqualTo("/error")).willReturn(
-        aResponse()
-            .withStatus(500)
-            .withBody("This is an error")));
+    assertEquals("KO", json.get().getString("status"));
   }
 
   private List<String> items = new ArrayList<>();
@@ -224,7 +223,7 @@ public class UsageTest {
       }
     });
 
-    assertThat(fallbackCalled.get()).isTrue();
+    assertTrue(fallbackCalled.get());
 
     items.clear();
     fallbackCalled.set(false);
@@ -238,7 +237,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertThat(items).isEmpty();
+    assertEquals(Collections.emptyList(), items);
 
     items.clear();
     fallbackCalled.set(false);
@@ -251,7 +250,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertThat(items).isEmpty();
+    assertEquals(Collections.emptyList(), items);
   }
 
 
@@ -279,7 +278,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertThat(items).isEmpty();
+    assertEquals(Collections.emptyList(), items);
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
@@ -291,7 +290,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertThat(items).isEmpty();
+    assertEquals(Collections.emptyList(), items);
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
@@ -303,8 +302,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertThat(items).isEmpty();
+    assertEquals(Collections.emptyList(), items);
     fallbackCalled.set(false);
   }
-
 }

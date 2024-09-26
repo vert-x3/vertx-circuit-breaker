@@ -1,4 +1,4 @@
-package io.vertx.circuitbreaker;
+package io.vertx.circuitbreaker.tests;
 
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;

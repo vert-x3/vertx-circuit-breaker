@@ -14,9 +14,10 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.*;
+import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.core.*;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -37,9 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.*;
 
 /**
  * Test the basic behavior of the circuit breaker.
@@ -72,15 +73,15 @@ public class CircuitBreakerImplTest {
   @Test
   public void testCreationWithDefault() {
     breaker = CircuitBreaker.create("name", vertx);
-    assertThat(breaker.name()).isEqualTo("name");
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals("name", breaker.name());
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
   }
 
   @Test
   @Repeat(5)
   public void testOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean operationCalled = new AtomicBoolean();
     AtomicReference<String> completionCalled = new AtomicReference<>();
@@ -100,7 +101,7 @@ public class CircuitBreakerImplTest {
       return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean operationCalled = new AtomicBoolean();
     AtomicReference<String> completionCalled = new AtomicReference<>();
@@ -109,7 +110,7 @@ public class CircuitBreakerImplTest {
       fut.fail("some fake exception");
     }).onComplete(ar -> {
       completionCalled.set(ar.cause().getMessage());
-      assertThat(ar.failed()).isTrue();
+      assertTrue(ar.failed());
     });
 
     await().until(operationCalled::get);
@@ -120,7 +121,7 @@ public class CircuitBreakerImplTest {
   @Repeat(5)
   public void testWithUserFutureOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean operationCalled = new AtomicBoolean();
     AtomicReference<String> completionCalled = new AtomicReference<>();
@@ -144,7 +145,7 @@ public class CircuitBreakerImplTest {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
       return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean operationCalled = new AtomicBoolean();
     AtomicReference<String> completionCalled = new AtomicReference<>();
@@ -152,7 +153,7 @@ public class CircuitBreakerImplTest {
     Promise<String> userFuture = Promise.promise();
     userFuture.future().onComplete(ar -> {
       completionCalled.set(ar.cause().getMessage());
-      assertThat(ar.failed()).isTrue();
+      assertTrue(ar.failed());
     });
 
     breaker.executeAndReport(userFuture, fut -> {
@@ -167,7 +168,7 @@ public class CircuitBreakerImplTest {
   @Test
   public void testAsynchronousOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean called = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -187,7 +188,7 @@ public class CircuitBreakerImplTest {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
       return ar.failed() && ar.cause().getStackTrace().length > 0;
     });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean called = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -198,7 +199,7 @@ public class CircuitBreakerImplTest {
       })
     ).onComplete(ar -> {
       result.set(ar.cause().getMessage());
-      assertThat(ar.failed()).isTrue();
+      assertTrue(ar.failed());
     });
     ;
 
@@ -209,7 +210,7 @@ public class CircuitBreakerImplTest {
   @Test
   public void testAsynchronousWithUserFutureOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean called = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -233,7 +234,7 @@ public class CircuitBreakerImplTest {
     breaker = CircuitBreaker.create("test", vertx).failurePolicy(ar -> {
       return ar.failed() && ar.cause() instanceof ClassNotFoundException;
     });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicBoolean called = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -241,7 +242,7 @@ public class CircuitBreakerImplTest {
     Promise<String> userFuture = Promise.promise();
     userFuture.future().onComplete(ar -> {
       result.set(ar.cause().getMessage());
-      assertThat(ar.failed()).isTrue();
+      assertTrue(ar.failed());
     });
     ;
 
@@ -261,15 +262,15 @@ public class CircuitBreakerImplTest {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions()
     														.setMaxFailures(10)
     														.setFailuresRollingWindow(10000));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     IntStream.range(0,  9).forEach(i -> breaker.execute(v -> v.fail(new RuntimeException("oh no, but this is expected"))));
     await().until(() -> breaker.failureCount() == 9);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     await().atMost(11, TimeUnit.SECONDS).until(() -> breaker.failureCount() < 9);
 
-    assertThat(breaker.failureCount()).isLessThan(9);
+    assertTrue(breaker.failureCount() < 9);
   }
 
   @Test
@@ -284,8 +285,8 @@ public class CircuitBreakerImplTest {
       .openHandler((v) -> spyOpen.incrementAndGet())
       .closeHandler((v) -> spyClosed.incrementAndGet());
 
-    assertThat(spyOpen.get()).isEqualTo(0);
-    assertThat(spyClosed.get()).isEqualTo(0);
+    assertEquals(0, spyOpen.get());
+    assertEquals(0, spyClosed.get());
 
     // First failure
     breaker.execute(v -> {
@@ -293,10 +294,10 @@ public class CircuitBreakerImplTest {
     })
       .onComplete(ar -> lastException.set(ar.cause()));
 
-    assertThat(spyOpen.get()).isEqualTo(0);
-    assertThat(spyClosed.get()).isEqualTo(0);
+    assertEquals(0, spyOpen.get());
+    assertEquals(0, spyClosed.get());
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
-    assertThat(lastException.get()).isNotNull();
+    assertNotNull(lastException.get());
     lastException.set(null);
 
     for (int i = 1; i < CircuitBreakerOptions.DEFAULT_MAX_FAILURES; i++) {
@@ -306,13 +307,13 @@ public class CircuitBreakerImplTest {
         .onComplete(ar -> lastException.set(ar.cause()));
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
-    assertThat(spyOpen.get()).isEqualTo(1);
-    assertThat(lastException.get()).isNotNull();
+    assertEquals(1, spyOpen.get());
+    assertNotNull(lastException.get());
 
     ((CircuitBreakerImpl) breaker).reset(true);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
-    assertThat(spyOpen.get()).isEqualTo(1);
-    assertThat(spyClosed.get()).isEqualTo(1);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
+    assertEquals(1, spyOpen.get());
+    assertEquals(1, spyClosed.get());
   }
 
   @Test
@@ -349,7 +350,7 @@ public class CircuitBreakerImplTest {
 
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
 
-    assertThat(thrown.get()).isFalse();
+    assertFalse(thrown.get());
   }
 
   @Test
@@ -364,7 +365,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         return "fallback";
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(v -> {
@@ -373,12 +374,12 @@ public class CircuitBreakerImplTest {
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN  ||
       breaker.state() == CircuitBreakerState.HALF_OPEN);
-    assertThat(called.get()).isEqualTo(false);
+    assertFalse(called.get());
 
     AtomicBoolean spy = new AtomicBoolean();
     breaker.execute(v -> spy.set(true));
-    assertThat(spy.get()).isEqualTo(false);
-    assertThat(called.get()).isEqualTo(true);
+    assertFalse(spy.get());
+    assertTrue(called.get());
   }
 
   @Test
@@ -389,7 +390,7 @@ public class CircuitBreakerImplTest {
       .setResetTimeout(-1);
     breaker = CircuitBreaker.create("test", vertx, options)
       .fallback(t -> "fallback");
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       Promise<String> future = Promise.promise();
@@ -398,11 +399,11 @@ public class CircuitBreakerImplTest {
         throw new RuntimeException("oh no, but this is expected");
       });
       future.future().onComplete(ar -> result.set(ar.result()));
-      assertThat(result.get()).isNull();
+      assertNull(result.get());
     }
 
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
 
     AtomicBoolean spy = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -411,8 +412,8 @@ public class CircuitBreakerImplTest {
       result.set(ar.result())
     );
     breaker.executeAndReport(fut, v -> spy.set(true));
-    assertThat(spy.get()).isEqualTo(false);
-    assertThat(result.get()).isEqualTo("fallback");
+    assertFalse(spy.get());
+    assertEquals("fallback", result.get());
   }
 
   @Test
@@ -425,7 +426,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         return "fallback";
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(
@@ -433,7 +434,7 @@ public class CircuitBreakerImplTest {
       ).onComplete(ar -> result.set(ar.result()));
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
-    assertThat(called.get()).isEqualTo(false);
+    assertFalse(called.get());
 
     AtomicBoolean spy = new AtomicBoolean();
     breaker.<String>execute(
@@ -443,8 +444,8 @@ public class CircuitBreakerImplTest {
       }))
       .onComplete(ar -> result.set(ar.result()));
     await().untilAtomic(called, is(true));
-    assertThat(spy.get()).isEqualTo(false);
-    assertThat(result.get()).isEqualTo("fallback");
+    assertFalse(spy.get());
+    assertEquals("fallback", result.get());
   }
 
   @Test
@@ -460,7 +461,7 @@ public class CircuitBreakerImplTest {
       .failurePolicy(ar -> {
         return ar.failed() && ar.cause().getStackTrace().length == 0;
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(
@@ -468,7 +469,7 @@ public class CircuitBreakerImplTest {
       ).onComplete(ar -> result.set(ar.result()));
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN);
-    assertThat(called.get()).isFalse();
+    assertFalse(called.get());
 
     AtomicBoolean spy = new AtomicBoolean();
     breaker.<String>execute(
@@ -481,8 +482,8 @@ public class CircuitBreakerImplTest {
       });
     ;
     await().untilAtomic(called, is(true));
-    assertThat(spy.get()).isEqualTo(false);
-    assertThat(result.get()).isEqualTo("fallback");
+    assertFalse(spy.get());
+    assertEquals("fallback", result.get());
   }
 
   @Test
@@ -495,7 +496,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         return "fallback";
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(v -> {
@@ -503,7 +504,7 @@ public class CircuitBreakerImplTest {
       });
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN  || breaker.state() == CircuitBreakerState.HALF_OPEN);
-    assertThat(called.get()).isEqualTo(false);
+    assertFalse(called.get());
 
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
 
@@ -512,10 +513,10 @@ public class CircuitBreakerImplTest {
       spy.set(true);
       v.complete();
     });
-    assertThat(spy.get()).isEqualTo(true);
-    assertThat(called.get()).isEqualTo(false);
+    assertTrue(spy.get());
+    assertFalse(called.get());
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
   }
 
   @Test
@@ -531,7 +532,7 @@ public class CircuitBreakerImplTest {
         return "fallback";
       });
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(v -> {
@@ -539,7 +540,7 @@ public class CircuitBreakerImplTest {
       });
     }
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
-    assertThat(called.get()).isEqualTo(true);
+    assertTrue(called.get());
 
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
     called.set(false);
@@ -551,7 +552,7 @@ public class CircuitBreakerImplTest {
 
     await().until(called::get);
     await().until(() -> breaker.state() == CircuitBreakerState.OPEN || breaker.state() == CircuitBreakerState.HALF_OPEN);
-    assertThat(result.get()).isEqualTo("fallback");
+    assertEquals("fallback", result.get());
   }
 
   @Test
@@ -563,7 +564,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         return "fallback";
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicInteger failureCount = new AtomicInteger();
     for (int i = 0; i < options.getMaxFailures(); i++) {
@@ -579,9 +580,9 @@ public class CircuitBreakerImplTest {
       });
     }
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
-    assertThat(called.get()).isEqualTo(false);
-    assertThat(failureCount.get()).isEqualTo(options.getMaxFailures());
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
+    assertFalse(called.get());
+    assertEquals(options.getMaxFailures(), failureCount.get());
 
     AtomicBoolean spy = new AtomicBoolean();
     AtomicReference<String> result = new AtomicReference<>();
@@ -590,9 +591,9 @@ public class CircuitBreakerImplTest {
       v.complete();
     })
       .onComplete(ar -> result.set(ar.result()));
-    assertThat(spy.get()).isEqualTo(false);
-    assertThat(called.get()).isEqualTo(true);
-    assertThat(result.get()).isEqualTo("fallback");
+    assertFalse(spy.get());
+    assertTrue(called.get());
+    assertEquals("fallback", result.get());
   }
 
   @Test
@@ -606,7 +607,7 @@ public class CircuitBreakerImplTest {
         called.set(true);
         return "fallback";
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < options.getMaxFailures() + 3; i++) {
@@ -625,9 +626,9 @@ public class CircuitBreakerImplTest {
       });
     }
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
-    assertThat(called.get()).isEqualTo(true);
-    assertThat(count.get()).isEqualTo(options.getMaxFailures() + 3);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
+    assertTrue(called.get());
+    assertEquals(options.getMaxFailures() + 3, count.get());
   }
 
   @Test
@@ -644,7 +645,7 @@ public class CircuitBreakerImplTest {
         return "fallback";
       })
       .openHandler(v -> hasBeenOpened.set(true));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(future -> {
@@ -652,7 +653,7 @@ public class CircuitBreakerImplTest {
       });
     }
     await().untilAtomic(hasBeenOpened, is(true));
-    assertThat(called.get()).isEqualTo(true);
+    assertTrue(called.get());
 
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
     called.set(false);
@@ -677,7 +678,7 @@ public class CircuitBreakerImplTest {
         return "fallback";
       })
       .openHandler(v -> hasBeenOpened.set(true));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(future -> {
@@ -685,7 +686,7 @@ public class CircuitBreakerImplTest {
       });
     }
     await().untilAtomic(hasBeenOpened, is(true));
-    assertThat(called.get()).isEqualTo(true);
+    assertTrue(called.get());
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
     hasBeenOpened.set(false);
     called.set(false);
@@ -749,13 +750,13 @@ public class CircuitBreakerImplTest {
         return "fallback";
       })
       .openHandler(v -> hasBeenOpened.set(true));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.execute(future -> future.fail("expected failure"));
     }
     await().untilAtomic(hasBeenOpened, is(true));
-    assertThat(called.get()).isEqualTo(true);
+    assertTrue(called.get());
 
     await().until(() -> breaker.state() == CircuitBreakerState.HALF_OPEN);
     called.set(false);
@@ -771,7 +772,7 @@ public class CircuitBreakerImplTest {
     }
 
     await().until(() -> breaker.state() == CircuitBreakerState.CLOSED);
-    assertThat(fallbackCalled.get()).isEqualTo(options.getMaxFailures() - 1);
+    assertEquals(options.getMaxFailures() - 1, fallbackCalled.get());
   }
 
   @Test
@@ -782,7 +783,7 @@ public class CircuitBreakerImplTest {
       .setFallbackOnFailure(true);
     breaker = CircuitBreaker.create("test", vertx, options);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     List<AsyncResult<String>> results = new ArrayList<>();
     for (int i = 0; i < options.getMaxFailures(); i++) {
@@ -791,8 +792,9 @@ public class CircuitBreakerImplTest {
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
-      assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isNotNull().hasMessage("expected failure");
+      assertTrue(ar.failed());
+      assertNotNull(ar.cause());
+      assertEquals("expected failure", ar.cause().getMessage());
     });
 
     results.clear();
@@ -802,15 +804,15 @@ public class CircuitBreakerImplTest {
       .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
-      assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isNotNull()
-        .isInstanceOf(OpenCircuitException.class)
-        .hasMessage("open circuit");
+      assertTrue(ar.failed());
+      assertNotNull(ar.cause());
+      assertTrue(ar.cause() instanceof OpenCircuitException);
+      assertEquals("open circuit", ar.cause().getMessage());
     });
 
     ((CircuitBreakerImpl) breaker).reset(true);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
     results.clear();
 
     breaker.<String>execute(future -> {
@@ -823,9 +825,10 @@ public class CircuitBreakerImplTest {
       .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
-      assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isInstanceOf(TimeoutException.class);
-      assertThat(ar.cause()).isNotNull().hasMessage("operation timeout");
+      assertTrue(ar.failed());
+      assertNotNull(ar.cause());
+      assertTrue(ar.cause() instanceof TimeoutException);
+      assertEquals("operation timeout", ar.cause().getMessage());
     });
   }
 
@@ -836,7 +839,7 @@ public class CircuitBreakerImplTest {
       .setFallbackOnFailure(true);
     breaker = CircuitBreaker.create("test", vertx, options);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     List<AsyncResult<String>> results = new ArrayList<>();
     for (int i = 0; i < options.getMaxFailures(); i++) {
@@ -849,8 +852,9 @@ public class CircuitBreakerImplTest {
     }
     await().until(() -> results.size() == options.getMaxFailures());
     results.forEach(ar -> {
-      assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isNotNull().hasMessage("boom");
+      assertTrue(ar.failed());
+      assertNotNull(ar.cause());
+      assertEquals("boom", ar.cause().getMessage());
     });
 
     results.clear();
@@ -864,8 +868,9 @@ public class CircuitBreakerImplTest {
       .onComplete(ar -> results.add(ar));
     await().until(() -> results.size() == 1);
     results.forEach(ar -> {
-      assertThat(ar.failed()).isTrue();
-      assertThat(ar.cause()).isNotNull().hasMessage("boom");
+      assertTrue(ar.failed());
+      assertNotNull(ar.cause());
+      assertEquals("boom", ar.cause().getMessage());
     });
   }
 
@@ -881,19 +886,22 @@ public class CircuitBreakerImplTest {
     breaker = CircuitBreaker.create("test", vertx, options)
       .fallback(failures::add);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     for (int i = 0; i < options.getMaxFailures(); i++) {
       breaker.<String>execute(future -> future.fail("expected failure"));
     }
     await().until(() -> failures.size() == options.getMaxFailures());
-    failures.forEach(ar -> assertThat(ar).isNotNull().hasMessage("expected failure"));
+    failures.forEach(ar -> {
+      assertNotNull(ar);
+      assertEquals("expected failure", ar.getMessage());
+    });
 
     failures.clear();
 
     ((CircuitBreakerImpl) breaker).reset(true);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
     failures.clear();
 
     breaker.<String>execute(future -> {
@@ -904,20 +912,25 @@ public class CircuitBreakerImplTest {
       }
     });
     await().until(() -> failures.size() == 1);
-    failures.forEach(ar -> assertThat(ar).isNotNull()
-      .isInstanceOf(TimeoutException.class)
-      .hasMessage("operation timeout"));
+    failures.forEach(ar -> {
+      assertNotNull(ar);
+      assertTrue(ar instanceof TimeoutException);
+      assertEquals("operation timeout", ar.getMessage());
+    });
 
     ((CircuitBreakerImpl) breaker).reset(true);
 
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
     failures.clear();
 
     breaker.<String>execute(future -> {
       throw new RuntimeException("boom");
     });
     await().until(() -> failures.size() == 1);
-    failures.forEach(ar -> assertThat(ar).isNotNull().hasMessage("boom"));
+    failures.forEach(ar -> {
+      assertNotNull(ar);
+      assertEquals("boom", ar.getMessage());
+    });
   }
 
   @Test
@@ -940,9 +953,9 @@ public class CircuitBreakerImplTest {
     });
 
     await().untilAtomic(calls, is(6));
-    assertThat(result.get().failed()).isTrue();
-    assertThat(breaker.failureCount()).isEqualTo(1);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertTrue(result.get().failed());
+    assertEquals(1, breaker.failureCount());
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     ((CircuitBreakerImpl) breaker).reset(true);
     calls.set(0);
@@ -960,9 +973,9 @@ public class CircuitBreakerImplTest {
 
 
     await().untilAtomic(calls, is(4));
-    assertThat(result.get().succeeded()).isTrue();
-    assertThat(breaker.failureCount()).isEqualTo(0);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertTrue(result.get().succeeded());
+    assertEquals(0, breaker.failureCount());
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     ((CircuitBreakerImpl) breaker).reset(true);
     calls.set(0);
@@ -1006,8 +1019,8 @@ public class CircuitBreakerImplTest {
 
 
     await().until(() -> result2.get() != null  && result2.get().failed());
-    assertThat(breaker.failureCount()).isGreaterThanOrEqualTo(options.getMaxFailures() + 1);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(options.getMaxFailures() + 1, breaker.failureCount());
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
 
 
     ((CircuitBreakerImpl) breaker).reset(true);
@@ -1027,10 +1040,12 @@ public class CircuitBreakerImplTest {
 
 
     await().until(() -> failures.size() == 1);
-    failures.forEach(ar -> assertThat(ar).isNotNull()
-      .isInstanceOf(TimeoutException.class)
-      .hasMessage("operation timeout"));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    failures.forEach(ar -> {
+      assertNotNull(ar);
+      assertTrue(ar instanceof TimeoutException);
+      assertEquals("operation timeout", ar.getMessage());
+    });
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     ((CircuitBreakerImpl) breaker).reset(true);
     calls.set(0);
@@ -1053,9 +1068,9 @@ public class CircuitBreakerImplTest {
 
 
     await().untilAtomic(calls, is(4));
-    assertThat(result.get().succeeded()).isTrue();
-    assertThat(breaker.failureCount()).isEqualTo(0);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertTrue(result.get().succeeded());
+    assertEquals(0, breaker.failureCount());
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
   }
 
