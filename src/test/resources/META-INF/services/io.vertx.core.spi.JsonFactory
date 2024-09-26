@@ -1,1 +1,1 @@
-io.vertx.circuitbreaker.JsonFactory
+io.vertx.circuitbreaker.tests.JsonFactory

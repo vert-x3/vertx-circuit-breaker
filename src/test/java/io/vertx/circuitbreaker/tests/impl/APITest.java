@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.circuitbreaker.CircuitBreakerState;
@@ -29,8 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -61,9 +62,9 @@ public class APITest {
   @Test
   public void testWhenOptionsAreNull() {
     CircuitBreaker cb = CircuitBreaker.create("name", vertx, null);
-    assertThat(cb).isNotNull();
-    assertThat(cb.name()).isEqualTo("name");
-    assertThat(cb.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertNotNull(cb);
+    assertEquals("name", cb.name());
+    assertEquals(CircuitBreakerState.CLOSED, cb.state());
   }
 
 

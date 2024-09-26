@@ -9,8 +9,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.circuitbreaker;
+package io.vertx.circuitbreaker.tests;
 
+import io.vertx.circuitbreaker.RetryPolicy;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

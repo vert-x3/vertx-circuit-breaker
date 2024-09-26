@@ -14,7 +14,7 @@
  * You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.circuitbreaker.impl;
+package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
@@ -29,9 +29,9 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.Router;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.awaitility.Awaitility.*;
 import static io.vertx.core.http.HttpHeaders.*;
 import static java.util.concurrent.TimeUnit.*;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.*;
 import static org.junit.Assert.*;
 
@@ -61,63 +60,62 @@ public class CircuitBreakerWithHTTPTest {
   private CircuitBreaker breaker;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     vertx = Vertx.vertx();
-    Router router = Router.router(vertx);
-    router.route(HttpMethod.GET, "/").handler(ctxt ->
-        ctxt.response().setStatusCode(200).end("hello")
-    );
-    router.route(HttpMethod.GET, "/error").handler(ctxt ->
-      ctxt.response().setStatusCode(500).end("failed !")
-    );
-    router.route(HttpMethod.GET, "/long").handler(ctxt -> {
-      try {
-        Thread.sleep(2000);
-      } catch (Exception e) {
-        // Ignored.
-      }
-      ctxt.response().setStatusCode(200).end("hello");
-    });
     AtomicBoolean invoked = new AtomicBoolean();
-    router.route(HttpMethod.GET, "/flaky").handler(ctxt -> {
-      if (invoked.compareAndSet(false, true)) {
-        ctxt.response().setStatusCode(503).putHeader(RETRY_AFTER, "2").end();
-      } else {
-        ctxt.response().setStatusCode(200).end();
-      }
-    });
+    http = vertx
+      .createHttpServer()
+      .requestHandler(request -> {
 
-    AtomicBoolean done = new AtomicBoolean();
-    vertx.createHttpServer().requestHandler(router).listen(8080).onComplete(ar -> {
-      done.set(ar.succeeded());
-      http = ar.result();
-    });
-
-    await().untilAtomic(done, is(true));
-
+        switch (request.path()) {
+          case "/":
+            request.response().end("hello");
+            break;
+          case "/error":
+            request.response().setStatusCode(500).end("failed !");
+            break;
+          case "/long":
+            try {
+              Thread.sleep(2000);
+            } catch (Exception e) {
+              // Ignored.
+            }
+            request.response().end("hello");
+            break;
+          case "/flaky":
+            if (invoked.compareAndSet(false, true)) {
+              request.response().setStatusCode(503).putHeader(RETRY_AFTER, "2").end();
+            } else {
+              request.response().setStatusCode(200).end();
+            }
+            break;
+        }
+      })
+      .listen(8080)
+      .await(20, SECONDS);
     client = vertx.createHttpClient();
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
     if (breaker != null) {
       breaker.close();
     }
-    AtomicBoolean completed = new AtomicBoolean();
-    http.close().onComplete(ar -> completed.set(true));
-    await().untilAtomic(completed, is(true));
-
-    completed.set(false);
-    vertx.close().onComplete(v -> completed.set(true));
-    await().untilAtomic(completed, is(true));
-
-    client.close();
+    try {
+      vertx
+        .close()
+        .await(20, SECONDS);
+    } finally {
+      vertx = null;
+      http = null;
+      client = null;
+    }
   }
 
   @Test
   public void testOk() {
     breaker = CircuitBreaker.create("test", vertx, new CircuitBreakerOptions());
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReport(result, v -> client.request(HttpMethod.GET, 8080, "localhost", "/")
@@ -129,14 +127,14 @@ public class CircuitBreakerWithHTTPTest {
       .onComplete(v));
 
     await().until(() -> result.future().result() != null);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
   }
 
   @Test
   public void testFailure() {
     CircuitBreakerOptions options = new CircuitBreakerOptions();
     breaker = CircuitBreaker.create("test", vertx, options);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicInteger count = new AtomicInteger();
 
@@ -157,7 +155,7 @@ public class CircuitBreakerWithHTTPTest {
     }
 
     await().untilAtomic(count, is(options.getMaxFailures()));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
@@ -172,7 +170,7 @@ public class CircuitBreakerWithHTTPTest {
       }), v -> "fallback");
 
     await().until(() -> result.future().result().equals("fallback"));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
 
   }
 
@@ -180,7 +178,7 @@ public class CircuitBreakerWithHTTPTest {
   public void testTimeout() {
     CircuitBreakerOptions options = new CircuitBreakerOptions().setTimeout(100).setMaxFailures(2);
     breaker = CircuitBreaker.create("test", vertx, options);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     AtomicInteger count = new AtomicInteger();
 
@@ -194,7 +192,7 @@ public class CircuitBreakerWithHTTPTest {
     }
 
     await().untilAtomic(count, is(options.getMaxFailures()));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
 
     Promise<String> result = Promise.promise();
     breaker.executeAndReportWithFallback(result, future ->
@@ -205,7 +203,7 @@ public class CircuitBreakerWithHTTPTest {
         }), v -> "fallback");
 
     await().until(() -> result.future().result().equals("fallback"));
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.OPEN);
+    assertEquals(CircuitBreakerState.OPEN, breaker.state());
   }
 
   private static class ServiceUnavailableException extends VertxException {
@@ -227,7 +225,7 @@ public class CircuitBreakerWithHTTPTest {
         }
         return 0;
       });
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     List<LocalDateTime> requestLocalDateTimes = Collections.synchronizedList(new ArrayList<>());
     Promise<String> result = Promise.promise();
@@ -249,7 +247,7 @@ public class CircuitBreakerWithHTTPTest {
     });
 
     await().until(() -> result.future().result() != null);
-    assertThat(breaker.state()).isEqualTo(CircuitBreakerState.CLOSED);
+    assertEquals(CircuitBreakerState.CLOSED, breaker.state());
 
     assertEquals(2, requestLocalDateTimes.size());
     assertTrue(Duration.between(requestLocalDateTimes.get(0), requestLocalDateTimes.get(1)).toMillis() >= 2000);
