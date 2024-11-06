@@ -568,16 +568,17 @@ public class CircuitBreakerImplTest {
 
     AtomicInteger failureCount = new AtomicInteger();
     for (int i = 0; i < options.getMaxFailures(); i++) {
-      breaker.<String>execute(v -> {
-        try {
-          Thread.sleep(500);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        }
-        v.complete("done");
-      }).onComplete(ar -> {
-        if (ar.failed()) failureCount.incrementAndGet();
-      });
+      try {
+        breaker.<String>execute(v -> {
+          vertx.setTimer(500, id -> {
+            v.complete("done");
+          });
+        }).onComplete(ar -> {
+          if (ar.failed()) failureCount.incrementAndGet();
+        }).await();
+      } catch (TimeoutException e) {
+        // Timeout
+      }
     }
 
     assertEquals(CircuitBreakerState.OPEN, breaker.state());
@@ -612,18 +613,14 @@ public class CircuitBreakerImplTest {
     AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < options.getMaxFailures() + 3; i++) {
       breaker.execute(v -> {
-        try {
-          Thread.sleep(500);
+        vertx.setTimer(500, id -> {
           v.complete("done");
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          v.fail(e);
-        }
+        });
       }).onComplete(ar -> {
         if (ar.result().equals("fallback")) {
           count.incrementAndGet();
         }
-      });
+      }).await();
     }
 
     assertEquals(CircuitBreakerState.OPEN, breaker.state());
@@ -983,12 +980,7 @@ public class CircuitBreakerImplTest {
     vertx.runOnContext(v -> {
       for (int i = 0; i < options.getMaxFailures() + 1; i++) {
         breaker.execute(future -> {
-          try {
-            calls.incrementAndGet();
-            Thread.sleep(150);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
+          calls.incrementAndGet();
         });
       }
     });
@@ -1003,11 +995,6 @@ public class CircuitBreakerImplTest {
         if (calls.incrementAndGet() == 4) {
           future.complete();
         } else {
-          try {
-            Thread.sleep(150);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
         }
       }));
       for (int i = 0; i < options.getMaxFailures(); i++) {

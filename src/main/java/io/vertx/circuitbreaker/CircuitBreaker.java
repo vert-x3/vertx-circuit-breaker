@@ -26,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * An implementation of the circuit breaker pattern for Vert.x
@@ -116,6 +117,27 @@ public interface CircuitBreaker {
   <T> Future<T> executeWithFallback(Handler<Promise<T>> command, Function<Throwable, T> fallback);
 
   /**
+   * Executes the given operation with the circuit breaker control. The operation is generally calling an
+   * <em>external</em> system. The operation receives a {@link Promise} object as parameter and <strong>must</strong>
+   * call {@link Promise#complete(Object)} when the operation has terminated successfully. The operation must also
+   * call {@link Promise#fail(Throwable)} in case of a failure.
+   * <p>
+   * The operation is not invoked if the circuit breaker is open, and the given fallback is called instead.
+   * The circuit breaker also monitors whether the operation completes in time. The operation is considered failed
+   * if it does not terminate before the configured timeout.
+   * <p>
+   * This method returns a {@link Future} object to retrieve the status and result of the operation, with the status
+   * being a success or a failure. If the fallback is called, the returned future is successfully completed with the
+   * value returned from the fallback. If the fallback throws an exception, the returned future is marked as failed.
+   *
+   * @param command  the operation
+   * @param fallback the fallback function; gets an exception as parameter and returns the <em>fallback</em> result
+   * @param <T>      the type of result
+   * @return a future object completed when the operation or the fallback completes
+   */
+  <T> Future<T> executeWithFallback(Supplier<Future<T>> command, Function<Throwable, T> fallback);
+
+  /**
    * Same as {@link #executeWithFallback(Handler, Function)} but using the circuit breaker
    * {@linkplain #fallback(Function) default fallback}.
    *
@@ -124,6 +146,16 @@ public interface CircuitBreaker {
    * @return a future object completed when the operation or its fallback completes
    */
   <T> Future<T> execute(Handler<Promise<T>> command);
+
+  /**
+   * Same as {@link #executeWithFallback(Supplier, Function)} but using the circuit breaker
+   * {@linkplain #fallback(Function) default fallback}.
+   *
+   * @param command the operation
+   * @param <T>     the type of result
+   * @return a future object completed when the operation or its fallback completes
+   */
+  <T> Future<T> execute(Supplier<Future<T>> command);
 
   /**
    * Same as {@link #executeAndReportWithFallback(Promise, Handler, Function)} but using the circuit breaker
