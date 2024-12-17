@@ -450,12 +450,6 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public CircuitBreaker retryPolicy(Function<Integer, Long> retryPolicy) {
-    this.retryPolicy = (failure, retryCount) -> retryPolicy.apply(retryCount);
-    return this;
-  }
-
-  @Override
   public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
