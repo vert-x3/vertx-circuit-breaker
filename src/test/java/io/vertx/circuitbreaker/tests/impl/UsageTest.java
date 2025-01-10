@@ -49,7 +49,7 @@ public class UsageTest {
   private HttpServer server;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     vertx = Vertx.vertx();
     items = Collections.synchronizedList(new ArrayList<>());
     cb = CircuitBreaker.create("circuit-breaker", vertx, new CircuitBreakerOptions()
@@ -231,7 +231,6 @@ public class UsageTest {
     await().untilAtomic(fallbackCalled, is(true));
     assertTrue(items.isEmpty());
 
-    items.clear();
     fallbackCalled.set(false);
     cb.<Void>executeWithFallback(
       future -> asyncWrite(Scenario.RUNTIME_EXCEPTION, future),
