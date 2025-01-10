@@ -2,12 +2,15 @@ package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.core.*;
+import io.vertx.core.Completable;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -40,15 +43,15 @@ public class UsageTest {
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
 
-//  @Rule
-//  public WireMockRule wireMockRule = new WireMockRule(8089);
   private Vertx vertx;
+  private List<String> items;
   private CircuitBreaker cb;
+  private HttpServer server;
 
   @Before
   public void setUp() throws Exception {
     vertx = Vertx.vertx();
-    items.clear();
+    items = Collections.synchronizedList(new ArrayList<>());
     cb = CircuitBreaker.create("circuit-breaker", vertx, new CircuitBreakerOptions()
         .setFallbackOnFailure(true)
         .setTimeout(500)
@@ -67,14 +70,17 @@ public class UsageTest {
 
   @After
   public void tearDown() {
+    if (server != null) {
+      server.close().await();
+    }
     cb.close();
-    vertx.close();
+    vertx.close().await();
   }
 
   @Test
   @Repeat(10)
   public void testCBWithReadOperation() throws Exception {
-    vertx.createHttpServer().requestHandler(req -> {
+    server = vertx.createHttpServer().requestHandler(req -> {
         switch (req.path()) {
           case "/resource":
             req.response()
@@ -155,9 +161,7 @@ public class UsageTest {
     assertEquals("KO", json.get().getString("status"));
   }
 
-  private List<String> items = new ArrayList<>();
-
-  public void asyncWrite(String content, Scenario scenario, Completable<Void> resultHandler) {
+  private void asyncWrite(Scenario scenario, Completable<Void> resultHandler) {
     long random = (long) (Math.random() * 1000);
     switch (scenario) {
       case TIMEOUT:
@@ -170,14 +174,10 @@ public class UsageTest {
 
     vertx.setTimer(random, l -> {
       if (scenario == Scenario.FAILURE) {
-        synchronized (UsageTest.this) {
-          items.add("Error");
-        }
+        items.add("Error");
         resultHandler.fail("Bad Bad Bad");
       } else {
-        synchronized (UsageTest.this) {
-          items.add(content);
-        }
+        items.add("Hello");
         resultHandler.succeed();
       }
     });
@@ -194,22 +194,18 @@ public class UsageTest {
   public void testCBWithWriteOperation() {
     cb.<Void>executeWithFallback(
         future -> {
-          asyncWrite("Hello", Scenario.OK, future);
+          asyncWrite(Scenario.OK, future);
         },
         t -> null
     );
 
-    await().until(() -> {
-      synchronized (UsageTest.this) {
-        return items.size() == 1;
-      }
-    });
+    await().until(() -> items.size() == 1);
     items.clear();
 
     AtomicBoolean fallbackCalled = new AtomicBoolean();
     cb.<Void>executeWithFallback(
         future -> {
-          asyncWrite("Hello", Scenario.FAILURE, future);
+          asyncWrite(Scenario.FAILURE, future);
         },
         t -> {
           fallbackCalled.set(true);
@@ -217,11 +213,7 @@ public class UsageTest {
         }
     );
 
-    await().until(() -> {
-      synchronized (UsageTest.this) {
-        return items.size() == 1;
-      }
-    });
+    await().until(() -> items.size() == 1);
 
     assertTrue(fallbackCalled.get());
 
@@ -229,7 +221,7 @@ public class UsageTest {
     fallbackCalled.set(false);
 
     cb.<Void>executeWithFallback(
-        future -> asyncWrite("Hello", Scenario.TIMEOUT, future),
+      future -> asyncWrite(Scenario.TIMEOUT, future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -237,12 +229,12 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertEquals(Collections.emptyList(), items);
+    assertTrue(items.isEmpty());
 
     items.clear();
     fallbackCalled.set(false);
     cb.<Void>executeWithFallback(
-        future -> asyncWrite("Hello", Scenario.RUNTIME_EXCEPTION, future),
+      future -> asyncWrite(Scenario.RUNTIME_EXCEPTION, future),
         t -> {
           fallbackCalled.set(true);
           return null;
@@ -250,7 +242,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertEquals(Collections.emptyList(), items);
+    assertTrue(items.isEmpty());
   }
 
 
@@ -261,11 +253,7 @@ public class UsageTest {
         t -> null
     ).onComplete(ar -> items.add(ar.result().body()));
 
-    await().until(() -> {
-      synchronized (UsageTest.this) {
-        return items.size() == 1;
-      }
-    });
+    await().until(() -> items.size() == 1);
     items.clear();
 
     AtomicBoolean fallbackCalled = new AtomicBoolean();
@@ -278,7 +266,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertEquals(Collections.emptyList(), items);
+    assertTrue(items.isEmpty());
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
@@ -290,7 +278,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertEquals(Collections.emptyList(), items);
+    assertTrue(items.isEmpty());
     fallbackCalled.set(false);
 
     cb.<Message<String>>executeWithFallback(
@@ -302,7 +290,7 @@ public class UsageTest {
     );
 
     await().untilAtomic(fallbackCalled, is(true));
-    assertEquals(Collections.emptyList(), items);
+    assertTrue(items.isEmpty());
     fallbackCalled.set(false);
   }
 }
