@@ -2,8 +2,8 @@ package io.vertx.circuitbreaker.tests.impl;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
-import io.vertx.core.Completable;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -21,18 +21,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -44,18 +39,16 @@ public class UsageTest {
   public RepeatRule repeatRule = new RepeatRule();
 
   private Vertx vertx;
-  private List<String> items;
   private CircuitBreaker cb;
   private HttpServer server;
 
   @Before
   public void setUp() {
     vertx = Vertx.vertx();
-    items = Collections.synchronizedList(new ArrayList<>());
     cb = CircuitBreaker.create("circuit-breaker", vertx, new CircuitBreakerOptions()
-        .setFallbackOnFailure(true)
-        .setTimeout(500)
-        .setResetTimeout(1000));
+      .setFallbackOnFailure(true)
+      .setTimeout(500)
+      .setResetTimeout(1000));
 
     vertx.eventBus().consumer("ok", message -> message.reply("OK"));
 
@@ -106,84 +99,84 @@ public class UsageTest {
 
     AtomicReference<JsonObject> json = new AtomicReference<>();
     cb.<JsonObject>executeWithFallback(
-        promise -> {
-          client.request(HttpMethod.GET, 8089, "localhost", "/resource")
-            .compose(req -> req
-              .putHeader("Accept", "application/json")
-              .send().compose(resp -> resp
-                .body()
-                .map(Buffer::toJsonObject))
-            ).onComplete(promise);
-        },
-        t -> null
+      promise -> {
+        client.request(HttpMethod.GET, 8089, "localhost", "/resource")
+          .compose(req -> req
+            .putHeader("Accept", "application/json")
+            .send().compose(resp -> resp
+              .body()
+              .map(Buffer::toJsonObject))
+          ).onComplete(promise);
+      },
+      t -> null
     ).onComplete(ar -> json.set(ar.result()));
     await().atMost(1, TimeUnit.MINUTES).untilAtomic(json, is(notNullValue()));
     assertEquals("OK", json.get().getString("status"));
 
     json.set(null);
     cb.executeWithFallback(
-        promise -> {
-          client.request(HttpMethod.GET, 8089, "localhost", "/error")
-            .compose(req -> req
-              .putHeader("Accept", "application/json")
-              .send().compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("Invalid response");
-                } else {
-                  return resp.body().map(Buffer::toJsonObject);
-                }
-              })
-            ).onComplete(promise);
-        },
-        t -> new JsonObject().put("status", "KO")
+      promise -> {
+        client.request(HttpMethod.GET, 8089, "localhost", "/error")
+          .compose(req -> req
+            .putHeader("Accept", "application/json")
+            .send().compose(resp -> {
+              if (resp.statusCode() != 200) {
+                return Future.failedFuture("Invalid response");
+              } else {
+                return resp.body().map(Buffer::toJsonObject);
+              }
+            })
+          ).onComplete(promise);
+      },
+      t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
     assertEquals("KO", json.get().getString("status"));
 
     json.set(null);
     cb.executeWithFallback(
-        promise -> {
-          client.request(HttpMethod.GET, 8089, "localhost", "/delayed")
-            .compose(req -> req
-              .putHeader("Accept", "application/json")
-              .send().compose(resp -> {
-                if (resp.statusCode() != 200) {
-                  return Future.failedFuture("Invalid response");
-                } else {
-                  return resp.body().map(Buffer::toJsonObject);
-                }
-              })
-            ).onComplete(promise);
-        },
-        t -> new JsonObject().put("status", "KO")
+      promise -> {
+        client.request(HttpMethod.GET, 8089, "localhost", "/delayed")
+          .compose(req -> req
+            .putHeader("Accept", "application/json")
+            .send().compose(resp -> {
+              if (resp.statusCode() != 200) {
+                return Future.failedFuture("Invalid response");
+              } else {
+                return resp.body().map(Buffer::toJsonObject);
+              }
+            })
+          ).onComplete(promise);
+      },
+      t -> new JsonObject().put("status", "KO")
     ).onComplete(ar -> json.set(ar.result()));
     await().untilAtomic(json, is(notNullValue()));
     assertEquals("KO", json.get().getString("status"));
   }
 
-  private void asyncWrite(Scenario scenario, Completable<Void> resultHandler) {
-    long random = (long) (Math.random() * 1000);
+  private void asyncWrite(Scenario scenario, Promise<String> promise) {
+    long delay;
     switch (scenario) {
-      case TIMEOUT:
-        random = 2000;
-        break;
       case RUNTIME_EXCEPTION:
         throw new RuntimeException("Bad bad bad");
+      case TIMEOUT:
+        delay = 2000;
+        break;
+      default:
+        delay = ThreadLocalRandom.current().nextLong(1, 250); // Must be less than CB timeout
+        break;
     }
 
-
-    vertx.setTimer(random, l -> {
+    vertx.setTimer(delay, l -> {
       if (scenario == Scenario.FAILURE) {
-        items.add("Error");
-        resultHandler.fail("Bad Bad Bad");
+        promise.fail("Bad Bad Bad");
       } else {
-        items.add("Hello");
-        resultHandler.succeed();
+        promise.succeed("foo");
       }
     });
   }
 
-  enum Scenario {
+  private enum Scenario {
     OK,
     FAILURE,
     RUNTIME_EXCEPTION,
@@ -191,105 +184,66 @@ public class UsageTest {
   }
 
   @Test
+  @Repeat(10)
   public void testCBWithWriteOperation() {
-    cb.<Void>executeWithFallback(
-        future -> {
-          asyncWrite(Scenario.OK, future);
-        },
-        t -> null
-    );
+    AtomicReference<String> str = new AtomicReference<>();
+    cb.executeWithFallback(
+      promise -> asyncWrite(Scenario.OK, promise),
+      t -> "bar"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("foo")));
 
-    await().until(() -> items.size() == 1);
-    items.clear();
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> asyncWrite(Scenario.FAILURE, promise),
+      t -> "bar"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("bar")));
 
-    AtomicBoolean fallbackCalled = new AtomicBoolean();
-    cb.<Void>executeWithFallback(
-        future -> {
-          asyncWrite(Scenario.FAILURE, future);
-        },
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> asyncWrite(Scenario.TIMEOUT, promise),
+      t -> "bar"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("bar")));
 
-    await().until(() -> items.size() == 1);
-
-    assertTrue(fallbackCalled.get());
-
-    items.clear();
-    fallbackCalled.set(false);
-
-    cb.<Void>executeWithFallback(
-      future -> asyncWrite(Scenario.TIMEOUT, future),
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
-
-    await().untilAtomic(fallbackCalled, is(true));
-    assertTrue(items.isEmpty());
-
-    fallbackCalled.set(false);
-    cb.<Void>executeWithFallback(
-      future -> asyncWrite(Scenario.RUNTIME_EXCEPTION, future),
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
-
-    await().untilAtomic(fallbackCalled, is(true));
-    assertTrue(items.isEmpty());
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> asyncWrite(Scenario.RUNTIME_EXCEPTION, promise),
+      t -> "bar"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("bar")));
   }
 
 
   @Test
   public void testCBWithEventBus() {
-    cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().<String>request("ok", "").onComplete(future),
-        t -> null
-    ).onComplete(ar -> items.add(ar.result().body()));
+    AtomicReference<String> str = new AtomicReference<>();
+    cb.executeWithFallback(
+      promise -> vertx.eventBus().<String>request("ok", "").map(Message::body).onComplete(promise),
+      t -> "KO"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("OK")));
 
-    await().until(() -> items.size() == 1);
-    items.clear();
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> vertx.eventBus().<String>request("timeout", "").map(Message::body).onComplete(promise),
+      t -> "KO"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("KO")));
 
-    AtomicBoolean fallbackCalled = new AtomicBoolean();
-    cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().<String>request("timeout", "").onComplete(future),
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> vertx.eventBus().<String>request("fail", "").map(Message::body).onComplete(promise),
+      t -> "KO"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("KO")));
 
-    await().untilAtomic(fallbackCalled, is(true));
-    assertTrue(items.isEmpty());
-    fallbackCalled.set(false);
-
-    cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().<String>request("fail", "").onComplete(future),
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
-
-    await().untilAtomic(fallbackCalled, is(true));
-    assertTrue(items.isEmpty());
-    fallbackCalled.set(false);
-
-    cb.<Message<String>>executeWithFallback(
-        future -> vertx.eventBus().<String>request("exception", "").onComplete(future),
-        t -> {
-          fallbackCalled.set(true);
-          return null;
-        }
-    );
-
-    await().untilAtomic(fallbackCalled, is(true));
-    assertTrue(items.isEmpty());
-    fallbackCalled.set(false);
+    str.set(null);
+    cb.executeWithFallback(
+      promise -> vertx.eventBus().<String>request("exception", "").map(Message::body).onComplete(promise),
+      t -> "KO"
+    ).onComplete(ar -> str.set(ar.result()));
+    await().untilAtomic(str, is(equalTo("KO")));
   }
 }
