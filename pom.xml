@@ -25,6 +25,12 @@
   <artifactId>vertx-circuit-breaker</artifactId>
   <version>4.5.15-SNAPSHOT</version>
 
+  <scm>
+    <connection>scm:git:git@github.com:vert-x3/vertx-circuit-breaker.git</connection>
+    <developerConnection>scm:git:git@github.com:vert-x3/vertx-circuit-breaker.git</developerConnection>
+    <url>git@github.com:vert-x3/vertx-circuit-breaker.git</url>
+  </scm>
+
   <properties>
     <hystrix.version>1.5.2</hystrix.version>
     <codegen.rxjava.deprecated>true</codegen.rxjava.deprecated>
