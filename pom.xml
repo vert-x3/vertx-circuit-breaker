@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>4.5.15</version>
+  <version>4.5.16-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-circuit-breaker.git</connection>
