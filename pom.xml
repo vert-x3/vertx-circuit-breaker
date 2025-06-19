@@ -23,6 +23,7 @@
   </parent>
 
   <artifactId>vertx-circuit-breaker</artifactId>
+  <name>Vert.x Circuit Breaker</name>
   <version>4.5.16-SNAPSHOT</version>
 
   <scm>
