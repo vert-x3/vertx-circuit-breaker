@@ -24,7 +24,7 @@
 
   <artifactId>vertx-circuit-breaker</artifactId>
   <name>Vert.x Circuit Breaker</name>
-  <version>4.5.21</version>
+  <version>4.5.22-SNAPSHOT</version>
 
   <scm>
     <connection>scm:git:git@github.com:vert-x3/vertx-circuit-breaker.git</connection>
