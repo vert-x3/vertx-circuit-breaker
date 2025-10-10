@@ -498,7 +498,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @SuppressWarnings("unchecked")
-  private abstract class Completion<T> implements Handler<AsyncResult<T>> {
+  private abstract class Completion<T> implements Completable<T> {
 
     final Context context;
     final Promise<T> resultFuture;
@@ -513,17 +513,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     @Override
-    public void handle(AsyncResult<T> ar) {
+    public void complete(T result, Throwable failure) {
       context.runOnContext(v -> {
-        if (failurePolicy.test(asFuture(ar))) {
+        if (failurePolicy.test(asFuture(result, failure))) {
           failureAction();
           if (operationMetrics != null) {
             operationMetrics.failed();
           }
           if (options.isFallbackOnFailure()) {
-            invokeFallback(ar.cause(), resultFuture, fallback, operationMetrics);
+            invokeFallback(failure, resultFuture, fallback, operationMetrics);
           } else {
-            resultFuture.fail(ar.cause());
+            resultFuture.fail(failure);
           }
         } else {
           if (operationMetrics != null) {
@@ -532,21 +532,13 @@ public class CircuitBreakerImpl implements CircuitBreaker {
           reset();
           //The event may pass due to a user given predicate. We still want to push up the failure for the user
           //to do any work
-          resultFuture.handle(ar);
+          resultFuture.handle(failure != null ? Future.failedFuture(failure) : Future.succeededFuture(result));
         }
       });
     }
 
-    private Future<T> asFuture(AsyncResult<T> ar) {
-      Future<T> result;
-      if (ar instanceof Future) {
-        result = (Future<T>) ar;
-      } else if (ar.succeeded()) {
-        result = Future.succeededFuture(ar.result());
-      } else {
-        result = Future.failedFuture(ar.cause());
-      }
-      return result;
+    private Future<T> asFuture(T result, Throwable err) {
+      return err != null ? Future.failedFuture(err) : Future.succeededFuture(result);
     }
 
     protected abstract void failureAction();
