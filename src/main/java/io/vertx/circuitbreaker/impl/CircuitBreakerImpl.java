@@ -388,16 +388,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   @Override
   public <T> Future<T> executeWithFallback(Handler<Promise<T>> operation, Function<Throwable, T> fallback) {
     // be careful to not create a new context, to preserve existing (sometimes synchronous) behavior
-    ContextInternal context = vertx.getOrCreateContext();
-    Promise<T> promise = context.promise();
+    Promise<T> promise = vertx.promise();
     executeAndReportWithFallback(promise, operation, fallback);
     return promise.future();
   }
 
   @Override
   public <T> Future<T> executeWithFallback(Supplier<Future<T>> command, Function<Throwable, T> fallback) {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    Promise<T> resultPromise = context.promise();
+    Promise<T> resultPromise = vertx.promise();
     executeAndReportWithFallback(resultPromise, command, fallback);
     return resultPromise.future();
   }
