@@ -12,6 +12,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
@@ -36,6 +37,7 @@ public class UsageTest {
   private Vertx vertx;
   private CircuitBreaker cb;
   private HttpServer server;
+  private HttpClient client;
 
   @Before
   public void setUp() {
@@ -54,6 +56,7 @@ public class UsageTest {
     });
 
     vertx.eventBus().consumer("timeout", message -> vertx.setTimer(2000, x -> message.reply("Too late")));
+    client = vertx.createHttpClient();
   }
 
   @After
@@ -61,89 +64,109 @@ public class UsageTest {
     if (server != null) {
       server.close().await();
     }
+    if (client != null) {
+      client.close().await();
+    }
     cb.close();
     vertx.close().await();
   }
 
   @Test
   @Repeat(10)
-  public void testCBWithReadOperation(TestContext should) throws Exception {
+  public void testCBWithReadOperation1(TestContext should) throws Exception {
     server = vertx.createHttpServer().requestHandler(req -> {
-        switch (req.path()) {
-          case "/resource":
-            req.response()
-              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-              .end(new JsonObject().put("status", "OK").encode());
-            break;
-          case "/delayed":
-            vertx.setTimer(2000, id -> {
-              req.response().end();
-            });
-            break;
-          case "/error":
-            req.response()
-              .setStatusCode(500)
-              .end("This is an error");
-            break;
-        }
+        req.response()
+          .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+          .end(new JsonObject().put("status", "OK").encode());
       }).listen(8089)
       .await(20, TimeUnit.SECONDS);
+    Async async = should.async();
+    vertx.runOnContext(v -> {
+      cb.<JsonObject>executeWithFallback(
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/resource")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> resp
+                .body()
+                .map(Buffer::toJsonObject))
+            ).onComplete(promise);
+        },
+        t -> {
+          should.fail(t);
+          return null;
+        }
+      ).onComplete(should.asyncAssertSuccess(json -> {
+        should.assertEquals("OK", json.getString("status"));
+        async.complete();
+      }));
+    });
+  }
 
+  @Test
+  @Repeat(10)
+  public void testCBWithReadOperation2(TestContext should) throws Exception {
+    server = vertx.createHttpServer().requestHandler(req -> {
+        req.response()
+          .setStatusCode(500)
+          .end("This is an error");
+      }).listen(8089)
+      .await(20, TimeUnit.SECONDS);
+    Async async = should.async();
+    vertx.runOnContext(v -> {
+      cb.executeWithFallback(
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/error")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("Invalid response");
+                } else {
+                  return resp.body().map(Buffer::toJsonObject);
+                }
+              })
+            ).onComplete(promise);
+        },
+        t -> new JsonObject().put("status", "KO")
+      ).onComplete(should.asyncAssertSuccess(json -> {
+        should.assertEquals("KO", json.getString("status"));
+        async.complete();
+      }));
+    });
+  }
 
-    HttpClient client = vertx.createHttpClient();
-
-    JsonObject json = cb.<JsonObject>executeWithFallback(
-      promise -> {
-        client.request(HttpMethod.GET, 8089, "localhost", "/resource")
-          .compose(req -> req
-            .putHeader("Accept", "application/json")
-            .send().compose(resp -> resp
-              .body()
-              .map(Buffer::toJsonObject))
-          ).onComplete(promise);
-      },
-      t -> {
-        should.fail(t);
-        return null;
-      }
-    ).await();
-    assertEquals("OK", json.getString("status"));
-
-    json = cb.executeWithFallback(
-      promise -> {
-        client.request(HttpMethod.GET, 8089, "localhost", "/error")
-          .compose(req -> req
-            .putHeader("Accept", "application/json")
-            .send().compose(resp -> {
-              if (resp.statusCode() != 200) {
-                return Future.failedFuture("Invalid response");
-              } else {
-                return resp.body().map(Buffer::toJsonObject);
-              }
-            })
-          ).onComplete(promise);
-      },
-      t -> new JsonObject().put("status", "KO")
-    ).await();
-    assertEquals("KO", json.getString("status"));
-
-    json = cb.executeWithFallback(
-      promise -> {
-        client.request(HttpMethod.GET, 8089, "localhost", "/delayed")
-          .compose(req -> req
-            .putHeader("Accept", "application/json")
-            .send().compose(resp -> {
-              if (resp.statusCode() != 200) {
-                return Future.failedFuture("Invalid response");
-              } else {
-                return resp.body().map(Buffer::toJsonObject);
-              }
-            })
-          ).onComplete(promise);
-      },
-      t -> new JsonObject().put("status", "KO")
-    ).await();
-    assertEquals("KO", json.getString("status"));
+  @Test
+  @Repeat(10)
+  public void testCBWithReadOperation3(TestContext should) throws Exception {
+    server = vertx.createHttpServer().requestHandler(req -> {
+        vertx.setTimer(2000, id -> {
+          req.response().end();
+        });
+      }).listen(8089)
+      .await(20, TimeUnit.SECONDS);
+    Async async = should.async();
+    vertx.runOnContext(v -> {
+      cb.executeWithFallback(
+        promise -> {
+          client.request(HttpMethod.GET, 8089, "localhost", "/delayed")
+            .compose(req -> req
+              .putHeader("Accept", "application/json")
+              .send().compose(resp -> {
+                if (resp.statusCode() != 200) {
+                  return Future.failedFuture("Invalid response");
+                } else {
+                  return resp.body().map(Buffer::toJsonObject);
+                }
+              })
+            ).onComplete(promise);
+        },
+        t -> new JsonObject().put("status", "KO")
+      ).onComplete(should.asyncAssertSuccess(json -> {
+        should.assertEquals("KO", json.getString("status"));
+        async.complete();
+      }));
+    });
   }
 
   private void asyncWrite(Scenario scenario, Promise<String> promise) {
