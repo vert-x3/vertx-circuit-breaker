@@ -373,6 +373,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     fut.onComplete(ar -> {
+      System.out.println("FUT COMPLETION " + ar.succeeded());
       if (ar.failed()) {
         if (!operationResult.future().isComplete()) {
           operationResult.fail(ar.cause());
@@ -514,8 +515,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     @Override
     public void handle(AsyncResult<T> ar) {
+      System.out.println("PROPAGATE 1");
       context.runOnContext(v -> {
+        System.out.println("PROPAGATE 2");
         if (failurePolicy.test(asFuture(ar))) {
+          System.out.println("branch 1");
           failureAction();
           if (operationMetrics != null) {
             operationMetrics.failed();
@@ -526,12 +530,14 @@ public class CircuitBreakerImpl implements CircuitBreaker {
             resultFuture.fail(ar.cause());
           }
         } else {
+          System.out.println("branch 2");
           if (operationMetrics != null) {
             operationMetrics.complete();
           }
           reset();
           //The event may pass due to a user given predicate. We still want to push up the failure for the user
           //to do any work
+          System.out.println("RESULT HANDLER");
           resultFuture.handle(ar);
         }
       });
