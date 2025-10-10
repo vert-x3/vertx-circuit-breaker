@@ -17,6 +17,7 @@ module io.vertx.circuitbreaker {
   requires static HdrHistogram;
   requires io.vertx.core;
   requires io.vertx.core.logging;
+  requires io.netty.common;
 
   exports io.vertx.circuitbreaker;
   exports io.vertx.circuitbreaker.impl to io.vertx.circuitbreaker.tests;

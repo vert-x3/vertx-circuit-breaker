@@ -16,10 +16,12 @@
 
 package io.vertx.circuitbreaker.impl;
 
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.FutureInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -213,13 +215,20 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public <T> CircuitBreaker executeAndReportWithFallback(Promise<T> resultPromise,
                                                          Handler<Promise<T>> command,
                                                          Function<Throwable, T> fallback) {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    executeAndReportWithFallback(resultPromise, convert(context, command), fallback);
+    PromiseInternal<T> promiseInternal = (PromiseInternal<T>)resultPromise;
+    ContextInternal context = promiseInternal.context();
+    if (context == null) {
+      // Give it a context
+      context = vertx.getOrCreateContext();
+      promiseInternal = context.promise();
+      promiseInternal.future().onComplete(resultPromise);
+    }
+    executeAndReportWithFallback(promiseInternal, convert(context, command), fallback);
     return this;
   }
 
   public <T> void executeAndReportWithFallback(
-    Promise<T> resultPromise,
+    PromiseInternal<T> resultPromise,
     Supplier<Future<T>> command,
     Function<Throwable, T> fallback) {
 
@@ -232,7 +241,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
     // this future object tracks the completion of the operation
     // This future is marked as failed on operation failures and timeout.
-    Promise<T> operationResult = ((PromiseInternal<?>)resultPromise).context().promise();
+    Promise<T> operationResult = resultPromise.context().promise();
 
     if (currentState == CircuitBreakerState.CLOSED) {
       Future<T> opFuture = operationResult.future();
@@ -395,7 +404,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public <T> Future<T> executeWithFallback(Supplier<Future<T>> command, Function<Throwable, T> fallback) {
-    Promise<T> resultPromise = vertx.promise();
+    PromiseInternal<T> resultPromise = vertx.promise();
     executeAndReportWithFallback(resultPromise, command, fallback);
     return resultPromise.future();
   }
