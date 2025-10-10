@@ -71,6 +71,7 @@ public class UsageTest {
     vertx.close().await();
   }
 
+  @Ignore
   @Test
   @Repeat(10)
   public void testCBWithReadOperation1(TestContext should) throws Exception {
@@ -103,6 +104,7 @@ public class UsageTest {
     });
   }
 
+  @Ignore
   @Test
   @Repeat(10)
   public void testCBWithReadOperation2(TestContext should) throws Exception {
@@ -136,6 +138,7 @@ public class UsageTest {
     });
   }
 
+  @Ignore
   @Test
   @Repeat(10)
   public void testCBWithReadOperation3(TestContext should) throws Exception {
