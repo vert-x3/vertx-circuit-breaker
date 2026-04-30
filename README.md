@@ -24,19 +24,19 @@ descriptor:
 
 - Maven (in your `pom.xml`):
 
-----
+```
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-circuit-breaker</artifactId>
   <version>$VERSION</version>
 </dependency>
-----
+```
 
 - Gradle (in your `build.gradle` file):
 
-----
+```
 compile 'io.vertx:vertx-circuit-breaker:$VERSION'
-----
+```
 
 ## Using the circuit breaker
 
