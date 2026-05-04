@@ -43,7 +43,3 @@ compile 'io.vertx:vertx-circuit-breaker:$VERSION'
 The manual is available from:
 
 * http://vertx.io/docs/vertx-circuit-breaker/java/[Java documentation]
-* http://vertx.io/docs/vertx-circuit-breaker/js/[JavaScript documentation]
-* http://vertx.io/docs/vertx-circuit-breaker/kotlin/[Kotlin documentation]
-* http://vertx.io/docs/vertx-circuit-breaker/groovy/[Groovy documentation]
-* http://vertx.io/docs/vertx-circuit-breaker/ruby/[Ruby documentation]
