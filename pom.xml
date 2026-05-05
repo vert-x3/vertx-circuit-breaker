@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>vertx-circuit-breaker</artifactId>
-  <version>5.0.12-SNAPSHOT</version>
+  <version>5.0.12</version>
 
   <name>Vert.x Circuit Breaker</name>
 
