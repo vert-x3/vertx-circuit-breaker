@@ -24,6 +24,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Repeat;
 import io.vertx.ext.unit.junit.RepeatRule;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -413,6 +414,7 @@ public class CircuitBreakerImplTest {
     );
     breaker.executeAndReport(fut, v -> spy.set(true));
     assertFalse(spy.get());
+    Awaitility.await().until(() -> result.get() != null);
     assertEquals("fallback", result.get());
   }
 
@@ -594,6 +596,7 @@ public class CircuitBreakerImplTest {
       .onComplete(ar -> result.set(ar.result()));
     assertFalse(spy.get());
     assertTrue(called.get());
+    Awaitility.await().until(() -> result.get() != null);
     assertEquals("fallback", result.get());
   }
 
