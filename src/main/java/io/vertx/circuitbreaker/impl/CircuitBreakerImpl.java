@@ -20,7 +20,6 @@ import io.vertx.circuitbreaker.*;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.json.JsonObject;
 
 import java.util.LinkedHashMap;
