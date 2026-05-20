@@ -22,6 +22,7 @@
     <version>12</version>
   </parent>
 
+  <name>vertx-circuit-breaker</name>
   <artifactId>vertx-circuit-breaker</artifactId>
   <version>5.1.0-SNAPSHOT</version>
 
