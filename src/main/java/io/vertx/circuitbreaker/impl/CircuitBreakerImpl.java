@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -50,7 +51,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private Function fallback = null;
   private FailurePolicy failurePolicy = FailurePolicy.defaultPolicy();
 
-  private CircuitBreakerState state = CircuitBreakerState.CLOSED;
+  private final AtomicReference<CircuitBreakerState> state = new AtomicReference<>(CircuitBreakerState.CLOSED);
   private final RollingCounter rollingFailures;
 
   private final AtomicInteger passed = new AtomicInteger();
@@ -165,17 +166,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     synchronized (this) {
       rollingFailures.reset();
 
-      if (state == CircuitBreakerState.CLOSED) {
+      if (state.get() == CircuitBreakerState.CLOSED) {
         // Do nothing else.
         return this;
       }
 
-      if (!force && state == CircuitBreakerState.OPEN) {
+      if (!force && state.get() == CircuitBreakerState.OPEN) {
         // Resetting the circuit breaker while we are in the open state is an illegal transition
         return this;
       }
 
-      state = CircuitBreakerState.CLOSED;
+      state.set(CircuitBreakerState.CLOSED);
     }
 
     closeHandler.handle(null);
@@ -198,9 +199,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   @Override
   public CircuitBreaker open() {
-    synchronized (this) {
-      state = CircuitBreakerState.OPEN;
-    }
+    CircuitBreakerState current;
+    do {
+      current = state.get();
+      if (current == CircuitBreakerState.OPEN) return this;
+    } while (!state.compareAndSet(current, CircuitBreakerState.OPEN));
 
     notifyOpened();
     return this;
@@ -223,17 +226,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public synchronized CircuitBreakerState state() {
-    return state;
+  public CircuitBreakerState state() {
+    return state.get();
   }
 
   private CircuitBreaker attemptReset() {
     boolean halfOpened;
     synchronized (this) {
-      halfOpened = state == CircuitBreakerState.OPEN;
+      halfOpened = state.get() == CircuitBreakerState.OPEN;
       if (halfOpened) {
         passed.set(0);
-        state = CircuitBreakerState.HALF_OPEN;
+        state.set(CircuitBreakerState.HALF_OPEN);
       }
     }
 
@@ -259,10 +262,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     Supplier<Future<T>> command,
     Function<Throwable, T> fallback) {
 
-    CircuitBreakerState currentState;
-    synchronized (this) {
-      currentState = state;
-    }
+    CircuitBreakerState currentState = state.get();
 
     CircuitBreakerMetrics.Operation operationMetrics = metrics != null ? metrics.enqueue() : null;
 
@@ -311,10 +311,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
         return;
       }
 
-      CircuitBreakerState currentState;
-      synchronized (this) {
-        currentState = state;
-      }
+      CircuitBreakerState currentState = state.get();
 
       if (currentState == CircuitBreakerState.CLOSED) {
         if (retryCount < options.getMaxRetries() - 1) {
@@ -461,10 +458,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     boolean opened;
     synchronized (this) {
       rollingFailures.increment();
-      opened = rollingFailures.count() >= options.getMaxFailures() && state != CircuitBreakerState.OPEN;
-      if (opened) {
-        state = CircuitBreakerState.OPEN;
-      }
+      // `open()` transitions without the lock, so this transition must lose to it
+      CircuitBreakerState current = state.get();
+      opened = rollingFailures.count() >= options.getMaxFailures()
+        && current != CircuitBreakerState.OPEN
+        && state.compareAndSet(current, CircuitBreakerState.OPEN);
     }
 
     if (opened) {
