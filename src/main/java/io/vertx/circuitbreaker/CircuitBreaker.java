@@ -16,6 +16,7 @@
 
 package io.vertx.circuitbreaker;
 
+import io.vertx.circuitbreaker.impl.CircuitBreakerBuilderImpl;
 import io.vertx.circuitbreaker.impl.CircuitBreakerImpl;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -60,6 +61,20 @@ public interface CircuitBreaker {
   }
 
   /**
+   * Creates a new {@link CircuitBreakerBuilder} to configure and build a {@link CircuitBreaker}.
+   * <p>
+   * Unlike {@link #create(String, Vertx, CircuitBreakerOptions)}, handlers configured through the builder cannot be
+   * changed after the circuit breaker is built; see {@link CircuitBreakerBuilder}.
+   *
+   * @param name  the name
+   * @param vertx the Vert.x instance
+   * @return the created builder
+   */
+  static CircuitBreakerBuilder builder(String name, Vertx vertx) {
+    return new CircuitBreakerBuilderImpl(name, vertx);
+  }
+
+  /**
    * Closes the circuit breaker. It stops sending events on its state on the event bus.
    * <p>
    * This method is not related to the {@code closed} state of the circuit breaker. To move the circuit breaker to the
@@ -73,6 +88,8 @@ public interface CircuitBreaker {
    *
    * @param handler the handler, must not be {@code null}
    * @return this {@link CircuitBreaker}
+   * @throws IllegalStateException if this circuit breaker was built with {@link CircuitBreakerBuilder} and an open
+   *                                handler was already supplied to the builder
    */
   @Fluent
   CircuitBreaker openHandler(Handler<Void> handler);
@@ -82,6 +99,8 @@ public interface CircuitBreaker {
    *
    * @param handler the handler, must not be {@code null}
    * @return this {@link CircuitBreaker}
+   * @throws IllegalStateException if this circuit breaker was built with {@link CircuitBreakerBuilder} and a
+   *                                half-open handler was already supplied to the builder
    */
   @Fluent
   CircuitBreaker halfOpenHandler(Handler<Void> handler);
@@ -91,6 +110,8 @@ public interface CircuitBreaker {
    *
    * @param handler the handler, must not be {@code null}
    * @return this {@link CircuitBreaker}
+   * @throws IllegalStateException if this circuit breaker was built with {@link CircuitBreakerBuilder} and a close
+   *                                handler was already supplied to the builder
    */
   @Fluent
   CircuitBreaker closeHandler(Handler<Void> handler);

@@ -144,6 +144,19 @@ You can also configure callbacks invoked when the circuit breaker is opened or c
 You can also be notified when the circuit breaker moves to the half-open state, in an attempt to reset. You can register
 such a callback with {@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)}.
 
+Alternatively, you can assemble a circuit breaker with the builder {@link io.vertx.circuitbreaker.CircuitBreaker#builder}
+API. Handlers configured through the builder are baked in as soon as the circuit breaker is built: calling
+{@link io.vertx.circuitbreaker.CircuitBreaker#openHandler(io.vertx.core.Handler)},
+{@link io.vertx.circuitbreaker.CircuitBreaker#halfOpenHandler(io.vertx.core.Handler)} or
+{@link io.vertx.circuitbreaker.CircuitBreaker#closeHandler(io.vertx.core.Handler)} again for a handler set this way
+throws an `IllegalStateException`, so callbacks configured up front cannot be silently replaced later. Handlers left
+unset in the builder remain freely settable afterwards.
+
+[source,$lang]
+----
+{@link examples.CircuitBreakerExamples#example10(io.vertx.core.Vertx)}
+----
+
 == Event bus notification
 
 Every time the circuit breaker state changes, an event can be published on the event bus.

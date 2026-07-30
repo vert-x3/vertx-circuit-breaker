@@ -196,6 +196,32 @@ public class CircuitBreakerExamples {
     });
   }
 
+  public void example10(Vertx vertx) {
+    CircuitBreaker breaker = CircuitBreaker.builder("my-circuit-breaker", vertx)
+      .with(new CircuitBreakerOptions().setMaxFailures(5).setTimeout(2000))
+      .openHandler(v -> {
+        System.out.println("Circuit breaker opened");
+      })
+      .closeHandler(v -> {
+        System.out.println("Circuit breaker closed");
+      })
+      .build();
+
+    breaker.<String>execute(promise -> {
+      vertx.createHttpClient().request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            if (resp.statusCode() != 200) {
+              return Future.failedFuture("HTTP error");
+            } else {
+              return resp.body().map(Buffer::toString);
+            }
+          }))
+        .onComplete(promise);
+    });
+  }
+
   public void enableNotifications(CircuitBreakerOptions options) {
     options.setNotificationAddress(CircuitBreakerOptions.DEFAULT_NOTIFICATION_ADDRESS);
   }

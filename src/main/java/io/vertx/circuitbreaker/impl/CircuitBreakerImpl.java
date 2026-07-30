@@ -44,9 +44,9 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private final String name;
   private final long periodicUpdateTask;
 
-  private Handler<Void> openHandler = NOOP;
-  private Handler<Void> halfOpenHandler = NOOP;
-  private Handler<Void> closeHandler = NOOP;
+  private final Handler<Void> openHandler;
+  private final Handler<Void> halfOpenHandler;
+  private final Handler<Void> closeHandler;
   private Function fallback = null;
   private FailurePolicy failurePolicy = FailurePolicy.defaultPolicy();
 
@@ -59,6 +59,19 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private RetryPolicy retryPolicy = (failure, retryCount) -> 0L;
 
   public CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options) {
+    this(name, vertx, options, null, null, null);
+  }
+
+  /**
+   * Creates a new instance of {@link CircuitBreakerImpl} with handlers supplied by a {@link CircuitBreakerBuilder}.
+   * <p>
+   * A non-{@code null} handler is baked in as immutable: the corresponding mutable setter
+   * ({@link #openHandler(Handler)}, {@link #halfOpenHandler(Handler)} or {@link #closeHandler(Handler)}) then throws
+   * {@link IllegalStateException} instead of replacing it. A {@code null} handler keeps the existing mutable
+   * behavior, backed by a {@link DelegatingHandler}.
+   */
+  CircuitBreakerImpl(String name, Vertx vertx, CircuitBreakerOptions options,
+                     Handler<Void> openHandler, Handler<Void> halfOpenHandler, Handler<Void> closeHandler) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(vertx);
     this.vertx = vertx;
@@ -69,6 +82,10 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     } else {
       this.options = new CircuitBreakerOptions(options);
     }
+
+    this.openHandler = openHandler != null ? openHandler : new DelegatingHandler<>(NOOP);
+    this.halfOpenHandler = halfOpenHandler != null ? halfOpenHandler : new DelegatingHandler<>(NOOP);
+    this.closeHandler = closeHandler != null ? closeHandler : new DelegatingHandler<>(NOOP);
 
     this.rollingFailures = new RollingCounter(this.options.getFailuresRollingWindow() / 1000, TimeUnit.SECONDS);
 
@@ -98,24 +115,28 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public synchronized CircuitBreaker openHandler(Handler<Void> handler) {
-    Objects.requireNonNull(handler);
-    openHandler = handler;
+  public CircuitBreaker openHandler(Handler<Void> handler) {
+    setDelegate(openHandler, handler, "openHandler");
     return this;
   }
 
   @Override
-  public synchronized CircuitBreaker halfOpenHandler(Handler<Void> handler) {
-    Objects.requireNonNull(handler);
-    halfOpenHandler = handler;
+  public CircuitBreaker halfOpenHandler(Handler<Void> handler) {
+    setDelegate(halfOpenHandler, handler, "halfOpenHandler");
     return this;
   }
 
   @Override
-  public synchronized CircuitBreaker closeHandler(Handler<Void> handler) {
-    Objects.requireNonNull(handler);
-    closeHandler = handler;
+  public CircuitBreaker closeHandler(Handler<Void> handler) {
+    setDelegate(closeHandler, handler, "closeHandler");
     return this;
+  }
+
+  private static void setDelegate(Handler<Void> field, Handler<Void> handler, String setterName) {
+    if (!(field instanceof DelegatingHandler)) {
+      throw new IllegalStateException(setterName + " was set through CircuitBreakerBuilder and cannot be changed");
+    }
+    ((DelegatingHandler<Void>) field).setDelegate(handler);
   }
 
   @Override
@@ -452,6 +473,28 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   public CircuitBreaker retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
+  }
+
+  /**
+   * Wraps a mutable {@code delegate}, so that {@link #openHandler}, {@link #halfOpenHandler} and
+   * {@link #closeHandler} can stay {@code final} while still supporting the legacy mutable setters.
+   */
+  private static class DelegatingHandler<T> implements Handler<T> {
+
+    private volatile Handler<T> delegate;
+
+    private DelegatingHandler(Handler<T> delegate) {
+      this.delegate = delegate;
+    }
+
+    private void setDelegate(Handler<T> delegate) {
+      this.delegate = Objects.requireNonNull(delegate);
+    }
+
+    @Override
+    public void handle(T event) {
+      delegate.handle(event);
+    }
   }
 
   static class RollingCounter {
