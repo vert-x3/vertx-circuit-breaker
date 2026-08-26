@@ -51,7 +51,7 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   private FailurePolicy failurePolicy = FailurePolicy.defaultPolicy();
 
   private CircuitBreakerState state = CircuitBreakerState.CLOSED;
-  private RollingCounter rollingFailures;
+  private final RollingCounter rollingFailures;
 
   private final AtomicInteger passed = new AtomicInteger();
 
@@ -161,31 +161,34 @@ public class CircuitBreakerImpl implements CircuitBreaker {
    * @param force whether we force the state change and allow an illegal transition
    * @return this circuit breaker
    */
-  public synchronized CircuitBreaker reset(boolean force) {
-    rollingFailures.reset();
+  public CircuitBreaker reset(boolean force) {
+    synchronized (this) {
+      rollingFailures.reset();
 
-    if (state == CircuitBreakerState.CLOSED) {
-      // Do nothing else.
-      return this;
+      if (state == CircuitBreakerState.CLOSED) {
+        // Do nothing else.
+        return this;
+      }
+
+      if (!force && state == CircuitBreakerState.OPEN) {
+        // Resetting the circuit breaker while we are in the open state is an illegal transition
+        return this;
+      }
+
+      state = CircuitBreakerState.CLOSED;
     }
 
-    if (!force && state == CircuitBreakerState.OPEN) {
-      // Resetting the circuit breaker while we are in the open state is an illegal transition
-      return this;
-    }
-
-    state = CircuitBreakerState.CLOSED;
     closeHandler.handle(null);
     sendUpdateOnEventBus();
     return this;
   }
 
   @Override
-  public synchronized CircuitBreaker reset() {
+  public CircuitBreaker reset() {
     return reset(false);
   }
 
-  private synchronized void sendUpdateOnEventBus() {
+  private void sendUpdateOnEventBus() {
     if (metrics != null) {
       DeliveryOptions deliveryOptions = new DeliveryOptions()
         .setLocalOnly(options.isNotificationLocalOnly());
@@ -194,8 +197,16 @@ public class CircuitBreakerImpl implements CircuitBreaker {
   }
 
   @Override
-  public synchronized CircuitBreaker open() {
-    state = CircuitBreakerState.OPEN;
+  public CircuitBreaker open() {
+    synchronized (this) {
+      state = CircuitBreakerState.OPEN;
+    }
+
+    notifyOpened();
+    return this;
+  }
+
+  private void notifyOpened() {
     openHandler.handle(null);
     sendUpdateOnEventBus();
 
@@ -204,8 +215,6 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     if (period != -1) {
       vertx.setTimer(period, l -> attemptReset());
     }
-
-    return this;
   }
 
   @Override
@@ -218,10 +227,17 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return state;
   }
 
-  private synchronized CircuitBreaker attemptReset() {
-    if (state == CircuitBreakerState.OPEN) {
-      passed.set(0);
-      state = CircuitBreakerState.HALF_OPEN;
+  private CircuitBreaker attemptReset() {
+    boolean halfOpened;
+    synchronized (this) {
+      halfOpened = state == CircuitBreakerState.OPEN;
+      if (halfOpened) {
+        passed.set(0);
+        state = CircuitBreakerState.HALF_OPEN;
+      }
+    }
+
+    if (halfOpened) {
       halfOpenHandler.handle(null);
       sendUpdateOnEventBus();
     }
@@ -441,17 +457,20 @@ public class CircuitBreakerImpl implements CircuitBreaker {
     return name;
   }
 
-  private synchronized void incrementFailures() {
-    rollingFailures.increment();
-    if (rollingFailures.count() >= options.getMaxFailures()) {
-      if (state != CircuitBreakerState.OPEN) {
-        open();
-      } else {
-        // `open()` calls `sendUpdateOnEventBus()`, so no need to repeat it in the previous case
-        sendUpdateOnEventBus();
+  private void incrementFailures() {
+    boolean opened;
+    synchronized (this) {
+      rollingFailures.increment();
+      opened = rollingFailures.count() >= options.getMaxFailures() && state != CircuitBreakerState.OPEN;
+      if (opened) {
+        state = CircuitBreakerState.OPEN;
       }
+    }
+
+    if (opened) {
+      // `notifyOpened()` calls `sendUpdateOnEventBus()`, so no need to repeat it in this case
+      notifyOpened();
     } else {
-      // Number of failure has changed, send update.
       sendUpdateOnEventBus();
     }
   }
@@ -499,11 +518,11 @@ public class CircuitBreakerImpl implements CircuitBreaker {
 
   static class RollingCounter {
     // all `RollingCounter` methods are called in a `synchronized (CircuitBreakerImpl.this)` block,
-    // which therefore guards access to these fields
+    // which therefore guards the contents of `window`
 
-    private Map<Long, Long> window;
-    private long timeUnitsInWindow;
-    private TimeUnit windowTimeUnit;
+    private final Map<Long, Long> window;
+    private final long timeUnitsInWindow;
+    private final TimeUnit windowTimeUnit;
 
     public RollingCounter(long timeUnitsInWindow, TimeUnit windowTimeUnit) {
       this.windowTimeUnit = windowTimeUnit;
